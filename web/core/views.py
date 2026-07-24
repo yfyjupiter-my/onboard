@@ -1,4 +1,6 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm
+from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
@@ -6,13 +8,27 @@ from django.utils import timezone
 from .models import JoinerProgress, Material
 
 
+class JoinerLoginForm(AuthenticationForm):
+    """Frontend login is joiners-only; staff (HR/IT) use /admin/login/."""
+
+    def confirm_login_allowed(self, user):
+        super().confirm_login_allowed(user)
+        if user.is_staff:
+            raise ValidationError(
+                "Staff accounts sign in through the admin site.", code="staff_forbidden"
+            )
+
+
 @login_required
 def checklist(request):
     # All active materials left-joined to this user's progress. No lazy create here
     # (progress rows are created on first material view, per P3/P5).
     progress = {p.material_id: p for p in request.user.progress.all()}
+    quiz_material_ids = set(
+        Material.objects.filter(is_active=True, quiz__isnull=False).values_list("id", flat=True)
+    )
     rows = [
-        (m, progress.get(m.id))
+        (m, progress.get(m.id), m.id in quiz_material_ids)
         for m in Material.objects.filter(is_active=True).order_by("created_at")
     ]
     return render(request, "checklist.html", {"rows": rows})

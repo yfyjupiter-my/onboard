@@ -6,21 +6,27 @@
     <h1 class="title" style="margin-bottom:4px">Your onboarding checklist</h1>
     <p style="color:var(--muted);margin:0 0 18px">Work through each item. Some end with a short quiz.</p>
 
-    {% for material, progress in rows %}
-      <a href="{% url 'material' material.id %}"
-         style="display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line);text-decoration:none;color:inherit">
-        <span class="tag neutral">{{ material.get_type_display }}</span>
-        <span style="flex:1;font-weight:600">{{ material.title }}</span>
-        {% if progress.status == 'completed' %}
-          <span class="tag done">Completed</span>
-        {% elif progress.status == 'viewed' %}
-          <span class="tag todo">In progress</span>
-        {% else %}
-          <span class="tag neutral">Not started</span>
-        {% endif %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
+    {% for material, progress, has_quiz in rows %}
+      <a href="{% url 'material' material.id %}" class="tile article type-{{ material.type }}">
+        <span class="cover">{% if material.type == 'video' %}▶{% else %}PDF{% endif %}</span>
+        <span class="body">
+          <span class="kicker">{{ material.get_type_display }}{% if has_quiz %} · Quiz{% endif %}</span>
+          <span class="headline">{{ material.title }}</span>
+          <span class="foot">
+          {% if progress.status == 'completed' %}
+            <span class="tag done">Completed</span>
+          {% elif progress.status == 'viewed' %}
+            <span class="tag todo">In progress</span>
+          {% else %}
+            <span class="tag neutral">Not started</span>
+          {% endif %}
+          </span>
+        </span>
       </a>
     {% empty %}
       <p style="color:var(--muted)">No materials assigned yet.</p>
     {% endfor %}
+    </div>
   </div>
 {% endblock %}

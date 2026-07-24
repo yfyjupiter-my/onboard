@@ -47,6 +47,10 @@
 
 - **Phase 2 security re-audit ✅ PASS** (post CODE-001) — presign/expiry/private-bucket surface sound. **SEC-008 fixed** — pinned `NGINX_ENVSUBST_FILTER=MINIO_BUCKET` so envsubst can't blank the presign-signing `Host $host` header. Carry-forward unchanged: SEC-004 (MinIO root creds → service account, Phase 5), SEC-005 (15-min bearer URLs, accepted). Recorded in `SEC-AUDIT.md`.
 
+- **Checklist card content ✅** — cards now reflect the uploaded material: cover shows a `PDF`/`▶` glyph with type-specific gradient (`type-{{material.type}}`), kicker appends `· Quiz` when a quiz is attached. `checklist()` view computes `quiz_material_ids` (one query) and passes `has_quiz` per row.
+
+- **Video/PDF playback fix ✅** — after host port moved 90→8080, presigned media URLs 404'd (signed against `http://localhost`:80, browser on :8080) → `<video>` "no supported format". Fixed: `.env` `MINIO_PUBLIC_ENDPOINT=http://localhost:8080`; nginx `/media/` now forwards `Host $http_host` (keeps port) not `$host` (strips it) so MinIO signature verifies. Verified 206 `video/mp4` range response end-to-end. **If host port changes again, update `MINIO_PUBLIC_ENDPOINT` to match.**
+
 ## Next
 - **Deploy prerequisites (operator, not code):** set real `.env` secrets (clears W009), `git init` (`.gitignore` ready), scope MinIO service account (SEC-004), put Cloudflare Access on `/admin/` (SEC-006/P14). App code is deploy-ready.
 

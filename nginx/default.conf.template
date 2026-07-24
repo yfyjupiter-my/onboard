@@ -8,14 +8,16 @@ server {
     client_max_body_size 512m;   # allow PDF/MP4 admin uploads
 
     # P2/P8: /media/<key> is rewritten to /<bucket>/<key> and proxied to MinIO.
-    # Presigns are signed over the bucket path + public Host, so forwarding the
-    # original Host ($host) makes the signature verify here. MinIO never exposed.
+    # Presigns are signed over the bucket path + public Host. Use $http_host (the
+    # full Host header, port included) not $host (port stripped) — the presign
+    # signs the public host WITH its port, so the forwarded Host must match or
+    # MinIO returns SignatureDoesNotMatch. MinIO never exposed.
     # Bucket segment is templated from MINIO_BUCKET via the nginx image's
     # envsubst (/etc/nginx/templates/*.template) — no drift with the app.
     location /media/ {
         rewrite ^/media/(.*)$ /${MINIO_BUCKET}/$1 break;
         proxy_pass http://minio:9000;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 
