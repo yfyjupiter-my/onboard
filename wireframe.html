@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onboard — Wireframe Blueprints</title>
+<style>
+  /* medium-fidelity grayscale wireframe — no branding, no real styling */
+  :root{
+    --ink:#333; --line:#999; --box:#e2e2e2; --box2:#cfcfcf; --page:#f4f4f4;
+    --note:#0a58ca; --radius:4px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:#ffffff;line-height:1.4}
+  header.top{padding:20px 24px;border-bottom:2px solid var(--ink);position:sticky;top:0;background:#fff;z-index:5}
+  header.top h1{margin:0;font-size:18px}
+  header.top p{margin:4px 0 0;font-size:12px;color:#666}
+  nav.jump{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  nav.jump a{font-size:12px;text-decoration:none;color:var(--ink);border:1px solid var(--line);padding:4px 10px;border-radius:20px}
+  .set{padding:28px 24px 48px;border-bottom:1px dashed var(--line)}
+  .set > h2{font-size:15px;letter-spacing:.08em;text-transform:uppercase;border-left:5px solid var(--ink);padding-left:10px;margin:0 0 4px}
+  .set > .desc{font-size:12px;color:#666;margin:0 0 20px}
+
+  .screens{display:grid;gap:24px}
+  @media(min-width:900px){.screens{grid-template-columns:repeat(2,1fr)}}
+
+  .screen{border:1px solid var(--line);border-radius:var(--radius);background:var(--page);overflow:hidden}
+  .screen > figcaption{font-size:11px;font-weight:bold;padding:6px 10px;background:var(--ink);color:#fff;letter-spacing:.05em}
+  .screen .body{padding:14px}
+
+  /* generic wireframe primitives */
+  .box{background:var(--box);border:1px solid var(--line);border-radius:var(--radius)}
+  .ph{background:repeating-linear-gradient(45deg,var(--box),var(--box) 8px,var(--box2) 8px,var(--box2) 16px);
+      border:1px solid var(--line);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;
+      font-size:11px;color:#555;text-align:center;padding:8px}
+  .line{height:10px;background:var(--box2);border-radius:2px}
+  .line.s{width:40%}.line.m{width:65%}.line.l{width:90%}
+  .btn{background:var(--ink);color:#fff;font-size:11px;text-align:center;padding:8px;border-radius:var(--radius)}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+  .input{height:30px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);display:flex;align-items:center;padding:0 8px;font-size:11px;color:#888}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .row{display:flex;gap:10px;align-items:center}
+  .badge{font-size:10px;border:1px solid var(--line);border-radius:20px;padding:2px 8px;background:#fff}
+  .pill{width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:#fff;flex:0 0 auto}
+  .pill.done{background:var(--ink)}
+  .ann{font-size:10px;color:var(--note);border-left:2px solid var(--note);padding-left:6px;margin:2px 0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .sidebar{display:grid;grid-template-columns:150px 1fr;gap:14px}
+  @media(max-width:520px){.sidebar{grid-template-columns:1fr}}
+  .checkitem{display:flex;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:10px}
+  .checkitem .grow{flex:1}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>Onboard — Wireframe Blueprints (medium fidelity)</h1>
+  <p>3 distinct layout directions for the joiner-facing app. Grayscale, structure only — HR/IT side is Django admin (not wireframed). Blue notes = annotations.</p>
+  <nav class="jump">
+    <a href="#setA">Set A · Sidebar app</a>
+    <a href="#setB">Set B · Card / centered</a>
+    <a href="#setC">Set C · Stepper / linear</a>
+  </nav>
+</header>
+
+<!-- ============ SET A : SIDEBAR APP SHELL ============ -->
+<section class="set" id="setA">
+  <h2>Set A — Persistent sidebar app shell</h2>
+  <p class="desc">Left nav stays; content swaps via htmx. Dashboard-style, good for returning joiners.</p>
+  <div class="screens">
+
+    <figure class="screen">
+      <figcaption>A1 · LOGIN</figcaption>
+      <div class="body">
+        <div class="sidebar">
+          <div class="ph" style="min-height:180px">Brand /<br>illustration<br>placeholder</div>
+          <div class="stack">
+            <div class="line s"></div>
+            <div class="line m" style="height:16px"></div>
+            <p class="ann">Sole entry point. No self-signup, no reset (HR resets in admin).</p>
+            <div class="input">username</div>
+            <div class="input">password</div>
+            <div class="btn">Log in</div>
+            <div class="badge">unauth → redirected here</div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>A2 · CHECKLIST / DASHBOARD</figcaption>
+      <div class="body">
+        <div class="sidebar">
+          <div class="stack">
+            <div class="ph" style="height:34px">logo</div>
+            <div class="box" style="padding:8px"><div class="line l"></div></div>
+            <div class="box" style="padding:8px"><div class="line m"></div></div>
+            <div class="box" style="padding:8px"><div class="line s"></div></div>
+            <div class="btn ghost" style="margin-top:auto">Log out</div>
+          </div>
+          <div class="stack">
+            <div class="row"><div class="line m" style="height:16px"></div><span class="badge">2 / 5 done</span></div>
+            <p class="ann">Progress bar + own materials only (filtered by request.user).</p>
+            <div class="box" style="height:10px"></div>
+            <div class="checkitem"><span class="pill done"></span><div class="grow line l"></div><span class="badge">done</span></div>
+            <div class="checkitem"><span class="pill done"></span><div class="grow line m"></div><span class="badge">done</span></div>
+            <div class="checkitem"><span class="pill"></span><div class="grow line l"></div><span class="badge">quiz</span></div>
+            <div class="checkitem"><span class="pill"></span><div class="grow line m"></div><span class="badge">view</span></div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>A3 · MATERIAL VIEWER (PDF / video)</figcaption>
+      <div class="body">
+        <div class="stack">
+          <div class="row"><div class="badge">&larr; back</div><div class="line m" style="height:14px"></div></div>
+          <div class="ph" style="height:180px">PDF / MP4 embed<br>(presigned MinIO URL via /media/*)</div>
+          <p class="ann">Streams direct from MinIO, not through Django. Marks "viewed" on open.</p>
+          <div class="row"><div class="btn ghost">Download</div><div class="btn">Take quiz →</div></div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>A4 · QUIZ</figcaption>
+      <div class="body">
+        <div class="stack">
+          <div class="line s" style="height:14px"></div>
+          <div class="box" style="padding:10px" class="stack">
+            <div class="line l"></div>
+            <div class="row"><span class="pill"></span><div class="grow line m"></div></div>
+            <div class="row"><span class="pill"></span><div class="grow line l"></div></div>
+            <div class="row"><span class="pill"></span><div class="grow line s"></div></div>
+          </div>
+          <p class="ann">htmx POST → returns result fragment. Score persisted to JoinerProgress on submit.</p>
+          <div class="row"><span class="badge">Q 2 / 4</span><div class="btn" style="margin-left:auto">Submit</div></div>
+        </div>
+      </div>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============ SET B : CENTERED CARD ============ -->
+<section class="set" id="setB">
+  <h2>Set B — Centered card / top-bar</h2>
+  <p class="desc">Minimal top bar, single centered column. Focused, mobile-first, less chrome.</p>
+  <div class="screens">
+
+    <figure class="screen">
+      <figcaption>B1 · LOGIN</figcaption>
+      <div class="body" style="display:flex;justify-content:center">
+        <div class="box" style="width:260px;padding:18px" >
+          <div class="stack">
+            <div class="ph" style="height:40px">logo</div>
+            <div class="line m"></div>
+            <div class="input">username</div>
+            <div class="input">password</div>
+            <div class="btn">Log in</div>
+            <p class="ann">Centered card, no sidebar. Same gateway rules as A1.</p>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>B2 · CHECKLIST (top bar + list)</figcaption>
+      <div class="body">
+        <div class="stack">
+          <div class="row box" style="padding:8px"><div class="ph" style="height:22px;width:60px">logo</div><div class="line s" style="margin-left:auto"></div><span class="badge">log out</span></div>
+          <div class="row"><div class="line s" style="height:16px"></div><span class="badge" style="margin-left:auto">3 / 5</span></div>
+          <div class="checkitem"><span class="pill done"></span><div class="grow"><div class="line l"></div></div><span class="badge">done</span></div>
+          <div class="checkitem"><span class="pill"></span><div class="grow"><div class="line m"></div><div class="line s" style="margin-top:6px"></div></div><span class="badge">quiz</span></div>
+          <div class="checkitem"><span class="pill"></span><div class="grow"><div class="line l"></div></div><span class="badge">view</span></div>
+          <p class="ann">Each row = 1 Material; status badge = not started / viewed / completed.</p>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>B3 · MATERIAL VIEWER (full-width media)</figcaption>
+      <div class="body">
+        <div class="stack">
+          <div class="ph" style="height:200px">large PDF / video<br>presigned MinIO stream</div>
+          <div class="row"><div class="line m" style="height:14px"></div><div class="btn" style="margin-left:auto">Take quiz →</div></div>
+          <p class="ann">No-quiz materials auto-complete here on view.</p>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>B4 · QUIZ RESULT (fragment)</figcaption>
+      <div class="body" style="display:flex;justify-content:center">
+        <div class="box" style="width:260px;padding:18px">
+          <div class="stack" style="align-items:center;text-align:center">
+            <div class="ph" style="height:60px;width:60px;border-radius:50%">✓ / ✗</div>
+            <div class="line m"></div>
+            <div class="line s"></div>
+            <div class="row"><span class="badge">score</span><span class="badge">pass / fail</span></div>
+            <p class="ann">htmx swaps quiz card → this result. Pass unlocks "complete".</p>
+            <div class="btn ghost">Back to checklist</div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+  </div>
+</section>
+
+<!-- ============ SET C : LINEAR STEPPER ============ -->
+<section class="set" id="setC">
+  <h2>Set C — Linear stepper / guided flow</h2>
+  <p class="desc">Onboarding as one guided sequence with a progress rail. Best for first-time completion in order.</p>
+  <div class="screens">
+
+    <figure class="screen">
+      <figcaption>C1 · LOGIN (split hero)</figcaption>
+      <div class="body">
+        <div class="grid2">
+          <div class="ph" style="min-height:170px">welcome hero<br>placeholder</div>
+          <div class="stack">
+            <div class="line m" style="height:16px"></div>
+            <div class="input">username</div>
+            <div class="input">password</div>
+            <div class="btn">Start onboarding</div>
+            <p class="ann">Framed as "begin", but same login gateway underneath.</p>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>C2 · STEP RAIL + OVERVIEW</figcaption>
+      <div class="body">
+        <div class="stack">
+          <div class="row" style="justify-content:space-between">
+            <span class="pill done"></span><div class="line" style="flex:1;height:2px"></div>
+            <span class="pill done"></span><div class="line" style="flex:1;height:2px"></div>
+            <span class="pill"></span><div class="line" style="flex:1;height:2px"></div>
+            <span class="pill"></span>
+          </div>
+          <p class="ann">Horizontal step rail = same JoinerProgress data, shown as sequence.</p>
+          <div class="grid3">
+            <div class="ph" style="height:70px">step</div>
+            <div class="ph" style="height:70px">step</div>
+            <div class="ph" style="height:70px">step</div>
+          </div>
+          <div class="btn" style="margin-left:auto;width:120px">Resume →</div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>C3 · STEP = MATERIAL + INLINE QUIZ</figcaption>
+      <div class="body">
+        <div class="stack">
+          <div class="row"><span class="badge">Step 3 of 5</span><div class="line s" style="margin-left:auto"></div></div>
+          <div class="ph" style="height:130px">material embed (MinIO presigned)</div>
+          <div class="box" style="padding:10px">
+            <div class="line m"></div>
+            <div class="row" style="margin-top:8px"><span class="pill"></span><div class="grow line l"></div></div>
+            <div class="row" style="margin-top:6px"><span class="pill"></span><div class="grow line m"></div></div>
+          </div>
+          <p class="ann">Material + quiz stacked in one step; can't advance until passed.</p>
+          <div class="row"><div class="btn ghost">← Prev</div><div class="btn" style="margin-left:auto">Submit &amp; next →</div></div>
+        </div>
+      </div>
+    </figure>
+
+    <figure class="screen">
+      <figcaption>C4 · COMPLETION</figcaption>
+      <div class="body">
+        <div class="stack" style="align-items:center;text-align:center">
+          <div class="ph" style="height:80px;width:80px;border-radius:50%">done</div>
+          <div class="line m"></div>
+          <div class="line s"></div>
+          <p class="ann">All steps done → completed_at recorded. Admin sees it in dashboard/CSV.</p>
+          <div class="btn ghost">Review materials</div>
+        </div>
+      </div>
+    </figure>
+
+  </div>
+</section>
+
+</body>
+</html>

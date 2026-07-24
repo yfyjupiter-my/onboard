@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Quiz — {{ material.title }}{% endblock %}
+{% block body %}
+  {% include "_topbar.html" %}
+  <div class="card">
+    <h1 class="title" style="font-size:20px;margin-bottom:4px">Quiz — {{ material.title }}</h1>
+    <p style="color:var(--muted);margin:0 0 18px">Choose one answer per question.</p>
+
+    <form method="post">
+      {% csrf_token %}
+      {% for q in questions %}
+        <fieldset style="border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px">
+          <legend style="font-weight:600;padding:0 6px">{{ forloop.counter }}. {{ q.text }}</legend>
+          {% for c in q.choices.all %}
+            <label style="display:flex;align-items:center;gap:10px;font-weight:400;color:var(--text);margin:8px 0;cursor:pointer">
+              <input type="radio" name="q{{ q.id }}" value="{{ c.id }}" required
+                     style="width:auto;height:auto;margin:0">
+              {{ c.text }}
+            </label>
+          {% endfor %}
+        </fieldset>
+      {% endfor %}
+      <div style="display:flex;justify-content:flex-end;gap:10px">
+        <a class="btn ghost" href="{% url 'material' material.id %}">Cancel</a>
+        <button class="btn primary" type="submit">Submit answers</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Your onboarding — Onboard{% endblock %}
+{% block body %}
+  {% include "_topbar.html" %}
+  <div class="card">
+    <h1 class="title" style="margin-bottom:4px">Your onboarding checklist</h1>
+    <p style="color:var(--muted);margin:0 0 18px">Work through each item. Some end with a short quiz.</p>
+
+    {% for material, progress in rows %}
+      <a href="{% url 'material' material.id %}"
+         style="display:flex;align-items:center;gap:12px;padding:14px 0;border-top:1px solid var(--line);text-decoration:none;color:inherit">
+        <span class="tag neutral">{{ material.get_type_display }}</span>
+        <span style="flex:1;font-weight:600">{{ material.title }}</span>
+        {% if progress.status == 'completed' %}
+          <span class="tag done">Completed</span>
+        {% elif progress.status == 'viewed' %}
+          <span class="tag todo">In progress</span>
+        {% else %}
+          <span class="tag neutral">Not started</span>
+        {% endif %}
+      </a>
+    {% empty %}
+      <p style="color:var(--muted)">No materials assigned yet.</p>
+    {% endfor %}
+  </div>
+{% endblock %}
