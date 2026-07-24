@@ -4,8 +4,10 @@
   <div class="card center" style="margin-top:8vh">
     <h1 class="title" style="margin-bottom:4px">Welcome back</h1>
     <p style="color:var(--muted);margin:0 0 18px">Log in to continue your onboarding.</p>
-    {% if form.errors %}
-      <p class="tag todo" style="margin-bottom:14px">Incorrect username or password.</p>
+    {% if form.non_field_errors %}
+      {% for error in form.non_field_errors %}
+        <p class="tag todo" style="margin-bottom:14px">{{ error }}</p>
+      {% endfor %}
     {% endif %}
     <form method="post">
       {% csrf_token %}

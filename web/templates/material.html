@@ -2,7 +2,7 @@
 {% block title %}{{ material.title }} — Onboard{% endblock %}
 {% block body %}
   {% include "_topbar.html" %}
-  <div class="card">
+  <div class="card" x-data="{ reviewed: false }">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
       <a class="btn ghost sm" href="{% url 'home' %}">&larr; Back</a>
       <h1 class="title" style="flex:1;font-size:20px">{{ material.title }}</h1>
@@ -10,19 +10,58 @@
     </div>
 
     {% if material.type == 'pdf' %}
-      <iframe src="{{ file_url }}" title="{{ material.title }}"
-              style="width:100%;height:70vh;border:1px solid var(--line);border-radius:12px"></iframe>
+      {% load static %}
+      <div id="pdfview"
+           @scroll="if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 8) reviewed = true"
+           style="width:100%;height:70vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px"></div>
+      <script type="module">
+        import * as pdfjsLib from "{% static 'vendor/pdf.min.mjs' %}";
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "{% static 'vendor/pdf.worker.min.mjs' %}";
+        const container = document.getElementById('pdfview');
+        (async () => {
+          const pdf = await pdfjsLib.getDocument("{{ file_url|escapejs }}").promise;
+          for (let n = 1; n <= pdf.numPages; n++) {
+            const page = await pdf.getPage(n);
+            const scale = (container.clientWidth - 24) / page.getViewport({ scale: 1 }).width;
+            const viewport = page.getViewport({ scale });
+            const canvas = document.createElement('canvas');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+            canvas.style.cssText = 'display:block;margin:0 auto 12px;max-width:100%';
+            container.appendChild(canvas);
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+          }
+          // Whole doc fits without scrolling (e.g. single page) -> unlock immediately.
+          container.dispatchEvent(new Event('scroll'));
+        })().catch((err) => {
+          // Not a real PDF (e.g. image/text uploaded as "pdf") or corrupt: fall back to the
+          // browser's native viewer so it still displays, and unlock (can't scroll-gate it).
+          console.error('PDF.js could not render this file, using native viewer:', err);
+          container.innerHTML = '';
+          const frame = document.createElement('iframe');
+          frame.src = "{{ file_url|escapejs }}";
+          frame.title = "{{ material.title|escapejs }}";
+          frame.style.cssText = 'width:100%;height:100%;border:0';
+          container.appendChild(frame);
+          container.dispatchEvent(new Event('scroll'));
+        });
+      </script>
     {% else %}
-      <video controls src="{{ file_url }}"
+      <video controls src="{{ file_url }}" @ended="reviewed = true"
              style="width:100%;max-height:70vh;border-radius:12px;background:#000"></video>
     {% endif %}
 
+    <div style="margin-top:18px;display:flex;justify-content:flex-end">
     {% if has_quiz %}
-      <div style="margin-top:18px;display:flex;justify-content:flex-end">
         <a class="btn primary" href="{% url 'quiz' material.id %}">
           {% if progress.status == 'completed' %}Retake quiz{% else %}Take the quiz{% endif %}
         </a>
-      </div>
+    {% elif progress.status != 'completed' %}
+        <form method="post" action="{% url 'mark_complete' material.id %}">
+          {% csrf_token %}
+          <button type="submit" class="btn primary" :disabled="!reviewed">Mark complete</button>
+        </form>
     {% endif %}
+    </div>
   </div>
 {% endblock %}

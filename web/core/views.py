@@ -2,8 +2,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from .models import JoinerProgress, Material
 
@@ -40,13 +41,9 @@ def material_view(request, pk):
     progress, _ = JoinerProgress.objects.get_or_create(user=request.user, material=material)
     has_quiz = hasattr(material, "quiz")
 
-    if not has_quiz:
-        # No quiz: viewing completes it.
-        if progress.status != JoinerProgress.COMPLETED:
-            progress.status = JoinerProgress.COMPLETED
-            progress.completed_at = timezone.now()
-            progress.save()
-    elif progress.status == JoinerProgress.NOT_STARTED:
+    # Viewing only marks progress; the joiner completes it by clicking "Mark complete"
+    # (no-quiz) or passing the quiz.
+    if progress.status == JoinerProgress.NOT_STARTED:
         progress.status = JoinerProgress.VIEWED
         progress.save()
 
@@ -56,6 +53,20 @@ def material_view(request, pk):
         {"material": material, "progress": progress, "has_quiz": has_quiz,
          "file_url": material.file.url},  # presigned, 15-min
     )
+
+
+@login_required
+@require_POST
+def mark_complete(request, pk):
+    material = get_object_or_404(Material, pk=pk, is_active=True)
+    if hasattr(material, "quiz"):
+        raise Http404("quiz materials complete via the quiz")  # can't shortcut the quiz gate
+    progress, _ = JoinerProgress.objects.get_or_create(user=request.user, material=material)
+    if progress.status != JoinerProgress.COMPLETED:
+        progress.status = JoinerProgress.COMPLETED
+        progress.completed_at = timezone.now()
+        progress.save()
+    return redirect("home")
 
 
 @login_required

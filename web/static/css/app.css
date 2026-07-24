@@ -55,6 +55,7 @@ label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bot
 .btn.ghost:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
 .btn.sm{height:36px;padding:0 12px}
 .btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn:disabled{opacity:.5;cursor:not-allowed;filter:none;pointer-events:none}
 
 input{
   height:42px;width:100%;padding:0 12px;border:1px solid var(--line);border-radius:9px;

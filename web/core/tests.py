@@ -113,13 +113,26 @@ class ChoiceFormSetTests(TestCase):
 
 @override_settings(SECURE_SSL_REDIRECT=False)
 class NoQuizViewTests(TestCase):
-    def test_viewing_no_quiz_material_completes_it(self):
-        user = User.objects.create_user("j2", password="pw-testing-123")
-        self.client.force_login(user)
-        material = Material.objects.create(title="Video", type=Material.VIDEO, file="materials/v.mp4")
-        self.client.get(reverse("material", args=[material.pk]))
-        p = JoinerProgress.objects.get(user=user, material=material)
+    def setUp(self):
+        self.user = User.objects.create_user("j2", password="pw-testing-123")
+        self.client.force_login(self.user)
+        self.material = Material.objects.create(title="Video", type=Material.VIDEO, file="materials/v.mp4")
+
+    def test_viewing_only_marks_in_progress(self):
+        self.client.get(reverse("material", args=[self.material.pk]))
+        p = JoinerProgress.objects.get(user=self.user, material=self.material)
+        self.assertEqual(p.status, JoinerProgress.VIEWED)
+
+    def test_mark_complete_button_completes(self):
+        self.client.post(reverse("mark_complete", args=[self.material.pk]))
+        p = JoinerProgress.objects.get(user=self.user, material=self.material)
         self.assertEqual(p.status, JoinerProgress.COMPLETED)
+        self.assertIsNotNone(p.completed_at)
+
+    def test_mark_complete_rejects_quiz_material(self):
+        Quiz.objects.create(material=self.material, pass_mark=80)
+        resp = self.client.post(reverse("mark_complete", args=[self.material.pk]))
+        self.assertEqual(resp.status_code, 404)
 
 
 class PresignTests(TestCase):
@@ -129,3 +142,18 @@ class PresignTests(TestCase):
         self.assertIn("/media/", url)          # bucket segment rewritten (T2.2)
         self.assertIn("X-Amz-Signature", url)  # signed, not public
         self.assertIn("X-Amz-Expires=900", url)
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
+class JoinerLoginFormTests(TestCase):
+    def test_staff_rejected_at_frontend_login(self):
+        User.objects.create_user("hr", password="pw-testing-123", is_staff=True)
+        resp = self.client.post(reverse("login"), {"username": "hr", "password": "pw-testing-123"})
+        self.assertEqual(resp.status_code, 200)  # re-rendered, not logged in
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_joiner_allowed_at_frontend_login(self):
+        User.objects.create_user("joiner", password="pw-testing-123")
+        resp = self.client.post(reverse("login"), {"username": "joiner", "password": "pw-testing-123"})
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("_auth_user_id", self.client.session)
