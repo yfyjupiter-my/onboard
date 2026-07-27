@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Log in — Onboard{% endblock %}
 {% block body %}
+  <div id="login-bg" aria-hidden="true">
+    <i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i>
+  </div>
+
   <div style="display:flex;align-items:center;min-height:calc(100vh - 36px)">
-  <div class="card center" style="max-width:400px;padding:32px">
+  <div class="card center" style="max-width:400px;padding:32px;position:relative;z-index:1">
     <h1 class="title" style="margin-bottom:4px">Welcome back</h1>
     <p style="color:var(--muted);margin:0 0 18px">Log in to continue your onboarding.</p>
     {% if form.non_field_errors %}
@@ -38,6 +42,21 @@
   </div>
 
   <style>
+  /* Decorative background: dot lattice + flat shapes (DESIGN.md tokens only) */
+  #login-bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  #login-bg::before{content:"";position:absolute;inset:0;
+    background-image:radial-gradient(color-mix(in srgb,var(--muted) 28%,transparent) 1.5px,transparent 1.6px);
+    background-size:22px 22px}
+  #login-bg i{position:absolute;display:block}
+  #login-bg .s1{width:280px;height:280px;border-radius:50%;top:-90px;left:-70px;
+    background:color-mix(in srgb,var(--primary) 10%,transparent)}
+  #login-bg .s2{width:160px;height:160px;border-radius:50%;right:-40px;top:18%;
+    border:2px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+  #login-bg .s3{width:220px;height:64px;border-radius:99px;bottom:12%;left:8%;
+    background:color-mix(in srgb,var(--accent) 12%,transparent)}
+  #login-bg .s4{width:120px;height:120px;border-radius:28px;bottom:-30px;right:12%;transform:rotate(18deg);
+    background:color-mix(in srgb,var(--primary) 14%,transparent)}
+
   #login-loading{position:fixed;inset:0;z-index:50;display:grid;place-items:center;
     overflow:hidden;background:var(--bg);color:var(--text)}
   #login-loading[hidden]{display:none}
