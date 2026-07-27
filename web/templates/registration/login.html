@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Log in — Onboard{% endblock %}
 {% block body %}
-  <div class="card center" style="margin-top:8vh">
+  <div style="display:flex;align-items:center;min-height:calc(100vh - 36px)">
+  <div class="card center" style="max-width:400px;padding:32px">
     <h1 class="title" style="margin-bottom:4px">Welcome back</h1>
     <p style="color:var(--muted);margin:0 0 18px">Log in to continue your onboarding.</p>
     {% if form.non_field_errors %}
@@ -9,7 +10,7 @@
         <p class="tag todo" style="margin-bottom:14px">{{ error }}</p>
       {% endfor %}
     {% endif %}
-    <form method="post">
+    <form method="post" id="login-form">
       {% csrf_token %}
       <label for="id_username">Username</label>
       {{ form.username }}
@@ -18,4 +19,64 @@
       <button class="btn primary" type="submit" style="width:100%;margin-top:18px">Log in</button>
     </form>
   </div>
+  </div>
+
+  <div id="login-loading" hidden aria-hidden="true">
+    <div class="wrap">
+      <div class="ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true">
+          <circle class="track" cx="60" cy="60" r="54"/>
+          <circle class="fill"  cx="60" cy="60" r="54"/>
+        </svg>
+        <div class="orbit" aria-hidden="true"><i></i></div>
+        <div class="orbit" aria-hidden="true"><i></i></div>
+        <div class="mark" aria-hidden="true">O</div>
+      </div>
+      <div class="brand">Onboard</div>
+      <p class="msg" role="status">Signing you in…</p>
+    </div>
+  </div>
+
+  <style>
+  #login-loading{position:fixed;inset:0;z-index:50;display:grid;place-items:center;
+    overflow:hidden;background:var(--bg);color:var(--text)}
+  #login-loading[hidden]{display:none}
+  #login-loading .wrap{display:grid;justify-items:center;text-align:center;padding:0 20px}
+  #login-loading .ring{width:120px;height:120px;position:relative;display:grid;place-items:center}
+  #login-loading svg{position:absolute;inset:0;transform:rotate(-90deg)}
+  #login-loading .track{fill:none;stroke:var(--line);stroke-width:4}
+  #login-loading .fill{fill:none;stroke:var(--primary);stroke-width:4;stroke-linecap:round;
+    stroke-dasharray:339;stroke-dashoffset:339;animation:ld-sweep 2.4s ease-in-out infinite}
+  @keyframes ld-sweep{0%{stroke-dashoffset:339}60%,100%{stroke-dashoffset:64}}
+  #login-loading .mark{width:54px;height:54px;border-radius:14px;background:var(--primary);
+    color:var(--primary-ink);display:grid;place-items:center;font-weight:700;font-size:20px;
+    animation:ld-pulse 2.4s ease-in-out infinite}
+  @keyframes ld-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+  #login-loading .orbit{position:absolute;inset:-14px;animation:ld-spin 3.2s linear infinite}
+  #login-loading .orbit i{position:absolute;top:0;left:50%;width:8px;height:8px;margin-left:-4px;
+    border-radius:50%;background:var(--accent)}
+  #login-loading .orbit:nth-of-type(2){animation-duration:4.6s;animation-direction:reverse}
+  #login-loading .orbit:nth-of-type(2) i{background:var(--primary);opacity:.5}
+  @keyframes ld-spin{to{transform:rotate(360deg)}}
+  #login-loading .brand{font-weight:700;font-size:19px;letter-spacing:-.01em;margin-top:26px}
+  #login-loading .msg{font-size:13px;margin-top:14px;color:var(--muted)}
+  /* Reduced motion: no travel, but keep an opacity heartbeat so the screen isn't dead */
+  @media (prefers-reduced-motion:reduce){
+    #login-loading .orbit,#login-loading .mark{animation:none}
+    #login-loading .fill{animation:none;stroke-dashoffset:120}
+    #login-loading .msg{animation:ld-fade 1.4s ease-in-out infinite}
+    @keyframes ld-fade{0%,100%{opacity:.4}50%{opacity:1}}
+  }
+  </style>
+
+  <script>
+  // ponytail: hold the POST 3s behind the overlay; no-JS falls through and posts normally
+  document.getElementById('login-form').addEventListener('submit', function (e) {
+    if (this.dataset.sent) return;          // let the delayed submit through
+    e.preventDefault();
+    this.dataset.sent = '1';
+    document.getElementById('login-loading').hidden = false;
+    setTimeout(() => this.submit(), 3000);
+  });
+  </script>
 {% endblock %}

@@ -65,6 +65,10 @@
 
 - **QA fixes ✅ (all 4 applied & verified)** — SEC-009 MinIO console → `127.0.0.1:9001`; SEC-010 fallback iframe `sandbox=''` + nginx `/media/` `nosniff`; BUS-005 `mark_complete` requires an existing `VIEWED` progress row (never-opened → 404, completed → idempotent); BUS-007 `<video @error>` unlocks so a bad video can't strand the joiner. Plus SEC-011 pdf.js 4.6.82 + htmx/Alpine versions recorded in README. `manage.py test core` **16/16**, `nginx -t` ok, stack up (`/` 302 → login). Only BUS-006 remains accepted (review gate is client-side by design).
 
+- **Login loading screen ✅** — `loading-effect.html` playground (3 variants: orbit mark / skeleton / curtain wipe); user picked **curtain wipe**. Wired into `registration/login.html`: full-screen teal overlay (dots + indeterminate bar + `clip-path` curtain reveal) shows on submit, then the POST fires after a **3s hold** (`data-sent` guard prevents double-submit; no-JS posts normally, no delay). Note total wait = 3s + server round-trip, and failed logins also sit the full 3s. **Reduced-motion fix**: a tester's machine showed a dead solid screen because `prefers-reduced-motion: reduce` killed every animation — now dots/bar keep an opacity heartbeat (no travel) and the curtain fades via the same keyframes so it also clears where `clip-path` is unsupported. Same fix mirrored in `loading-effect.html`.
+
+- **Loading screen → orbit mark ✅** — switched from curtain wipe to the **orbit mark** variant: light `--bg` overlay, SVG progress ring sweep, two counter-rotating orbit dots, pulsing "O" mark, brand + "Signing you in…". Curtain markup/CSS deleted. Submit flow unchanged (3s hold, `data-sent` guard, no-JS posts normally). Reduced motion: animations off, ring parked mid-sweep, message keeps an opacity heartbeat.
+
 ## Next
 - **Deploy prerequisites (operator, not code):** set real `.env` secrets (clears W009), `git init` (`.gitignore` ready), scope MinIO service account (SEC-004), put Cloudflare Access on `/admin/` (SEC-006/P14). App code is deploy-ready.
 

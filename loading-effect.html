@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loading Effects — Playground</title>
+<style>
+:root{
+  --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#8a7d6d;
+  --primary:#0f766e; --primary-ink:#fff; --accent:#d97706;
+  --line:#ece3d6; --radius:16px; --shadow:0 2px 6px rgba(120,90,40,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:400 15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+
+/* --- playground chrome (not part of the effect) --- */
+.bar{position:fixed;top:0;left:0;right:0;z-index:10;display:flex;gap:8px;
+  align-items:center;padding:12px 16px;background:var(--surface);
+  border-bottom:1px solid var(--line)}
+.bar b{font-size:13px;margin-right:8px}
+.bar button{height:36px;padding:0 14px;border-radius:10px;font-weight:600;
+  font-size:13px;cursor:pointer;border:1px solid var(--line);background:transparent;
+  color:var(--text);transition:background .15s,border-color .15s,color .15s}
+.bar button:hover{border-color:var(--primary)}
+.bar button[aria-pressed=true]{background:var(--primary);color:var(--primary-ink);
+  border-color:var(--primary)}
+.bar button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* --- shared stage --- */
+.stage{position:fixed;inset:60px 0 0;display:none;place-items:center;
+  background:var(--bg);overflow:hidden}
+.stage[data-on]{display:grid}
+.brand{font-weight:700;letter-spacing:-.01em}
+.msg{font-size:13px;color:var(--muted);margin-top:14px;text-align:center}
+
+/* ============ 1. ORBIT — logo mark with orbiting dots + progress ring ============ */
+#s1 .wrap{display:grid;justify-items:center}
+#s1 .ring{width:120px;height:120px;position:relative;display:grid;place-items:center}
+#s1 svg{position:absolute;inset:0;transform:rotate(-90deg)}
+#s1 .track{fill:none;stroke:var(--line);stroke-width:4}
+#s1 .fill{fill:none;stroke:var(--primary);stroke-width:4;stroke-linecap:round;
+  stroke-dasharray:339;stroke-dashoffset:339;animation:sweep 2.4s ease-in-out infinite}
+@keyframes sweep{0%{stroke-dashoffset:339}60%,100%{stroke-dashoffset:64}}
+#s1 .mark{width:54px;height:54px;border-radius:14px;background:var(--primary);
+  color:var(--primary-ink);display:grid;place-items:center;font-weight:700;font-size:20px;
+  animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+#s1 .orbit{position:absolute;inset:-14px;animation:spin 3.2s linear infinite}
+#s1 .orbit i{position:absolute;top:0;left:50%;width:8px;height:8px;margin-left:-4px;
+  border-radius:50%;background:var(--accent)}
+#s1 .orbit:nth-of-type(2){animation-duration:4.6s;animation-direction:reverse}
+#s1 .orbit:nth-of-type(2) i{background:var(--primary);opacity:.5}
+@keyframes spin{to{transform:rotate(360deg)}}
+#s1 .brand{margin-top:26px;font-size:19px}
+
+/* ============ 2. SKELETON — dashboard shell filling in ============ */
+#s2 .card{width:min(420px,90vw);background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+#s2 .row{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+#s2 .sk{background:var(--line);border-radius:8px;position:relative;overflow:hidden}
+#s2 .sk::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.85),transparent);
+  animation:shimmer 1.4s ease-in-out infinite}
+@keyframes shimmer{to{transform:translateX(100%)}}
+#s2 .av{width:44px;height:44px;border-radius:50%;flex:none}
+#s2 .t1{height:12px;width:55%}
+#s2 .t2{height:10px;width:35%;margin-top:8px}
+#s2 .line{height:12px;margin-bottom:10px}
+#s2 .line:nth-child(1){width:100%}
+#s2 .line:nth-child(2){width:92%}
+#s2 .line:nth-child(3){width:70%}
+#s2 .sk:nth-child(2)::after{animation-delay:.15s}
+#s2 .sk:nth-child(3)::after{animation-delay:.3s}
+#s2 .tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px}
+#s2 .tiles .sk{height:58px}
+
+/* ============ 3. WIPE — full-screen curtain + typing status ============ */
+#s3{background:var(--primary);color:var(--primary-ink)}
+#s3 .wrap{display:grid;justify-items:center;text-align:center;padding:0 20px}
+#s3 .dots{display:flex;gap:10px;margin-bottom:24px}
+#s3 .dots i{width:12px;height:12px;border-radius:50%;background:var(--primary-ink);
+  opacity:.35;animation:bounce 1.1s ease-in-out infinite}
+#s3 .dots i:nth-child(2){animation-delay:.15s}
+#s3 .dots i:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:.35}
+  40%{transform:translateY(-10px);opacity:1}}
+#s3 .brand{font-size:26px}
+#s3 .bar2{width:min(260px,70vw);height:4px;border-radius:99px;margin-top:22px;
+  background:rgba(255,255,255,.25);overflow:hidden}
+#s3 .bar2 span{display:block;height:100%;width:40%;border-radius:99px;
+  background:var(--primary-ink);animation:slide 1.6s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}
+#s3 .msg{color:rgba(255,255,255,.8)}
+#s3 .curtain{position:absolute;inset:0;background:var(--bg);
+  animation:wipe 3.2s cubic-bezier(.7,0,.3,1) infinite}
+@keyframes wipe{0%{clip-path:inset(0 0 0 0)}35%,100%{clip-path:inset(0 0 100% 0)}}
+
+@media (prefers-reduced-motion:reduce){
+  /* no travel, but keep an opacity heartbeat — a frozen screen reads as broken */
+  #s1 .orbit,#s1 .mark,#s2 .sk::after,#s3 .curtain{animation:none}
+  #s1 .fill{animation:none;stroke-dashoffset:120}
+  #s3 .curtain{display:none}
+  #s2 .sk,#s3 .dots i,#s3 .bar2 span{animation:fade 1.4s ease-in-out infinite}
+  #s3 .bar2 span{width:100%}
+  @keyframes fade{0%,100%{opacity:.35}50%{opacity:1}}
+}
+</style>
+</head>
+<body>
+
+<nav class="bar" role="tablist" aria-label="Loading effect">
+  <b>Loading effect</b>
+  <button aria-pressed="true"  data-go="s1">1 · Orbit mark</button>
+  <button aria-pressed="false" data-go="s2">2 · Skeleton</button>
+  <button aria-pressed="false" data-go="s3">3 · Curtain wipe</button>
+</nav>
+
+<!-- 1 -->
+<section class="stage" id="s1" data-on>
+  <div class="wrap">
+    <div class="ring">
+      <svg viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="track" cx="60" cy="60" r="54"/>
+        <circle class="fill"  cx="60" cy="60" r="54"/>
+      </svg>
+      <div class="orbit" aria-hidden="true"><i></i></div>
+      <div class="orbit" aria-hidden="true"><i></i></div>
+      <div class="mark" aria-hidden="true">O</div>
+    </div>
+    <div class="brand">Onboard</div>
+    <p class="msg" role="status">Signing you in…</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="stage" id="s2">
+  <div class="card" role="status" aria-label="Loading your dashboard">
+    <div class="row">
+      <div class="sk av"></div>
+      <div style="flex:1">
+        <div class="sk t1"></div>
+        <div class="sk t2"></div>
+      </div>
+    </div>
+    <div class="sk line"></div>
+    <div class="sk line"></div>
+    <div class="sk line"></div>
+    <div class="tiles"><div class="sk"></div><div class="sk"></div></div>
+    <p class="msg">Loading your dashboard…</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="stage" id="s3">
+  <div class="wrap">
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="brand">Onboard</div>
+    <div class="bar2"><span></span></div>
+    <p class="msg" role="status">Preparing your training plan…</p>
+  </div>
+  <div class="curtain" aria-hidden="true"></div>
+</section>
+
+<script>
+// ponytail: plain delegation, no framework
+document.querySelector('.bar').addEventListener('click', e => {
+  const b = e.target.closest('[data-go]'); if (!b) return;
+  document.querySelectorAll('[data-go]').forEach(x =>
+    x.setAttribute('aria-pressed', x === b));
+  document.querySelectorAll('.stage').forEach(s =>
+    s.toggleAttribute('data-on', s.id === b.dataset.go));
+});
+</script>
+</body>
+</html>
