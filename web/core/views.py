@@ -61,12 +61,14 @@ def mark_complete(request, pk):
     material = get_object_or_404(Material, pk=pk, is_active=True)
     if hasattr(material, "quiz"):
         raise Http404("quiz materials complete via the quiz")  # can't shortcut the quiz gate
-    progress, _ = JoinerProgress.objects.get_or_create(user=request.user, material=material)
-    if progress.status != JoinerProgress.COMPLETED:
+    # BUS-005: the "reviewed" gate is client-side, so at minimum require a real
+    # material_view hit first — no progress row (never opened) => 404, not a free completion.
+    progress = get_object_or_404(JoinerProgress, user=request.user, material=material)
+    if progress.status == JoinerProgress.VIEWED:
         progress.status = JoinerProgress.COMPLETED
         progress.completed_at = timezone.now()
         progress.save()
-    return redirect("home")
+    return redirect("home")  # already completed -> idempotent no-op
 
 
 @login_required

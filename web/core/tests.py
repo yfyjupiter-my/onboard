@@ -124,10 +124,17 @@ class NoQuizViewTests(TestCase):
         self.assertEqual(p.status, JoinerProgress.VIEWED)
 
     def test_mark_complete_button_completes(self):
+        self.client.get(reverse("material", args=[self.material.pk]))  # must open it first
         self.client.post(reverse("mark_complete", args=[self.material.pk]))
         p = JoinerProgress.objects.get(user=self.user, material=self.material)
         self.assertEqual(p.status, JoinerProgress.COMPLETED)
         self.assertIsNotNone(p.completed_at)
+
+    def test_mark_complete_rejects_unopened_material(self):
+        # BUS-005: no progress row means the joiner never opened it — no free completion.
+        resp = self.client.post(reverse("mark_complete", args=[self.material.pk]))
+        self.assertEqual(resp.status_code, 404)
+        self.assertFalse(JoinerProgress.objects.filter(user=self.user).exists())
 
     def test_mark_complete_rejects_quiz_material(self):
         Quiz.objects.create(material=self.material, pass_mark=80)

@@ -60,3 +60,35 @@ Gate: two open items, both cheap, neither a security/crash risk.
 ### Final-gate fixes applied — 2026-07-24
 - BUS-001 ✅ Fixed — `ChoiceInlineFormSet.clean()` enforces exactly one correct choice per question (admin). Tests: valid / zero / two.
 - BUS-002 ✅ Fixed — `Quiz.pass_mark` gains `MaxValueValidator(100)` (migration `0002`). Test: 150 → ValidationError.
+
+## Post-Phase-5 audit — "Mark complete" review gate — 2026-07-27
+
+Scope: `mark_complete` view, `material_view` state machine, PDF.js / video review gate (`material.html`), checklist card flags.
+
+BUS-005: `mark_complete` trusts the client — no server-side proof the material was opened
+Verdict: ⚠️ Open — completion-record integrity
+Action Needed: the view `get_or_create`s progress and sets `completed` regardless of prior status. A joiner with a session + CSRF token can `POST /material/<id>/complete/` for a material they never opened; the record then reads "Completed" in the HR CSV. The `reviewed` gate is Alpine-only (client). Fix (one line): only complete when a progress row already exists with `status=VIEWED` —
+`progress = get_object_or_404(JoinerProgress, user=request.user, material=material, status=JoinerProgress.VIEWED)`
+Keeps idempotency (already-completed → 404/no-op) and forces a real `material_view` hit first. Does not (and cannot) prove the human read it — that is BUS-006.
+
+BUS-006: PDF review gate unlocks on any PDF.js error
+Verdict: ⚠️ Accepted — UX gate only, but bypass is trivial
+Action Needed: the `.catch` fallback unlocks the button whenever rendering fails — including transient failures (expired presign, offline tab, blocked worker), not just mislabeled uploads. Anyone wanting to skip can force an error. Acceptable while the gate is cosmetic; if completion must mean "read it", the proof has to be server-side (e.g. POST a per-page ack), which is out of scope for the MVP. Document as a known limit rather than harden the client.
+
+BUS-007: video-type material whose file will not play leaves the joiner permanently stuck
+Verdict: ⚠️ Open — joiner-blocking data trap (mirror of BUS-006's PDF fallback)
+Action Needed: PDFs fall back and unlock on error; `<video>` has no such path. A material saved as `type=video` with an unplayable/mislabeled file never fires `ended`, so **Mark complete** stays disabled forever and the joiner cannot finish onboarding. Fix (one attribute): `@error="reviewed = true"` on the `<video>` element, matching the PDF fallback.
+
+BUS-OK (verified good):
+- `mark_complete` 404s for quiz materials — the pass_mark gate cannot be shortcut.
+- No IDOR: progress is always keyed to `request.user`; `is_active=True` filter on every lookup.
+- `material_view` no longer auto-completes; NOT_STARTED→VIEWED only, never downgrades COMPLETED.
+- BUS-003 guard intact (failing retake keeps the passing record).
+- Checklist `quiz_material_ids` is one extra query, no N+1, display-only (no authz decision).
+
+Gate: three open items — BUS-005 and BUS-007 are cheap one-liners, BUS-006 is a documented limit.
+
+### Fixes applied — 2026-07-27
+- BUS-005 ✅ Fixed — `mark_complete` now `get_object_or_404`s an existing `JoinerProgress` and only completes from `VIEWED`; never-opened material → 404, already-completed → idempotent redirect. Tests: `test_mark_complete_button_completes` (views first), `test_mark_complete_rejects_unopened_material` (404, no row created).
+- BUS-007 ✅ Fixed — `<video @error="reviewed = true">` mirrors the PDF fallback, so an unplayable/mislabeled video can't strand the joiner.
+- BUS-006 ⚠️ Accepted, unchanged — client-side gate by design; server-side proof of reading is out of MVP scope.

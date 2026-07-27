@@ -19,6 +19,9 @@ server {
         proxy_pass http://minio:9000;
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
+        # SEC-010: media is served from the app's own origin — don't let the browser
+        # sniff an upload into text/html and run it as us.
+        add_header X-Content-Type-Options nosniff always;
     }
 
     # whitenoise serves /static/ from within gunicorn; just pass through.

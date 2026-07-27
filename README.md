@@ -42,7 +42,8 @@ Log in at `/admin/` to add Materials, Quizzes, Questions/Choices. Joiners are or
 
 - `DJANGO_DEBUG=False` turns on HSTS, SSL redirect, and secure cookies (TLS terminates at nginx/Cloudflare; the proxy `X-Forwarded-Proto` header lets Django see https). Verify with `docker compose run --rm web python manage.py check --deploy` — a real `DJANGO_SECRET_KEY` clears the last warning.
 - **Put Cloudflare Access (or equivalent SSO) in front of `/admin/`** — there is no app-level login throttle (SEC-006); Access provides authentication + brute-force protection.
-- MinIO currently uses root credentials; scope a bucket-only service account before real deployment (SEC-004).
+- MinIO currently uses root credentials; scope a bucket-only service account before real deployment (SEC-004). The console is bound to `127.0.0.1:9001` — reach it over an SSH tunnel, don't publish it (SEC-009).
+- Vendored frontend libs (no CDN, offline by design), under `web/static/vendor/`: htmx 1.9.x, Alpine 3.x, **pdf.js 4.6.82** (Apache-2.0; ≥4.2.67, so past CVE-2024-4367). Re-record the version here on upgrade.
 
 ## Dev commands
 

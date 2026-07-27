@@ -124,3 +124,37 @@ SEC-OK (verified good, unchanged):
 Carry-forward: SEC-004 (MinIO root creds → service account, Phase 5), SEC-005 (15-min bearer URL, accepted).
 
 Gate verdict: PASS. SEC-008 fixed; no new blocker.
+
+## Post-Phase-5 audit — review gate + compose changes — 2026-07-27
+
+Scope: published MinIO console port, vendored PDF.js, `material.html` fallback iframe, `mark_complete` endpoint.
+
+SEC-009: MinIO **console** published on host `:9001` with root credentials
+Verdict: 🚫 Blocking for deploy (LAN/prod), ⚠️ acceptable on a dev laptop
+Action Needed: `docker-compose.yml` maps `9001:9001` on all interfaces, so the console login is reachable from the whole LAN (and any port-forward), guarded only by `MINIO_ROOT_USER/PASSWORD` — the same unrotated root creds as SEC-004. Compromise = every material plus the ability to rewrite them. Fix: bind loopback only (`127.0.0.1:9001:9001`) or drop the mapping and use `docker compose exec minio mc` / an SSH tunnel when the console is needed. Combine with SEC-004 (bucket-scoped service account for the app).
+
+SEC-010: PDF fallback renders an uploaded file **same-origin** in an unsandboxed iframe
+Verdict: ⚠️ Open — staff→joiner stored XSS path
+Action Needed: `/media/` is proxied on the app's own origin, so when PDF.js fails the fallback `<iframe src="{{ file_url }}">` executes whatever the file is. An HTML/SVG uploaded through the admin (staff-only, so not a joiner-reachable escalation) then runs script in the app origin — same-origin iframe can read the parent DOM, the session-bound CSRF token, and act as the viewing joiner. Two cheap fixes, apply both:
+- `frame.sandbox = ''` on the fallback iframe (no `allow-scripts`; native PDF viewing still works).
+- `add_header X-Content-Type-Options nosniff always;` in the nginx `/media/` location so the browser honours MinIO's stored Content-Type instead of sniffing HTML.
+
+SEC-011: vendored PDF.js provenance unrecorded
+Verdict: ✅ Correct — no action beyond a note
+Action Needed: `static/vendor/pdf.min.mjs` / `pdf.worker.min.mjs` are pdf.js **4.6.82** (Mozilla, Apache-2.0), i.e. after the CVE-2024-4367 font-handler RCE fixed in 4.2.67 — not vulnerable. No version or checksum is written down anywhere. Record "pdf.js 4.6.82" in `README.md` alongside htmx/Alpine so future upgrades are auditable.
+
+SEC-OK (verified good):
+- `mark_complete` — `@login_required` + `@require_POST` + CSRF token; scoped to `request.user`; 404s on quiz materials; no IDOR.
+- `JoinerLoginForm` blocks `is_staff` on the joiner login route (admin surface separated).
+- `{{ file_url|escapejs }}` / `{{ material.title|escapejs }}` correctly escaped inside the JS module; no `|safe`, no `mark_safe`.
+- PDF.js is a same-origin module + worker (no CDN); no external URLs in templates/CSS.
+- Presign/private-bucket surface unchanged since the Phase 2 re-audit; nginx still never exposes `:9000`.
+
+Carry-forward unchanged: SEC-004 (root creds → service account), SEC-005 (15-min bearer URLs, accepted), SEC-006 (login throttle → Cloudflare Access).
+
+Gate verdict: **FAIL for LAN/prod deploy on SEC-009** (one-line compose fix), SEC-010 open (two one-line fixes). No RCE/crash-class issue in app code.
+
+### Fixes applied — 2026-07-27
+- SEC-009 ✅ Fixed — MinIO console bound to `127.0.0.1:9001:9001` (verified: `docker compose port minio 9001` → `127.0.0.1:9001`). README notes the SSH-tunnel workflow.
+- SEC-010 ✅ Fixed — fallback iframe gets `frame.sandbox = ''` (no `allow-scripts`) **and** nginx `/media/` sends `X-Content-Type-Options: nosniff always`. `nginx -t` passes.
+- SEC-011 ✅ Recorded — pdf.js 4.6.82 (+ htmx/Alpine) listed in `README.md` production notes.
