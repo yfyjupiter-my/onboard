@@ -3,7 +3,9 @@
 {% block body %}
   {% include "_topbar.html" %}
   <div class="card">
-    <h1 class="title" style="font-size:26px;margin-bottom:8px"><em>Quiz</em> — {{ material.title }}</h1>
+    {# Accent the material name, not "Quiz": Bricolage's capital Q has a long horizontal tail
+       that runs under the following letters and reads as an accidental underline. #}
+    <h1 class="title" style="font-size:26px;margin-bottom:8px">Quiz — <em>{{ material.title }}</em></h1>
     <p style="color:var(--muted);margin:0 0 18px">Choose one answer per question.</p>
 
     <form method="post">
