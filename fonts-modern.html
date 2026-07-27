@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Font styling — 3 modern options</title>
+<!-- Playground only: CDN fonts + font-display:swap. The app vendors woff2 locally (COM-003). -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Work+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#8a7d6d;
+  --primary:#0f766e; --primary-ink:#fff; --accent:#d97706;
+  --line:#ece3d6; --ok:#0f766e; --radius:16px;
+  --shadow:0 2px 6px rgba(120,90,40,.08);
+  /* z-scale: 10 decor · 20 sticky · 30 overlay · 50 modal */
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text)}
+:where(a,button,.tile){cursor:pointer}
+:where(a,button,input,.tile):focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+/* ===================== SET D · Cut Serif =====================
+   Instrument Serif (high-contrast display) + DM Sans. Oversized title,
+   real italic for the coloured word — contrast comes from the shapes, not effects. */
+.set-d{
+  --f-title:"Instrument Serif",Georgia,serif; --f-body:"DM Sans",system-ui,sans-serif;
+  --f-label:"DM Sans",system-ui,sans-serif;   --f-num:"Instrument Serif",Georgia,serif;
+  --w-title:400; --ls-title:-.015em; --lh-title:.95;
+  --sz-h1:clamp(38px,6vw,54px); --sz-h2:28px; --sz-headline:20px;
+  --sz-body:16px; --lh-body:1.6;
+  --sz-label:11px; --ls-label:.14em; --w-label:700;
+  --sz-num:52px; --w-num:400;
+}
+.set-d h1 em,.set-d h2 em{font-style:italic;color:var(--primary)}
+.set-d .kicker{color:var(--accent)}
+.set-d .headline{color:var(--text)}
+.set-d .score{color:var(--primary)}
+/* hairline rule under the title — the one flourish */
+.set-d .login h1::after{content:"";display:block;width:56px;height:2px;margin:14px auto 0;background:var(--accent)}
+
+/* ===================== SET E · Optical Grotesque =====================
+   Bricolage Grotesque (variable, opsz-aware) + Inter. Title runs heavy and tight;
+   the second line drops to a lighter grade in teal. Deliberately imperfect, modern. */
+.set-e{
+  --f-title:"Bricolage Grotesque",system-ui,sans-serif; --f-body:Inter,system-ui,sans-serif;
+  --f-label:Inter,system-ui,sans-serif; --f-num:"Bricolage Grotesque",system-ui,sans-serif;
+  --w-title:800; --ls-title:-.04em; --lh-title:.92;
+  --sz-h1:clamp(34px,5.5vw,46px); --sz-h2:26px; --sz-headline:19px;
+  --sz-body:16px; --lh-body:1.6;
+  --sz-label:11px; --ls-label:.1em; --w-label:700;
+  --sz-num:48px; --w-num:800;
+}
+.set-e h1,.set-e h2,.set-e .headline{font-variation-settings:"opsz" 72}
+.set-e h1 em{font-style:normal;font-weight:500;color:var(--primary)}
+.set-e h2 em{font-style:normal;color:var(--primary)}
+.set-e .kicker{color:var(--accent)}
+.set-e .score{color:var(--primary)}
+/* amber highlight sitting behind the accent word, baseline-anchored */
+.set-e .headline mark{background:linear-gradient(transparent 62%,color-mix(in srgb,var(--accent) 30%,transparent) 0);
+  color:inherit;padding:0 2px}
+
+/* ===================== SET F · Geometric + Mono =====================
+   Outfit titles + Work Sans body + JetBrains Mono for every label, tag and numeral.
+   The mono is the "special" signal — reads as a modern product, stays warm via tokens. */
+.set-f{
+  --f-title:Outfit,system-ui,sans-serif; --f-body:"Work Sans",system-ui,sans-serif;
+  --f-label:"JetBrains Mono",ui-monospace,monospace; --f-num:"JetBrains Mono",ui-monospace,monospace;
+  --w-title:600; --ls-title:-.03em; --lh-title:1.05;
+  --sz-h1:clamp(32px,5vw,42px); --sz-h2:24px; --sz-headline:18px;
+  --sz-body:16px; --lh-body:1.65;
+  --sz-label:11px; --ls-label:.02em; --w-label:500;
+  --sz-num:44px; --w-num:700;
+}
+.set-f h1 em{font-style:normal;color:var(--primary)}
+.set-f h2 em{font-style:normal;color:var(--primary)}
+.set-f .kicker{color:var(--accent);text-transform:none}
+.set-f .kicker::before{content:"// ";opacity:.6}
+.set-f .score{color:var(--primary)}
+.set-f .tag{font-family:var(--f-label);letter-spacing:0}
+
+/* ===================== shared shell (identical across sets) ===================== */
+.set{padding:56px 18px 52px;border-bottom:1px solid var(--line);
+  font-family:var(--f-body);font-size:var(--sz-body);line-height:var(--lh-body)}
+.inner{max-width:1100px;margin:0 auto}
+.label{display:inline-block;font:600 12px/1 Inter,sans-serif;color:var(--muted);
+  background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:7px 13px}
+.meta{font:12px/1.5 Inter,sans-serif;color:var(--muted);margin:10px 0 22px;max-width:70ch}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:26px}
+h1,h2,.headline{font-family:var(--f-title);font-weight:var(--w-title);
+  letter-spacing:var(--ls-title);line-height:var(--lh-title);margin:0;text-wrap:balance}
+h1{font-size:var(--sz-h1)}
+h2{font-size:var(--sz-h2)}
+.headline{font-size:var(--sz-headline);display:block}
+.sub{color:var(--muted);margin:10px 0 20px;max-width:60ch}
+.kicker,label{display:block;font-family:var(--f-label);font-size:var(--sz-label);
+  letter-spacing:var(--ls-label);text-transform:uppercase;font-weight:var(--w-label);color:var(--muted)}
+
+.cols{display:grid;grid-template-columns:minmax(0,400px) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+
+.login h1,.login .sub{text-align:center}
+.login .sub{margin-inline:auto}
+.f{margin-top:16px}
+input{width:100%;height:44px;margin-top:6px;padding:0 12px;border:1px solid var(--line);
+  border-radius:9px;background:var(--surface);color:var(--text);font:inherit}
+input:focus{outline:none;border-color:var(--primary);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 22%,transparent)}
+.btn{width:100%;min-height:44px;margin-top:20px;border:0;border-radius:10px;
+  font-family:var(--f-body);font-size:15px;font-weight:600;
+  background:var(--primary);color:var(--primary-ink);transition:filter .2s}
+.btn:hover{filter:brightness(1.07)}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:18px}
+.tile{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface);
+  transition:border-color .2s,box-shadow .2s}
+.tile:hover{border-color:var(--primary);box-shadow:var(--shadow)}
+.cover{height:76px;display:grid;place-items:center;color:var(--primary);
+  background:color-mix(in srgb,var(--primary) 10%,var(--surface))}
+.cover svg{width:26px;height:26px}
+.tile .body{padding:13px 15px 15px;display:flex;flex-direction:column;gap:8px}
+.tag{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:3px 10px;border-radius:99px;border:1px solid;width:fit-content}
+.tag svg{width:12px;height:12px}
+.done{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent);
+  border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.todo{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);
+  border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+
+.q p{margin:0 0 12px;max-width:65ch}
+.opt{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;
+  transition:border-color .2s}
+.opt:hover{border-color:var(--primary)}
+.score{font-family:var(--f-num);font-weight:var(--w-num);font-size:var(--sz-num);
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1;margin-top:6px}
+.rule{border:0;border-top:1px solid var(--line);margin:22px 0}
+
+.scale{display:grid;gap:12px;margin-top:14px}
+.scale > div{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
+  border-bottom:1px dashed var(--line);padding-bottom:10px}
+.scale > div > span:first-child{font:11px/1 Inter,sans-serif;color:var(--muted);width:104px;flex:none}
+.note{max-width:1100px;margin:0 auto;padding:30px 18px 56px;font:13px/1.65 Inter,sans-serif;color:var(--muted)}
+.note code{font-family:ui-monospace,monospace;color:var(--text)}
+.note strong{color:var(--text)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<template id="specimen">
+<div class="cols">
+  <section class="card login" aria-label="Login card specimen">
+    <h1>Welcome<br><em>Onboard</em></h1>
+    <p class="sub">Log in to continue your onboarding.</p>
+    <div class="f"><label for="u">Username</label><input id="u" value="chris.goh"></div>
+    <div class="f"><label for="p">Password</label><input id="p" type="password" value="password"></div>
+    <button class="btn" type="button">Log in</button>
+  </section>
+
+  <div style="display:grid;gap:20px;min-width:0">
+    <section class="card" aria-label="Checklist specimen">
+      <h2>Your onboarding <em>checklist</em></h2>
+      <p class="sub">Work through each item. Some end with a short quiz.</p>
+      <div class="grid">
+        <article class="tile">
+          <div class="cover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+          </div>
+          <div class="body">
+            <span class="kicker">Document · Quiz</span>
+            <span class="headline">Employee <mark>handbook</mark></span>
+            <span class="tag done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Completed</span>
+          </div>
+        </article>
+        <article class="tile">
+          <div class="cover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
+          </div>
+          <div class="body">
+            <span class="kicker">Video</span>
+            <span class="headline">Welcome from the CEO</span>
+            <span class="tag todo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>In progress</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="card" aria-label="Quiz and result specimen">
+      <h2>Handbook <em>quiz</em></h2>
+      <div class="q">
+        <p>How many days of annual leave does a new joiner accrue in year one?</p>
+        <div class="opt">12 days</div>
+        <div class="opt">14 days, pro-rated from the start date</div>
+        <div class="opt">20 days</div>
+      </div>
+      <hr class="rule">
+      <span class="kicker">Your score</span>
+      <div class="score">86%</div>
+      <p class="sub" style="margin:10px 0 0">Passed — you needed 80% to complete this material.</p>
+    </section>
+
+    <section class="card" aria-label="Type scale">
+      <span class="kicker">Type scale</span>
+      <div class="scale">
+        <div><span>H1 · login</span><h1 style="font-size:var(--sz-h2)">Welcome <em>Onboard</em></h1></div>
+        <div><span>H2 · screen</span><h2>Your onboarding checklist</h2></div>
+        <div><span>Headline</span><span class="headline">Employee handbook</span></div>
+        <div><span>Body 16px</span><span>Work through each item. Some end with a short quiz.</span></div>
+        <div><span>Label 11px</span><span class="kicker">Document · Quiz</span></div>
+        <div><span>Numerals</span><span class="score" style="font-size:26px;margin:0">0123456789 · 86%</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+</template>
+
+<section class="set set-d">
+  <div class="inner">
+    <span class="label">D · Cut Serif — Instrument Serif + DM Sans</span>
+    <p class="meta">High-contrast display serif at 54px with a real italic for the coloured word. The amber hairline under the login title is the only ornament. Warmest of the three; closest in spirit to today's Fraunces.</p>
+  </div>
+</section>
+
+<section class="set set-e">
+  <div class="inner">
+    <span class="label">E · Optical Grotesque — Bricolage Grotesque + Inter</span>
+    <p class="meta">Variable grotesque set at <code>opsz 72</code>, weight 800, tracking −.04em; the accent line drops to weight 500 in teal. Amber baseline highlight on card headlines. The most "designed" option — distinctly not a default sans.</p>
+  </div>
+</section>
+
+<section class="set set-f">
+  <div class="inner">
+    <span class="label">F · Geometric + Mono — Outfit + Work Sans + JetBrains Mono</span>
+    <p class="meta">Geometric titles, humanist body, and monospace for every label, tag and numeral (kickers prefixed <code>//</code>). The mono carries the modern signal without touching reading text. Coolest of the three.</p>
+  </div>
+</section>
+
+<p class="note">
+  All three render identical markup and identical colour tokens — only the type variables at the top of each
+  <code>.set-*</code> block differ. Colour on type stays inside DESIGN.md: titles/scores <code>--primary</code>,
+  labels <code>--accent</code>, body always <code>--text</code>. No gradient text (§1 prohibits gradients);
+  set E's highlight is a background wash behind the word, not gradient-filled glyphs.<br><br>
+  <strong>Contrast:</strong> teal <code>#0f766e</code> on white 5.2:1 (AA all sizes). Amber <code>#d97706</code> 3.1:1 —
+  used only on 11px bold uppercase labels and on large numerals, never body text. Status tags pair colour with an
+  SVG icon, so colour is never the only signal.<br><br>
+  <strong>Shipping cost:</strong> D = 2 woff2 · E = 2 woff2 (Bricolage is variable, one file covers 500–800) ·
+  F = 3 woff2. Each vendored into <code>web/static/fonts/</code> with <code>font-display:swap</code>; picking any of
+  these means amending DESIGN.md §2 since Fraunces stops being the warmth signal.
+</p>
+
+<script>
+// ponytail: one template stamped into three sections — no duplicated markup to drift.
+for (const set of document.querySelectorAll('.set')) {
+  set.querySelector('.inner').append(document.getElementById('specimen').content.cloneNode(true));
+}
+</script>
+</html>

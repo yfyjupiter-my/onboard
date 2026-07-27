@@ -30,19 +30,27 @@ Rules:
 
 ## 2. Typography
 
-```css
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap');
-```
+**Optical Grotesque** — Bricolage Grotesque titles + Inter body. Both vendored as local files under `web/static/fonts/` (`bricolage.woff2`, the true variable font: `opsz` 12–96, `wght` 200–800, `wdth` 75–100; `inter.woff2`); **no CDN import**, no external requests (COM-003).
 
 | Use | Font | Weight | Size |
 |---|---|---|---|
-| Screen / result titles | **Fraunces** (serif) | 600 | 18–19px |
-| Body, UI, buttons, items | **Inter** | 400–600 | 14px |
-| Labels / captions | Inter | 600 | 12px |
+| Login title | **Bricolage Grotesque** | 800 | 44px |
+| Screen titles (`.title`) | Bricolage Grotesque | 800 | 26–34px |
+| Card headline | Bricolage Grotesque | 800 | 19px |
+| Body, UI, buttons, items | **Inter** | 400–600 | 16px |
+| Labels / kickers | Inter | 700 | 11px, uppercase, `.1em` |
 | Score numeral | Inter | 700 | 34px, `tabular-nums` |
-| Body line-height | — | — | 1.5 |
+| Body line-height | — | — | 1.6 |
 
-Fraunces is the warmth signal — use it **only** for titles (`.title`, result `h3`). Everything functional is Inter. Fallbacks: `Inter, system-ui, sans-serif` / `Fraunces, serif`.
+Title settings: `font-weight:800`, `letter-spacing:-.04em`, `line-height:.95`, `font-optical-sizing:auto`, `text-wrap:balance`.
+
+⚠️ **Never add `font-variation-settings`** to these rules. It outranks `font-weight` and silently resets every axis you don't list to its default — that renders titles at the wrong weight and kills the `<em>` accent. `font-optical-sizing:auto` already drives `opsz` from the font size. Likewise, only the real variable font works: Google's legacy-UA `.ttf` download is a single static instance where `font-weight` does nothing.
+
+**Accent word** — `<em>` inside any title renders as `font-weight:500` + `--primary`, *not* italic. Use it for one word per title (`Welcome <em>Onboard</em>`, `Your onboarding <em>checklist</em>`). The weight drop is the effect; the colour reinforces it.
+
+Kickers are `--accent` amber at 11px/700/uppercase only — amber is 3.1:1, so it never goes on body text. Fallbacks: `"Bricolage Grotesque", system-ui, sans-serif` / `Inter, system-ui, sans-serif`.
+
+> Replaced the original Fraunces + Inter pairing (2026-07-27). Fraunces was the warmth signal; warmth now comes from the palette and radii, with the grotesque carrying a modern, deliberately-designed voice.
 
 ---
 
@@ -88,7 +96,7 @@ Design tokens live on a root/app wrapper; components read the vars.
 
 **Media viewer** — bordered surface, `16/10` stage (muted play/file icon + label), bottom bar (top border) with download icon button + status + "Take quiz" button. Real media = presigned MinIO URL; never a public bucket.
 
-**Quiz result** — centered card: 72px teal-tint success badge, Fraunces title, 34px teal score numeral, two tags (Passed / Recorded), ghost "Back to checklist" button.
+**Quiz result** — centered card: 72px teal-tint success badge, Bricolage Grotesque title, 34px teal score numeral, two tags (Passed / Recorded), ghost "Back to checklist" button.
 
 **Icons** — inline SVG only (Lucide-style: check, book, play, file, log-out, download), 24×24 viewBox, `stroke-width:2` (check uses 3). **No emoji.**
 
@@ -106,7 +114,7 @@ Design tokens live on a root/app wrapper; components read the vars.
 
 - ❌ No emoji as icons — SVG only.
 - ❌ No gradients, glassmorphism, or colored/heavy shadows (flat, one soft shadow only).
-- ❌ No Fraunces on body/UI text — titles only.
+- ❌ No Bricolage Grotesque on body/UI text — titles and card headlines only.
 - ❌ No accent-amber for large fills or body text — attention/CTA accents only.
 - ❌ No `--muted` for body copy or on colored backgrounds (contrast).
 - ❌ No layout-shifting hover (scale that reflows); use `translateY`/color.

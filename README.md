@@ -147,7 +147,7 @@ With nothing ticked Django just re-renders the page with "Items must be selected
    ```bash
    docker compose exec db pg_dump -U onboard onboard > backup-$(date +%F).sql
    ```
-8. **Vendored frontend libs** (no CDN, offline by design) under `web/static/vendor/`: htmx 1.9.x, Alpine 3.x, **pdf.js 4.6.82** (Apache-2.0; ≥ 4.2.67, past CVE-2024-4367). Fonts (Inter, Fraunces) are self-hosted under `web/static/fonts/`. Re-record versions here on upgrade.
+8. **Vendored frontend libs** (no CDN, offline by design) under `web/static/vendor/`: htmx 1.9.x, Alpine 3.x, **pdf.js 4.6.82** (Apache-2.0; ≥ 4.2.67, past CVE-2024-4367). Fonts (Inter, Bricolage Grotesque — both OFL) are self-hosted under `web/static/fonts/`. Re-record versions here on upgrade.
 
 ---
 

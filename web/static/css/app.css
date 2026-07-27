@@ -3,8 +3,11 @@
 /* Vendored variable fonts (OFL) — served locally, no external CDN. COM-003. */
 @font-face{font-family:Inter;src:url(../fonts/inter.woff2) format("woff2");
   font-weight:400 700;font-display:swap}
-@font-face{font-family:Fraunces;src:url(../fonts/fraunces.ttf) format("truetype");
-  font-weight:500 600;font-display:swap}
+/* Variable (opsz 12–96, wght 200–800, wdth 75–100) — from google/fonts, converted to woff2.
+   ponytail: do NOT add font-variation-settings; it overrides font-weight and resets unlisted
+   axes to their defaults. font-optical-sizing:auto already drives opsz from the font size. */
+@font-face{font-family:"Bricolage Grotesque";src:url(../fonts/bricolage.woff2) format("woff2");
+  font-weight:200 800;font-display:swap}
 :root{
   --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#8a7d6d;
   --primary:#0f766e; --primary-ink:#fff; --accent:#d97706;
@@ -14,9 +17,13 @@
 *{box-sizing:border-box}
 body{
   margin:0; background:var(--bg); color:var(--text);
-  font:400 14px/1.5 Inter,system-ui,sans-serif; padding:18px;
+  font:400 16px/1.6 Inter,system-ui,sans-serif; padding:18px;
 }
-h1,h2,h3,.title{font-family:Fraunces,serif;font-weight:600;margin:0}
+/* Optical Grotesque titles: heavy, tight, opsz cranked up so the display cut is used at any size.
+   `em` inside a title is the accent word — lighter grade, teal. Not italics. */
+h1,h2,h3,.title{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;
+  letter-spacing:-.04em;line-height:.95;margin:0;font-optical-sizing:auto;text-wrap:balance}
+h1 em,h2 em,h3 em,.title em{font-style:normal;font-weight:500;color:var(--primary)}
 a{color:var(--primary)}
 label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
 
@@ -59,8 +66,10 @@ label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bot
 .tile.article.type-video .cover{color:color-mix(in srgb,var(--accent) 75%,var(--text));
   background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 22%,var(--surface)),color-mix(in srgb,var(--primary) 16%,var(--surface)))}
 .tile.article .body{display:flex;flex-direction:column;gap:8px;padding:14px 16px 16px;flex:1}
-.tile.article .kicker{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
-.tile.article .headline{font-family:Fraunces,serif;font-weight:600;font-size:17px;line-height:1.25}
+/* amber label — 11px bold uppercase only; amber is 3.1:1 so it never goes on body text */
+.tile.article .kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.tile.article .headline{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;
+  font-size:19px;line-height:1.1;letter-spacing:-.03em;font-optical-sizing:auto}
 .tile.article .foot{margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
 
 .btn{

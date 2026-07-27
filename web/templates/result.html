@@ -5,12 +5,12 @@
   <div class="card center" style="text-align:center;margin-top:6vh">
     {% if passed %}
       <span class="tag done" style="margin:0 auto 12px">Passed</span>
-      <h1 class="title" style="font-size:22px">Nice work — {{ score }}%</h1>
+      <h1 class="title" style="font-size:30px">Nice work<br><em>{{ score }}%</em></h1>
       <p style="color:var(--muted)">You needed {{ pass_mark }}% and passed. This item is complete.</p>
       <a class="btn primary" href="{% url 'home' %}" style="width:100%;margin-top:18px">Back to checklist</a>
     {% else %}
       <span class="tag todo" style="margin:0 auto 12px">Not passed</span>
-      <h1 class="title" style="font-size:22px">You scored {{ score }}%</h1>
+      <h1 class="title" style="font-size:30px">You scored<br><em>{{ score }}%</em></h1>
       <p style="color:var(--muted)">You need {{ pass_mark }}% to complete this item. You can retake it now.</p>
       <a class="btn primary" href="{% url 'quiz' material.id %}" style="width:100%;margin-top:18px">Retake quiz</a>
       <a class="btn ghost" href="{% url 'material' material.id %}" style="width:100%;margin-top:10px">Review material</a>

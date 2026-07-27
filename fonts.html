@@ -1,0 +1,214 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Font styling — 3 options</title>
+<!-- playground only: CDN fonts. The app vendors woff2 locally (COM-003) — see note at the bottom. -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#8a7d6d;
+  --primary:#0f766e; --primary-ink:#fff; --accent:#d97706;
+  --line:#ece3d6; --ok:#0f766e; --radius:16px;
+  --shadow:0 2px 6px rgba(120,90,40,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text)}
+
+/* ---------- per-set type variables (only these three blocks differ) ---------- */
+
+/* A · Editorial — Fraunces display titles, Inter body. Tuned version of today's pairing. */
+.set-a{
+  --f-title:Fraunces,Georgia,serif;   --f-body:Inter,system-ui,sans-serif;
+  --w-title:600; --ls-title:-.02em;   --lh-title:1.15;
+  --sz-h1:30px; --sz-h2:21px; --sz-headline:18px;
+  --sz-body:15px; --lh-body:1.6; --w-body:400;
+  --sz-label:11px; --ls-label:.08em; --tt-label:uppercase; --w-label:700;
+  --f-num:Inter,system-ui,sans-serif; --w-num:700;
+}
+/* B · One family — Inter only. Hierarchy from weight + size, no second font file. */
+.set-b{
+  --f-title:Inter,system-ui,sans-serif; --f-body:Inter,system-ui,sans-serif;
+  --w-title:700; --ls-title:-.03em;   --lh-title:1.1;
+  --sz-h1:28px; --sz-h2:20px; --sz-headline:17px;
+  --sz-body:15px; --lh-body:1.55; --w-body:400;
+  --sz-label:11px; --ls-label:.06em; --tt-label:uppercase; --w-label:600;
+  --f-num:Inter,system-ui,sans-serif; --w-num:700;
+}
+/* C · Product — Space Grotesk titles, IBM Plex Sans body. Modern/tech, less warm. */
+.set-c{
+  --f-title:"Space Grotesk",system-ui,sans-serif; --f-body:"IBM Plex Sans",system-ui,sans-serif;
+  --w-title:600; --ls-title:-.02em;   --lh-title:1.15;
+  --sz-h1:30px; --sz-h2:22px; --sz-headline:18px;
+  --sz-body:15px; --lh-body:1.6; --w-body:400;
+  --sz-label:11px; --ls-label:.1em; --tt-label:uppercase; --w-label:600;
+  --f-num:"Space Grotesk",system-ui,sans-serif; --w-num:700;
+}
+
+/* ---------- color treatment of the type (one per set) ---------- */
+/* A · Teal titles — headings carry the brand colour, labels go amber. Flat, token-only. */
+.set-a h1,.set-a h2{color:var(--primary)}
+.set-a .headline{color:color-mix(in srgb,var(--primary) 80%,var(--text))}
+.set-a .kicker{color:var(--accent)}
+.set-a .score{color:var(--primary)}
+
+/* B · Two-tone — one word of the title in accent, rest in ink. Colour as emphasis, not decoration. */
+.set-b h1 em,.set-b h2 em{font-style:normal;color:var(--primary)}
+.set-b .kicker{color:var(--accent)}
+.set-b .headline{color:var(--text)}
+.set-b .score{color:var(--primary)}
+.set-b .cover{color:var(--primary)}
+
+/* C · Gradient text — DESIGN.md §1 prohibits gradients; this set deliberately breaks that rule. */
+.set-c h1,.set-c .score{background:linear-gradient(100deg,var(--primary),var(--accent));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+.set-c h2{color:var(--primary)}
+.set-c .headline{color:var(--text)}
+.set-c .kicker{color:var(--accent)}
+
+/* ---------- shared shell (identical across sets) ---------- */
+.set{padding:56px 18px 48px;border-bottom:1px solid var(--line);
+  font-family:var(--f-body);font-size:var(--sz-body);line-height:var(--lh-body);font-weight:var(--w-body)}
+.label{display:inline-block;margin:0 auto 22px;font-family:Inter,sans-serif;font-size:12px;font-weight:600;
+  color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 12px}
+.inner{max-width:1000px;margin:0 auto}
+.meta{font-family:Inter,sans-serif;font-size:12px;color:var(--muted);margin:0 0 22px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:22px}
+h1,h2,.headline{font-family:var(--f-title);font-weight:var(--w-title);
+  letter-spacing:var(--ls-title);line-height:var(--lh-title);margin:0}
+h1{font-size:var(--sz-h1)}
+h2{font-size:var(--sz-h2)}
+.headline{font-size:var(--sz-headline)}
+.sub{color:var(--muted);margin:6px 0 18px}
+.kicker,label{display:block;font-size:var(--sz-label);letter-spacing:var(--ls-label);
+  text-transform:var(--tt-label);font-weight:var(--w-label);color:var(--muted)}
+
+.cols{display:grid;grid-template-columns:400px 1fr;gap:18px;align-items:start}
+@media(max-width:860px){.cols{grid-template-columns:1fr}}
+
+/* login card */
+.login h1{text-align:center}
+.login .sub{text-align:center}
+.f{margin-top:14px}
+input{width:100%;height:42px;margin-top:6px;padding:0 12px;border:1px solid var(--line);
+  border-radius:9px;background:var(--surface);color:var(--text);font:inherit}
+.btn{width:100%;height:44px;margin-top:18px;border:0;border-radius:10px;cursor:pointer;
+  font-family:var(--f-body);font-size:15px;font-weight:600;background:var(--primary);color:var(--primary-ink)}
+
+/* checklist tiles */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:16px}
+.tile{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.cover{height:70px;display:grid;place-items:center;font-family:var(--f-body);font-weight:700;font-size:20px;
+  letter-spacing:.05em;color:color-mix(in srgb,var(--primary) 70%,var(--text));
+  background:color-mix(in srgb,var(--primary) 12%,var(--surface))}
+.tile .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:7px}
+.tag{display:inline-block;font-family:var(--f-body);font-size:11px;font-weight:600;
+  padding:2px 10px;border-radius:99px;border:1px solid;width:fit-content}
+.done{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent);
+  border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.todo{color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);
+  border-color:color-mix(in srgb,var(--accent) 45%,transparent)}
+
+/* quiz + result specimen */
+.q{margin-top:14px}
+.q p{margin:0 0 10px;font-weight:500}
+.opt{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.score{font-family:var(--f-num);font-weight:var(--w-num);font-size:38px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1}
+
+/* type scale strip */
+.scale{margin-top:18px;display:grid;gap:10px}
+.scale div{display:flex;align-items:baseline;gap:14px;border-bottom:1px dashed var(--line);padding-bottom:8px}
+.scale span:first-child{font-family:Inter,sans-serif;font-size:11px;color:var(--muted);width:110px;flex:none}
+.note{max-width:1000px;margin:0 auto;padding:26px 18px 48px;font:13px/1.6 Inter,sans-serif;color:var(--muted)}
+.note code{font-family:ui-monospace,monospace;color:var(--text)}
+</style>
+
+<template id="specimen">
+<div class="inner">
+  <p class="meta"></p>
+  <div class="cols">
+    <div class="card login">
+      <h1>Welcome<br><em>Onboard</em></h1>
+      <p class="sub">Log in to continue your onboarding.</p>
+      <div class="f"><label>Username</label><input value="chris.goh"></div>
+      <div class="f"><label>Password</label><input type="password" value="password"></div>
+      <button class="btn">Log in</button>
+    </div>
+
+    <div style="display:grid;gap:18px">
+      <div class="card">
+        <h2>Your onboarding checklist</h2>
+        <p class="sub">Work through each item. Some end with a short quiz.</p>
+        <div class="grid">
+          <div class="tile"><div class="cover">PDF</div><div class="body">
+            <span class="kicker">Document · Quiz</span>
+            <span class="headline">Employee handbook</span>
+            <span class="tag done">Completed</span></div></div>
+          <div class="tile"><div class="cover">▶</div><div class="body">
+            <span class="kicker">Video</span>
+            <span class="headline">Welcome from the CEO</span>
+            <span class="tag todo">In progress</span></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Handbook quiz</h2>
+        <div class="q">
+          <p>How many days of annual leave does a new joiner accrue in year one?</p>
+          <div class="opt">12 days</div>
+          <div class="opt">14 days, pro-rated from the start date</div>
+          <div class="opt">20 days</div>
+        </div>
+        <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+        <span class="kicker">Your score</span>
+        <div class="score">86%</div>
+        <p class="sub" style="margin:6px 0 0">Passed — you needed 80% to complete this material.</p>
+      </div>
+
+      <div class="card">
+        <span class="kicker">Type scale</span>
+        <div class="scale">
+          <div><span>H1 / login</span><h1 style="font-size:var(--sz-h1)">Welcome <em>Onboard</em></h1></div>
+          <div><span>H2 / screen</span><h2>Your onboarding checklist</h2></div>
+          <div><span>Headline / card</span><span class="headline">Employee handbook</span></div>
+          <div><span>Body 15px</span><span>Work through each item. Some end with a short quiz.</span></div>
+          <div><span>Label 11px</span><span class="kicker">Document · Quiz</span></div>
+          <div><span>Numerals</span><span class="score" style="font-size:26px">0123456789 · 86%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</template>
+
+<section class="set set-a"><div class="inner"><span class="label">A · Editorial — Fraunces + Inter</span></div></section>
+<section class="set set-b"><div class="inner"><span class="label">B · One family — Inter only</span></div></section>
+<section class="set set-c"><div class="inner"><span class="label">C · Product — Space Grotesk + IBM Plex Sans</span></div></section>
+
+<p class="note">
+  Sets differ <strong>only</strong> in the CSS variables at the top of each <code>.set-*</code> block — family, weight,
+  size, tracking, line-height, label casing. Markup and colour are identical, so what you see is the type doing the work.<br><br>
+  <strong>A · Teal titles</strong> — today's pairing, enlarged and tightened to <code>-.02em</code>; headings take <code>--primary</code>, labels take <code>--accent</code>. Flat, token-only, fully inside DESIGN.md.<br>
+  <strong>B · Two-tone</strong> — Inter only (one fewer font file); colour used as emphasis, one word of each title in teal. Safest contrast-wise.<br>
+  <strong>C · Gradient text</strong> — Space Grotesk + IBM Plex Sans with a teal→amber gradient title and score. <strong>Note:</strong> DESIGN.md §1 says "no gradients" and §2 calls Fraunces the warmth signal — picking C means amending both.<br><br>
+  <strong>Contrast:</strong> teal <code>#0f766e</code> on white is 5.2:1 (passes AA at any size). Amber <code>#d97706</code> is 3.1:1 — fine for the 11px <em>bold uppercase</em> labels as used here, but don't move it onto body text. Gradient text in C can't be contrast-checked automatically; it stays above 3:1 across the sweep at 30px.<br><br>
+  <strong>Shipping note:</strong> the app loads <em>no</em> CDN fonts (COM-003 — privacy + offline). Choosing B needs no new
+  file; A needs none either. C needs two woff2 files vendored into <code>web/static/fonts/</code>.
+</p>
+
+<script>
+// ponytail: one specimen template stamped into each set — no copy-pasted markup to drift.
+const notes = {
+  'set-a':'Fraunces 600 titles · Inter 400 body 15px/1.6 · uppercase labels — titles teal, labels amber',
+  'set-b':'Inter 700 titles · Inter 400 body 15px/1.55 · uppercase labels — two-tone title, ink + teal',
+  'set-c':'Space Grotesk 600 titles · IBM Plex Sans 400 body — teal→amber gradient title and score'
+};
+for (const set of document.querySelectorAll('.set')) {
+  const node = document.getElementById('specimen').content.cloneNode(true);
+  node.querySelector('.meta').textContent = notes[set.classList[1]];
+  set.append(node);
+}
+</script>
