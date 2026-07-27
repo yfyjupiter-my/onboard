@@ -70,6 +70,23 @@ class QuestionAdmin(admin.ModelAdmin):
     inlines = [ChoiceInline]
 
 
+# ponytail: admin index lists models alphabetically (Questions before Quizzes).
+# Sort core's models by this order instead; unlisted models keep falling to the end.
+_MODEL_ORDER = {"Material": 0, "Quiz": 1, "Question": 2, "JoinerProgress": 3}
+_default_get_app_list = admin.site.get_app_list
+
+
+def _get_app_list(request, app_label=None):
+    app_list = _default_get_app_list(request, app_label)
+    for app in app_list:
+        if app["app_label"] == "core":
+            app["models"].sort(key=lambda m: _MODEL_ORDER.get(m["object_name"], 99))
+    return app_list
+
+
+admin.site.get_app_list = _get_app_list
+
+
 @admin.register(JoinerProgress)
 class JoinerProgressAdmin(admin.ModelAdmin):
     # Read-mostly: progress is written by the joiner flow, not hand-edited. (P13 CSV export lands here in Phase 4.)
