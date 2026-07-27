@@ -11,7 +11,13 @@
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
     {% for material, progress, has_quiz in rows %}
       <a href="{% url 'material' material.id %}" class="tile article type-{{ material.type }}">
-        <span class="cover">{% if material.type == 'video' %}▶{% else %}PDF{% endif %}</span>
+        <span class="cover">
+        {% if material.type == 'video' %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
+        {% else %}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+        {% endif %}
+        </span>
         <span class="body">
           <span class="kicker">{{ material.get_type_display }}{% if has_quiz %} · Quiz{% endif %}</span>
           <span class="headline">{{ material.title }}</span>

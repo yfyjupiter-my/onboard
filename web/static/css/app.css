@@ -43,6 +43,15 @@ label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bot
   background:color-mix(in srgb,var(--primary) 12%,transparent);animation:bgspin 34s linear infinite}
 .bgshape.s5{width:90px;height:90px;border-radius:50%;top:52%;left:44%;
   border:2px solid color-mix(in srgb,var(--primary) 22%,transparent);animation:bgfloat2 25s ease-in-out infinite reverse}
+/* Narrow screens: the %-positioned shapes fall off-canvas, so pull them back in and
+   shrink them — otherwise only the top-left circle is ever visible on a phone. */
+@media (max-width:600px){
+  .bgshape.s1{width:200px;height:200px;top:-70px;left:-60px}
+  .bgshape.s2{width:110px;height:110px;right:-30px;top:22%}
+  .bgshape.s3{width:170px;height:52px;bottom:22%;left:-40px}
+  .bgshape.s4{width:90px;height:90px;bottom:-24px;right:-18px}
+  .bgshape.s5{width:64px;height:64px;top:60%;left:6%}
+}
 @keyframes bgfloat1{50%{transform:translate(34px,26px) scale(1.06)}}
 @keyframes bgfloat2{50%{transform:translate(-26px,34px)}}
 @keyframes bgfloat3{50%{transform:translate(40px,-22px)}}
@@ -60,11 +69,13 @@ label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bot
 /* Article-preview card: cover band, kicker, headline, status footer */
 .tile.article{display:flex;flex-direction:column;overflow:hidden;padding:0;
   border:1px solid var(--line);border-radius:12px;text-decoration:none;color:inherit;background:var(--surface)}
-.tile.article .cover{height:96px;display:flex;align-items:center;justify-content:center;
-  font-weight:700;font-size:22px;letter-spacing:.05em;color:color-mix(in srgb,var(--primary) 70%,var(--text));
-  background:linear-gradient(135deg,color-mix(in srgb,var(--primary) 18%,var(--surface)),color-mix(in srgb,var(--accent) 20%,var(--surface)))}
-.tile.article.type-video .cover{color:color-mix(in srgb,var(--accent) 75%,var(--text));
-  background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 22%,var(--surface)),color-mix(in srgb,var(--primary) 16%,var(--surface)))}
+/* Flat tint + inline SVG — DESIGN.md §1 bans gradients, §4 bans glyph/emoji icons.
+   Type is also stated in the kicker, so colour is never the only signal. */
+.tile.article .cover{height:96px;display:grid;place-items:center;
+  color:var(--primary);background:color-mix(in srgb,var(--primary) 10%,var(--surface))}
+.tile.article .cover svg{width:30px;height:30px}
+.tile.article.type-video .cover{color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
 .tile.article .body{display:flex;flex-direction:column;gap:8px;padding:14px 16px 16px;flex:1}
 /* amber label — 11px bold uppercase only; amber is 3.1:1 so it never goes on body text */
 .tile.article .kicker{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
