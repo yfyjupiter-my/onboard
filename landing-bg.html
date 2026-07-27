@@ -1,0 +1,149 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Landing background — 3 animated options</title>
+<style>
+:root{
+  --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#8a7d6d;
+  --primary:#0f766e; --primary-ink:#fff; --accent:#d97706;
+  --line:#ece3d6; --ok:#0f766e; --radius:16px;
+  --shadow:0 2px 6px rgba(120,90,40,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);background:var(--bg)}
+
+.stage{position:relative;min-height:100vh;padding:64px 18px 48px;overflow:hidden;isolation:isolate}
+.label{position:absolute;top:16px;left:16px;z-index:3;font-size:12px;font-weight:600;color:var(--muted);
+  background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 12px}
+
+/* --- page content (identical in all three) --- */
+.wrap{position:relative;z-index:2;max-width:1000px;margin:0 auto}
+.topbar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--radius);box-shadow:var(--shadow);padding:11px 14px;margin-bottom:18px}
+.mark{width:28px;height:28px;border-radius:8px;background:var(--primary);color:var(--primary-ink);
+  display:grid;place-items:center;font-weight:700}
+.brand{font-weight:700}
+.spacer{flex:1}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:22px}
+h1{font-family:Fraunces,Georgia,serif;font-size:19px;font-weight:600;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.tile{border:1px solid var(--line);border-radius:var(--radius);padding:14px;text-decoration:none;color:inherit;
+  display:block;background:var(--surface)}
+.cover{display:grid;place-items:center;height:78px;border-radius:10px;background:var(--bg);
+  color:var(--muted);font-weight:600;margin-bottom:10px}
+.kicker{font-size:12px;font-weight:600;color:var(--muted)}
+.headline{display:block;font-weight:600;margin:2px 0 8px}
+.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:99px;padding:2px 10px}
+.done{background:color-mix(in srgb,var(--ok) 12%,transparent);color:var(--ok);
+  border:1px solid color-mix(in srgb,var(--ok) 45%,transparent)}
+.todo{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);
+  border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.neutral{background:color-mix(in srgb,var(--muted) 12%,transparent);color:var(--muted);
+  border:1px solid color-mix(in srgb,var(--muted) 45%,transparent)}
+
+/* ponytail: every animation below is transform/opacity only — no layout, no paint thrash */
+
+/* ===== A · Parallax drift — two dot layers panning at different speeds ===== */
+.a .layer{position:absolute;z-index:0;inset:-40% -40% -40% -40%;pointer-events:none;will-change:transform}
+.a .l1{background-image:radial-gradient(color-mix(in srgb,var(--primary) 32%,transparent) 2px,transparent 2.1px);
+  background-size:44px 44px;animation:driftA 44s linear infinite}
+.a .l2{background-image:radial-gradient(color-mix(in srgb,var(--accent) 26%,transparent) 1.4px,transparent 1.5px);
+  background-size:26px 26px;animation:driftB 30s linear infinite}
+/* translate by exactly one tile → seamless loop */
+@keyframes driftA{to{transform:translate(44px,-44px)}}
+@keyframes driftB{to{transform:translate(-26px,26px)}}
+.a::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:var(--bg);
+  -webkit-mask-image:radial-gradient(ellipse 70% 60% at 50% 42%,#000 20%,transparent 75%);
+          mask-image:radial-gradient(ellipse 70% 60% at 50% 42%,#000 20%,transparent 75%)}
+
+/* ===== B · Floating shapes — flat blobs bobbing at their own pace ===== */
+.b .sh{position:absolute;z-index:0;pointer-events:none;will-change:transform}
+.b .s1{width:300px;height:300px;border-radius:50%;top:-90px;left:-80px;
+  background:color-mix(in srgb,var(--primary) 9%,transparent);animation:float1 17s ease-in-out infinite}
+.b .s2{width:170px;height:170px;border-radius:50%;right:6%;top:14%;
+  border:2px solid color-mix(in srgb,var(--accent) 40%,transparent);animation:float2 13s ease-in-out infinite}
+.b .s3{width:240px;height:70px;border-radius:99px;bottom:16%;left:5%;
+  background:color-mix(in srgb,var(--accent) 11%,transparent);animation:float3 21s ease-in-out infinite}
+.b .s4{width:130px;height:130px;border-radius:30px;bottom:-40px;right:14%;
+  background:color-mix(in srgb,var(--primary) 12%,transparent);animation:spin4 34s linear infinite}
+.b .s5{width:90px;height:90px;border-radius:50%;top:52%;left:44%;
+  border:2px solid color-mix(in srgb,var(--primary) 22%,transparent);animation:float2 25s ease-in-out infinite reverse}
+@keyframes float1{50%{transform:translate(34px,26px) scale(1.06)}}
+@keyframes float2{50%{transform:translate(-26px,34px)}}
+@keyframes float3{50%{transform:translate(40px,-22px)}}
+@keyframes spin4{to{transform:rotate(360deg)}}
+
+/* ===== C · Flowing lines — wave rows scrolling opposite directions ===== */
+.c .flow{position:absolute;left:-100%;width:300%;height:120px;z-index:0;pointer-events:none;
+  background-repeat:repeat-x;background-size:400px 120px;will-change:transform}
+.c .f1{top:8%;animation:slideR 26s linear infinite;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='120' fill='none'%3E%3Cpath d='M0 60q50-40 100 0t100 0 100 0 100 0' stroke='%230f766e' stroke-opacity='.28' stroke-width='2'/%3E%3C/svg%3E")}
+.c .f2{top:38%;animation:slideL 34s linear infinite;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='120' fill='none'%3E%3Cpath d='M0 60q50-34 100 0t100 0 100 0 100 0' stroke='%23d97706' stroke-opacity='.26' stroke-width='2'/%3E%3C/svg%3E")}
+.c .f3{top:66%;animation:slideR 44s linear infinite;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='120' fill='none'%3E%3Cpath d='M0 60q50-48 100 0t100 0 100 0 100 0' stroke='%230f766e' stroke-opacity='.18' stroke-width='2'/%3E%3C/svg%3E")}
+/* translate by exactly one tile width → seamless loop */
+@keyframes slideR{to{transform:translateX(400px)}}
+@keyframes slideL{to{transform:translateX(-400px)}}
+.c::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:var(--bg);
+  -webkit-mask-image:radial-gradient(ellipse 60% 55% at 50% 45%,#000 15%,transparent 70%);
+          mask-image:radial-gradient(ellipse 60% 55% at 50% 45%,#000 15%,transparent 70%)}
+
+@media (prefers-reduced-motion:reduce){
+  .a .layer,.b .sh,.c .flow{animation:none!important}
+}
+</style>
+
+<section class="stage a">
+  <span class="label">A · Parallax drift</span>
+  <i class="layer l1"></i><i class="layer l2"></i>
+  <div class="wrap">
+    <div class="topbar"><span class="mark">✓</span><span class="brand">Onboard</span><span class="spacer"></span><span class="kicker">Sign out</span></div>
+    <div class="card">
+      <h1>Your onboarding checklist</h1>
+      <p class="sub">Work through each item. Some end with a short quiz.</p>
+      <div class="grid">
+        <a class="tile"><span class="cover">PDF</span><span class="kicker">Document · Quiz</span><span class="headline">Employee handbook</span><span class="tag done">Completed</span></a>
+        <a class="tile"><span class="cover">▶</span><span class="kicker">Video</span><span class="headline">Welcome from the CEO</span><span class="tag todo">In progress</span></a>
+        <a class="tile"><span class="cover">PDF</span><span class="kicker">Document</span><span class="headline">IT security basics</span><span class="tag neutral">Not started</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage b">
+  <span class="label">B · Floating shapes</span>
+  <i class="sh s1"></i><i class="sh s2"></i><i class="sh s3"></i><i class="sh s4"></i><i class="sh s5"></i>
+  <div class="wrap">
+    <div class="topbar"><span class="mark">✓</span><span class="brand">Onboard</span><span class="spacer"></span><span class="kicker">Sign out</span></div>
+    <div class="card">
+      <h1>Your onboarding checklist</h1>
+      <p class="sub">Work through each item. Some end with a short quiz.</p>
+      <div class="grid">
+        <a class="tile"><span class="cover">PDF</span><span class="kicker">Document · Quiz</span><span class="headline">Employee handbook</span><span class="tag done">Completed</span></a>
+        <a class="tile"><span class="cover">▶</span><span class="kicker">Video</span><span class="headline">Welcome from the CEO</span><span class="tag todo">In progress</span></a>
+        <a class="tile"><span class="cover">PDF</span><span class="kicker">Document</span><span class="headline">IT security basics</span><span class="tag neutral">Not started</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="stage c">
+  <span class="label">C · Flowing lines</span>
+  <i class="flow f1"></i><i class="flow f2"></i><i class="flow f3"></i>
+  <div class="wrap">
+    <div class="topbar"><span class="mark">✓</span><span class="brand">Onboard</span><span class="spacer"></span><span class="kicker">Sign out</span></div>
+    <div class="card">
+      <h1>Your onboarding checklist</h1>
+      <p class="sub">Work through each item. Some end with a short quiz.</p>
+      <div class="grid">
+        <a class="tile"><span class="cover">PDF</span><span class="kicker">Document · Quiz</span><span class="headline">Employee handbook</span><span class="tag done">Completed</span></a>
+        <a class="tile"><span class="cover">▶</span><span class="kicker">Video</span><span class="headline">Welcome from the CEO</span><span class="tag todo">In progress</span></a>
+        <a class="tile"><span class="cover">PDF</span><span class="kicker">Document</span><span class="headline">IT security basics</span><span class="tag neutral">Not started</span></a>
+      </div>
+    </div>
+  </div>
+</section>

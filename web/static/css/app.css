@@ -20,7 +20,27 @@ h1,h2,h3,.title{font-family:Fraunces,serif;font-weight:600;margin:0}
 a{color:var(--primary)}
 label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
 
-.wrap{max-width:1000px;margin:0 auto}
+.wrap{max-width:1000px;margin:0 auto;position:relative;z-index:1}
+
+/* Landing background — flat floating shapes (DESIGN.md tokens, transform-only animation).
+   ponytail: fixed-position decor, so it never affects layout or scroll width. */
+/* z-index:-1 inside .wrap's stacking context → always behind the cards, never above them */
+.bgshape{position:fixed;z-index:-1;pointer-events:none;will-change:transform}
+.bgshape.s1{width:300px;height:300px;border-radius:50%;top:-90px;left:-80px;
+  background:color-mix(in srgb,var(--primary) 9%,transparent);animation:bgfloat1 17s ease-in-out infinite}
+.bgshape.s2{width:170px;height:170px;border-radius:50%;right:6%;top:14%;
+  border:2px solid color-mix(in srgb,var(--accent) 40%,transparent);animation:bgfloat2 13s ease-in-out infinite}
+.bgshape.s3{width:240px;height:70px;border-radius:99px;bottom:16%;left:5%;
+  background:color-mix(in srgb,var(--accent) 11%,transparent);animation:bgfloat3 21s ease-in-out infinite}
+.bgshape.s4{width:130px;height:130px;border-radius:30px;bottom:-40px;right:14%;
+  background:color-mix(in srgb,var(--primary) 12%,transparent);animation:bgspin 34s linear infinite}
+.bgshape.s5{width:90px;height:90px;border-radius:50%;top:52%;left:44%;
+  border:2px solid color-mix(in srgb,var(--primary) 22%,transparent);animation:bgfloat2 25s ease-in-out infinite reverse}
+@keyframes bgfloat1{50%{transform:translate(34px,26px) scale(1.06)}}
+@keyframes bgfloat2{50%{transform:translate(-26px,34px)}}
+@keyframes bgfloat3{50%{transform:translate(40px,-22px)}}
+@keyframes bgspin{to{transform:rotate(360deg)}}
+
 .card{
   background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
   box-shadow:var(--shadow);padding:22px;
@@ -86,4 +106,4 @@ input:focus{outline:none;border-color:var(--primary);
 .tag.neutral{color:var(--muted);background:color-mix(in srgb,var(--muted) 12%,transparent);
   border-color:color-mix(in srgb,var(--muted) 45%,transparent)}
 
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
