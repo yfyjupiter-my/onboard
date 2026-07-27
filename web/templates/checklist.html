@@ -3,6 +3,7 @@
 {% block body %}
   <i class="bgshape s1"></i><i class="bgshape s2"></i><i class="bgshape s3"></i>
   <i class="bgshape s4"></i><i class="bgshape s5"></i>
+  <i id="spot" aria-hidden="true"></i>
   {% include "_topbar.html" %}
   <div class="card">
     <h1 class="title" style="margin-bottom:10px;font-size:34px">Your onboarding <em>checklist</em></h1>
@@ -37,4 +38,22 @@
     {% endfor %}
     </div>
   </div>
+
+  <style>
+  /* Cursor spotlight: two CSS vars set on pointermove, no per-frame JS */
+  #spot{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .35s;
+    background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),
+      color-mix(in srgb,var(--accent) 45%,transparent),
+      color-mix(in srgb,var(--accent) 16%,transparent) 42%,transparent 72%)}
+  body.spot-on #spot{opacity:1}
+  @media (hover:none),(prefers-reduced-motion:reduce){#spot{display:none}}
+  </style>
+
+  <script>
+  addEventListener('pointermove', function (e) {
+    document.body.classList.add('spot-on');
+    document.body.style.setProperty('--mx', e.clientX + 'px');
+    document.body.style.setProperty('--my', e.clientY + 'px');
+  });
+  </script>
 {% endblock %}
