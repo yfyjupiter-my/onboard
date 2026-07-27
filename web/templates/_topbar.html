@@ -3,10 +3,9 @@
     <span class="mark">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
     </span>
-    Onboard
+    Welcome {{ request.user.get_username }}
   </a>
   <span class="spacer"></span>
-  <span style="color:var(--muted);font-size:13px">{{ request.user.get_username }}</span>
   <form method="post" action="{% url 'logout' %}" style="margin:0">
     {% csrf_token %}
     <button class="btn ghost sm" type="submit">Log out</button>
