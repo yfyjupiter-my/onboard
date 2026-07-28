@@ -2,6 +2,7 @@
 No fixtures/frameworks — Django TestCase + the joiner flow. `manage.py test core`.
 """
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -227,6 +228,24 @@ class JoinerAdminTests(TestCase):
     def test_export_button_rendered_on_changelist(self):
         resp = self.client.get(reverse("admin:core_joiner_changelist"))
         self.assertContains(resp, "Export CSV")
+
+    def test_export_needs_progress_permission(self):
+        # SEC-012: view_joiner alone must not hand over everyone's progress rows, and the
+        # denial must land before the pk lookup so 403-vs-404 isn't an existence oracle.
+        clerk = User.objects.create_user("clerk", password="pw-testing-123", is_staff=True)
+        clerk.user_permissions.add(Permission.objects.get(codename="view_joiner"))
+        self.client.force_login(clerk)
+        joiner = User.objects.get(username="aaa")
+        self.assertEqual(self.client.get(reverse("admin:core_joiner_export")).status_code, 403)
+        self.assertEqual(
+            self.client.get(reverse("admin:core_joiner_export_one", args=[joiner.pk])).status_code, 403)
+        self.assertEqual(
+            self.client.get(reverse("admin:core_joiner_export_one", args=[999999])).status_code, 403)
+
+    def test_export_survives_a_bad_filter_value(self):
+        # SEC-013: IncorrectLookupParameters used to escape as a 500.
+        resp = self.client.get(reverse("admin:core_joiner_export") + "?is_active__exact=bogus")
+        self.assertRedirects(resp, reverse("admin:core_joiner_changelist"))
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)

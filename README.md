@@ -123,8 +123,17 @@ Still in `/admin/` → **Users** → add user, leave **staff status unchecked**.
 
 ## Step 8 — Export progress
 
-`/admin/` → **Joiner progress** → **tick the rows you want** → action *Export selected as CSV* → Go.
-With nothing ticked Django just re-renders the page with "Items must be selected" — that is the usual "the export doesn't work" report. Columns: joiner name, email, material, status, score, passed, completed_at (ISO).
+`/admin/` → **Joiners** lists one row per joiner with `completed / total` materials. Three ways out, same columns every time — joiner name, email, material, status, score, passed, completed_at (ISO):
+
+| You want | Do this |
+|---|---|
+| Everyone (or everyone matching a search/filter) | **Export CSV** button, top right of the joiner list. Filter or search first — the button exports exactly what the list is showing. No ticking needed. |
+| A few specific joiners | Tick their rows → action *Export selected as CSV* → **Go**. With nothing ticked Django re-renders with "Items must be selected" — the usual "the export doesn't work" report. |
+| One joiner | Open them → **Export CSV**, top right. |
+
+Each export writes a line to the container log (`docker compose logs web`) naming the staff user and the row count — that is the only record it happened, so leave it on.
+
+> **Handle the file.** The CSV is joiner personal data (names, emails, results) and the app has no control over it once downloaded. Keep it off shared drives and delete it when the reporting need has passed.
 
 ---
 

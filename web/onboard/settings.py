@@ -104,6 +104,15 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
+# COM-004: without this, core's INFO records (the PII-export audit line in admin.py)
+# propagate to an unconfigured root logger and are dropped. Container stdout is the trail.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {"core": {"handlers": ["console"], "level": "INFO"}},
+}
+
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "login"

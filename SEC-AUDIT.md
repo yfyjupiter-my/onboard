@@ -158,3 +158,36 @@ Gate verdict: **FAIL for LAN/prod deploy on SEC-009** (one-line compose fix), SE
 - SEC-009 ✅ Fixed — MinIO console bound to `127.0.0.1:9001:9001` (verified: `docker compose port minio 9001` → `127.0.0.1:9001`). README notes the SSH-tunnel workflow.
 - SEC-010 ✅ Fixed — fallback iframe gets `frame.sandbox = ''` (no `allow-scripts`) **and** nginx `/media/` sends `X-Content-Type-Options: nosniff always`. `nginx -t` passes.
 - SEC-011 ✅ Recorded — pdf.js 4.6.82 (+ htmx/Alpine) listed in `README.md` production notes.
+
+## QA check — admin joiner export (T6.2 / T6.3) — 2026-07-28
+
+Scope: `c2335de` + `da914f6` — `Joiner` proxy admin, three CSV export paths (bulk action, changelist-wide `core_joiner_export`, per-joiner `core_joiner_export_one`), the two custom `get_urls` endpoints, and the joinerprogress→joiner redirect. Joiner flow, storage/presign and auth were untouched and are not re-audited here.
+
+SEC-012: CSV export checks `view_joiner` but never `view_joinerprogress`
+Verdict: ⚠️ Open — low (staff-only, no joiner-reachable path)
+Action Needed: `export_one_view`/`export_all_view` gate on `has_view_permission` for the **Joiner** model only, then `_csv()` reads `JoinerProgress` rows unconditionally. Verified: a staff account holding just `core.view_joiner` downloads every joiner's email, per-material status, score and pass flag. Nothing in the deployment grants that split today (HR is superuser), so this is a latent least-privilege gap, not a live leak. Fix: in `_csv()` (single choke point, all three callers) `if not request.user.has_perm("core.view_joinerprogress"): raise PermissionDenied` — needs `request` threaded through, ~3 lines. Same-file note: `export_one_view` runs `get_object_or_404` **before** the permission check, so an unprivileged staff user distinguishes "joiner exists" (403) from "doesn't" (404); swap the two lines while you're in there.
+
+SEC-013: unhandled `IncorrectLookupParameters` on the changelist-wide export → HTTP 500
+Verdict: ⚠️ Open — robustness, not a disclosure
+Action Needed: `export_all_view` calls `get_changelist_instance(request)` directly; Django's own `changelist_view` wraps that call in `try/except IncorrectLookupParameters` and redirects to `?e=1`. Here it propagates. Verified: `GET /admin/core/joiner/export-csv/?is_active__exact=bogus` → **500**. `DEBUG=False` means no traceback reaches the browser, so the impact is a broken export link (any stale/hand-edited filter querystring) plus 500s in the log, not information disclosure. Fix: wrap the call, `except IncorrectLookupParameters: return redirect("admin:core_joiner_changelist")`.
+
+SEC-014: arbitrary local-field lookups reach the export queryset (`?password__startswith=…`)
+Verdict: ✅ Accepted — inherited Django behaviour, no privilege gain
+Action Needed: none required. The export reuses the ChangeList queryset, and `ModelAdmin.lookup_allowed()` returns True for any single-part local field, so `?password__startswith=pbkdf2` filters the export. Verified as a working presence oracle (`pbkdf2` → 1 row, `zzzz` → 0), i.e. a staff user can walk a joiner's password **hash** character by character. This is identical to what Django already permits on `/admin/auth/user/?password__startswith=…` for anyone with changelist access, so the export adds no new capability — the boundary is "who is staff", which P14/SEC-006 puts behind Cloudflare Access. Close it properly by overriding `lookup_allowed` on `JoinerAdmin` to an allowlist (`is_active`, `username`, `email`, plus the search fields) if the staff set ever widens beyond HR/IT.
+
+SEC-OK (verified good):
+- Both new endpoints wrapped in `admin_site.admin_view` — anonymous and joiner sessions get 302 → `/admin/login/`; staff without model perms get **403** on both (verified).
+- `export_one_view` resolves the pk against `get_queryset()` (which filters `is_staff=False`), so a staff/superuser pk **404s** — no staff PII leaks through the joiner export (verified).
+- `_csv_safe()` still applied to every cell on all three export paths (SEC-007 holds); `Content-Disposition` filename is a constant, not interpolated.
+- Exports are read-only GETs with no state change; a forced cross-origin request can't be read back, so the missing CSRF token is correct, not an omission.
+- `{{ request.GET.urlencode }}` in `change_list.html` is auto-escaped; no `|safe` in either new template.
+- `admin.site.get_app_list` monkeypatch is display-ordering only — it re-calls the original, so per-app permission filtering is unchanged.
+- `0004_joiner` is proxy-only; the `joinerprogress` → joiner 301 is a static `pattern_name` redirect with no user input in the target.
+
+Gate verdict: **PASS** — no blocker, no joiner-reachable issue. Two one-liners open (SEC-012, SEC-013), one accepted (SEC-014). Carry-forward unchanged: SEC-004, SEC-005, SEC-006.
+
+### Fixes applied — 2026-07-28
+- SEC-012 ✅ Fixed — `_require_export_perm(request)` requires **both** `view_joiner` and `core.view_joinerprogress`; called from `_csv()` (the choke point all three export paths reach) and again at the top of `export_one_view` **before** `get_object_or_404`, so the 403-vs-404 existence oracle is closed. Verified: `view_joiner`-only staff → 403 on all three paths and 403 for a non-existent pk; both perms → 200; staff pk still 404.
+- SEC-013 ✅ Fixed — `export_all_view` wraps `get_changelist_instance` in `try/except IncorrectLookupParameters` → 302 to the joiner changelist. Verified: `?is_active__exact=bogus` → **302 /admin/core/joiner/** (was 500).
+- SEC-014 — unchanged, accepted as inherited Django behaviour. Revisit with a `lookup_allowed` allowlist if staff access widens past HR/IT.
+- Regression cover: `core/tests.py` gains `test_export_needs_progress_permission` + `test_export_survives_a_bad_filter_value`. `manage.py test core` **27/27**. `check --deploy` (DEBUG=False) clean except W009 (placeholder SECRET_KEY = operator value).

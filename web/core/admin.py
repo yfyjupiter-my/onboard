@@ -1,12 +1,16 @@
 import csv
+import logging
 
 from django.contrib import admin
+from django.contrib.admin.options import IncorrectLookupParameters
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Max, Q, Value
 from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import path
+
+logger = logging.getLogger(__name__)
 
 from .models import Choice, Joiner, JoinerProgress, Material, Question, Quiz
 
@@ -157,27 +161,40 @@ class JoinerAdmin(admin.ModelAdmin):
         ] + super().get_urls()
 
     def export_all_view(self, request):
-        if not self.has_view_permission(request):
-            raise PermissionDenied
-        return self._csv(self.get_changelist_instance(request).get_queryset(request))
+        self._require_export_perm(request)
+        try:
+            changelist = self.get_changelist_instance(request)
+        except IncorrectLookupParameters:
+            # SEC-013: a bad filter value is a 500 here; the stock changelist_view
+            # catches this and bounces to an unfiltered list. Do the same.
+            return redirect("admin:core_joiner_changelist")
+        return self._csv(request, changelist.get_queryset(request))
 
     def export_one_view(self, request, pk):
+        # SEC-012: both permissions before the lookup, else 403-vs-404 says whether the pk exists.
+        self._require_export_perm(request)
         joiner = get_object_or_404(self.get_queryset(request), pk=pk)
-        if not self.has_view_permission(request, joiner):
-            raise PermissionDenied
-        return self._csv([joiner])
+        return self._csv(request, [joiner])
 
     @admin.action(description="Export selected as CSV")
     def export_as_csv(self, request, queryset):
-        return self._csv(queryset)
+        return self._csv(request, queryset)
 
-    def _csv(self, joiners):
+    def _require_export_perm(self, request):
+        # SEC-012: the rows are JoinerProgress, so view_joiner alone isn't enough.
+        if not self.has_view_permission(request) or not request.user.has_perm("core.view_joinerprogress"):
+            raise PermissionDenied
+
+    def _csv(self, request, joiners):
+        self._require_export_perm(request)  # choke point: all three export paths land here
         queryset = JoinerProgress.objects.filter(user__in=joiners)
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="joiner_progress.csv"'
         writer = csv.writer(response)
         writer.writerow(["joiner name", "email", "material title", "status", "score", "passed", "completed_at"])
+        rows = 0
         for p in queryset.select_related("user", "material"):
+            rows += 1
             writer.writerow([_csv_safe(v) for v in (
                 p.user.get_full_name() or p.user.get_username(),
                 p.user.email,
@@ -187,4 +204,6 @@ class JoinerAdmin(admin.ModelAdmin):
                 "" if p.passed is None else p.passed,
                 p.completed_at.isoformat() if p.completed_at else "",
             )])
+        # COM-004: a whole-table PII export is one click and leaves no admin history.
+        logger.info("joiner CSV export by %s: %d rows", request.user.get_username(), rows)
         return response
