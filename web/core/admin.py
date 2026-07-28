@@ -1,11 +1,13 @@
 import csv
 
 from django.contrib import admin
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db.models import Count, Max, Q, Value
 from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponse
+from django.urls import path
 
-from .models import Choice, JoinerProgress, Material, Question, Quiz
+from .models import Choice, Joiner, JoinerProgress, Material, Question, Quiz
 
 
 def _csv_safe(value):
@@ -72,7 +74,7 @@ class QuestionAdmin(admin.ModelAdmin):
 
 # ponytail: admin index lists models alphabetically (Questions before Quizzes).
 # Sort core's models by this order instead; unlisted models keep falling to the end.
-_MODEL_ORDER = {"Material": 0, "Quiz": 1, "Question": 2, "JoinerProgress": 3}
+_MODEL_ORDER = {"Material": 0, "Quiz": 1, "Question": 2, "Joiner": 3}
 _default_get_app_list = admin.site.get_app_list
 
 
@@ -87,20 +89,78 @@ def _get_app_list(request, app_label=None):
 admin.site.get_app_list = _get_app_list
 
 
-@admin.register(JoinerProgress)
-class JoinerProgressAdmin(admin.ModelAdmin):
-    # Read-mostly: progress is written by the joiner flow, not hand-edited. (P13 CSV export lands here in Phase 4.)
-    list_display = ("user", "material", "status", "score", "passed", "completed_at")
-    list_filter = ("status", "passed", "material")
-    search_fields = ("user__username", "user__email", "material__title")
-    readonly_fields = ("user", "material", "status", "score", "passed", "submitted_at", "completed_at")
+class ProgressInline(admin.TabularInline):
+    # Read-only: progress is written by the joiner flow, never hand-edited.
+    model = JoinerProgress
+    fields = ("material", "status", "score", "passed", "submitted_at", "completed_at")
+    readonly_fields = fields
+    extra = 0
+    can_delete = False
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(Joiner)
+class JoinerAdmin(admin.ModelAdmin):
+    # One row per joiner; click through for their per-material progress. (P13 CSV export.)
+    list_display = ("name", "email", "completed", "last_activity", "is_active")
+    list_filter = ("is_active",)
+    search_fields = ("username", "first_name", "last_name", "email")
+    readonly_fields = ("username", "first_name", "last_name", "email", "is_active", "date_joined")
+    inlines = [ProgressInline]
     actions = ["export_as_csv"]
 
     def has_add_permission(self, request):
+        return False  # joiner accounts are created/deleted in the Users admin
+
+    def has_delete_permission(self, request, obj=None):
         return False
+
+    def get_queryset(self, request):
+        total = Material.objects.filter(is_active=True).count()
+        return (
+            super().get_queryset(request).filter(is_staff=False).annotate(
+                completed_count=Count("progress", filter=Q(progress__status=JoinerProgress.COMPLETED)),
+                total_count=Value(total),
+                last_activity=Max("progress__completed_at"),
+            )
+        )
+
+    @admin.display(description="joiner", ordering="username")
+    def name(self, obj):
+        return obj.get_full_name() or obj.get_username()
+
+    @admin.display(description="completed", ordering="completed_count")
+    def completed(self, obj):
+        return f"{obj.completed_count} / {obj.total_count}"
+
+    @admin.display(description="last activity", ordering="last_activity")
+    def last_activity(self, obj):
+        return obj.last_activity
+
+    def get_urls(self):
+        # "Export CSV" button in the changelist toolbar; exports everything matching
+        # the current filters/search, no row selection needed.
+        return [
+            path(
+                "export-csv/",
+                self.admin_site.admin_view(self.export_all_view),
+                name="core_joiner_export",
+            ),
+        ] + super().get_urls()
+
+    def export_all_view(self, request):
+        if not self.has_view_permission(request):
+            raise PermissionDenied
+        return self._csv(self.get_changelist_instance(request).get_queryset(request))
 
     @admin.action(description="Export selected as CSV")
     def export_as_csv(self, request, queryset):
+        return self._csv(queryset)
+
+    def _csv(self, joiners):
+        queryset = JoinerProgress.objects.filter(user__in=joiners)
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="joiner_progress.csv"'
         writer = csv.writer(response)

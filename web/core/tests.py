@@ -183,3 +183,49 @@ class JoinerLoginFormTests(TestCase):
         resp = self.client.post(reverse("login"), {"username": "joiner", "password": "pw-testing-123"})
         self.assertEqual(resp.status_code, 302)
         self.assertIn("_auth_user_id", self.client.session)
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
+class JoinerAdminTests(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_superuser("hr2", password="pw-testing-123"))
+        material = Material.objects.create(title="Doc", type=Material.PDF, file="materials/x.pdf")
+        Material.objects.create(title="Doc 2", type=Material.PDF, file="materials/y.pdf")
+        for name in ("aaa", "bbb"):
+            JoinerProgress.objects.create(
+                user=User.objects.create_user(name), material=material,
+                status=JoinerProgress.COMPLETED, score=90, passed=True,
+            )
+
+    def test_changelist_lists_each_joiner_once_with_counts(self):
+        resp = self.client.get(reverse("admin:core_joiner_changelist"))
+        self.assertEqual(resp.content.count(b'class="field-completed"'), 2)  # one row per joiner
+        self.assertContains(resp, "1 / 2")  # completed / active materials
+        self.assertContains(resp, "2 joiners")  # staff (hr2) excluded from the list
+
+    def test_change_view_shows_progress_rows(self):
+        joiner = User.objects.get(username="aaa")
+        resp = self.client.get(reverse("admin:core_joiner_change", args=[joiner.pk]))
+        self.assertContains(resp, "Doc")
+
+    def test_export_button_exports_all(self):
+        resp = self.client.get(reverse("admin:core_joiner_export"))
+        self.assertEqual(resp["Content-Type"], "text/csv")
+        self.assertEqual(len(resp.content.decode().strip().splitlines()), 3)  # header + 2
+
+    def test_export_respects_changelist_filters(self):
+        resp = self.client.get(reverse("admin:core_joiner_export") + "?q=aaa")
+        self.assertEqual(len(resp.content.decode().strip().splitlines()), 2)  # header + 1
+
+    def test_export_button_rendered_on_changelist(self):
+        resp = self.client.get(reverse("admin:core_joiner_changelist"))
+        self.assertContains(resp, "Export CSV")
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
+class OldProgressUrlRedirectTests(TestCase):
+    def test_old_progress_admin_urls_redirect_to_joiners(self):
+        self.client.force_login(User.objects.create_superuser("hr3", password="pw-testing-123"))
+        for old in ("/admin/core/joinerprogress/", "/admin/core/joinerprogress/26/change/?_facets=True"):
+            resp = self.client.get(old)
+            self.assertRedirects(resp, reverse("admin:core_joiner_changelist"), status_code=301)

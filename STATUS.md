@@ -91,3 +91,5 @@
 ## Next
 - **Deploy prerequisites (operator, not code):** set real `.env` secrets (clears W009), `git init` (`.gitignore` ready), scope MinIO service account (SEC-004), put Cloudflare Access on `/admin/` (SEC-006/P14). App code is deploy-ready.
 
+
+- **Admin progress grouped by joiner ✅ (T6.2)** — flat `JoinerProgress` changelist (one row per user×material, duplicated names) replaced by a `Joiner` proxy of `auth.User`: one row per joiner with `completed / total active materials`, last activity, sortable; click through for the per-material breakdown as a read-only inline. Add/delete disabled (Users admin owns accounts); `JoinerProgress` no longer in the admin index. CSV export moved to `admin:core_joiner_export` (same columns, exports the progress of joiners matching the current search/filter); template moved to `templates/admin/core/joiner/change_list.html`. Migration `0004_joiner` is proxy-only (no DB change). Old `/admin/core/joinerprogress/...` URLs 301 to the new changelist. `manage.py test core` **24/24**.

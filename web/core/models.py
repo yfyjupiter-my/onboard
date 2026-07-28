@@ -1,6 +1,7 @@
 from urllib.parse import parse_qs, urlparse
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
@@ -104,3 +105,11 @@ class JoinerProgress(models.Model):
 
     def __str__(self):
         return f"{self.user} · {self.material} · {self.status}"
+
+
+class Joiner(User):
+    # Proxy of User so the admin can list progress once per joiner instead of one row
+    # per (user, material) pair. No columns of its own.
+    class Meta:
+        proxy = True
+        verbose_name = "joiner"
