@@ -1,0 +1,5 @@
+{% extends "admin/change_form.html" %}
+{% block object-tools-items %}
+  <li><a href="{% url 'admin:core_joiner_export_one' original.pk %}">Export CSV</a></li>
+  {{ block.super }}
+{% endblock %}

@@ -5,6 +5,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db.models import Count, Max, Q, Value
 from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.urls import path
 
 from .models import Choice, Joiner, JoinerProgress, Material, Question, Quiz
@@ -140,13 +141,18 @@ class JoinerAdmin(admin.ModelAdmin):
         return obj.last_activity
 
     def get_urls(self):
-        # "Export CSV" button in the changelist toolbar; exports everything matching
-        # the current filters/search, no row selection needed.
+        # "Export CSV" buttons: changelist toolbar (everything matching the current
+        # filters/search, no row selection needed) and one joiner's own page.
         return [
             path(
                 "export-csv/",
                 self.admin_site.admin_view(self.export_all_view),
                 name="core_joiner_export",
+            ),
+            path(
+                "<int:pk>/export-csv/",
+                self.admin_site.admin_view(self.export_one_view),
+                name="core_joiner_export_one",
             ),
         ] + super().get_urls()
 
@@ -154,6 +160,12 @@ class JoinerAdmin(admin.ModelAdmin):
         if not self.has_view_permission(request):
             raise PermissionDenied
         return self._csv(self.get_changelist_instance(request).get_queryset(request))
+
+    def export_one_view(self, request, pk):
+        joiner = get_object_or_404(self.get_queryset(request), pk=pk)
+        if not self.has_view_permission(request, joiner):
+            raise PermissionDenied
+        return self._csv([joiner])
 
     @admin.action(description="Export selected as CSV")
     def export_as_csv(self, request, queryset):

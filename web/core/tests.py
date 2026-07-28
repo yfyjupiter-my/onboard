@@ -217,6 +217,13 @@ class JoinerAdminTests(TestCase):
         resp = self.client.get(reverse("admin:core_joiner_export") + "?q=aaa")
         self.assertEqual(len(resp.content.decode().strip().splitlines()), 2)  # header + 1
 
+    def test_export_one_joiner(self):
+        joiner = User.objects.get(username="aaa")
+        resp = self.client.get(reverse("admin:core_joiner_export_one", args=[joiner.pk]))
+        self.assertEqual(len(resp.content.decode().strip().splitlines()), 2)  # header + that joiner
+        detail = self.client.get(reverse("admin:core_joiner_change", args=[joiner.pk]))
+        self.assertContains(detail, "Export CSV")
+
     def test_export_button_rendered_on_changelist(self):
         resp = self.client.get(reverse("admin:core_joiner_changelist"))
         self.assertContains(resp, "Export CSV")
