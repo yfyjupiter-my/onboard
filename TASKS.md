@@ -81,3 +81,12 @@ Verified: `check --deploy` → only W009 (placeholder SECRET_KEY, operator value
 - ✅ **T5.3** `core/tests.py` — 7 tests: csv_safe (2), quiz scoring/state machine incl. BUS-003 (3), no-quiz completion (1), presign URL shape (1). No fixtures/framework bloat. `@override_settings(SECURE_SSL_REDIRECT=False)` on view tests (prod redirect vs http test client).
 
 **Gate:** ✅ final audit PASS — 4 open items found & fixed (SEC-002 .gitignore, COM-003 local fonts, BUS-001 one-correct formset, BUS-002 pass_mark≤100). `test core` 11/11, `check --deploy` clean (W009 = placeholder key). Remaining are operator deploy steps (real secrets, git init, MinIO service account, Cloudflare Access) — no code blockers.
+---
+
+## Post-MVP — user-requested changes
+Small changes requested after the 6 phases closed. Each is done + tested; no phase gate (no new attack surface beyond what the per-item audit notes cover).
+
+- ✅ **T6.1** Material type **Link** — `Material.type` gains `link`; `url = URLField(blank=True)`, `file` now optional, `clean()` requires exactly one per type (admin-enforced), `source_url` returns the embeddable URL for links / presigned file URL otherwise. `embeddable()` (stdlib `urlparse`) rewrites `youtube.com/watch?v=` and `youtu.be/` → `/embed/<id>`. Rendered in a same-tab `<iframe>` that unlocks **Mark complete** on `load`; `referrerpolicy="strict-origin-when-cross-origin"` overrides Django's `same-origin` default so YouTube gets a `Referer` (its absence = YouTube error 153). Migration `0003_material_url` (additive). Checklist gets a link glyph.
+  - **Known limit:** sites sending `X-Frame-Options`/frame-ancestors CSP render blank and this is undetectable cross-origin (the frame still fires `load`). The "Open link" fallback was removed by request → **prefer embeddable URLs** (YouTube, Drive `/preview`, intranet).
+  - **Review gate is weak for links** (unlocks on frame load) — attach a quiz if proof of reading matters.
+  - Acceptance: `manage.py test core` 18/18; browser-verified YouTube playback. Commit `d889f84`.
