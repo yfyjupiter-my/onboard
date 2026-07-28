@@ -78,6 +78,25 @@ class ModelValidationTests(TestCase):
         with self.assertRaises(ValidationError):
             Quiz(material=m, pass_mark=150).full_clean()
 
+    def test_link_material_requires_url_and_serves_it(self):
+        with self.assertRaises(ValidationError):
+            Material(title="L", type=Material.LINK).full_clean()
+        with self.assertRaises(ValidationError):
+            Material(title="P", type=Material.PDF).full_clean()
+        link = Material(title="L", type=Material.LINK, url="https://example.com/handbook")
+        link.full_clean()
+        self.assertEqual(link.source_url, "https://example.com/handbook")
+
+    def test_youtube_links_rewritten_to_embed(self):
+        embed = "https://www.youtube.com/embed/tUd9Dg0R9CA"
+        for url in ("https://www.youtube.com/watch?v=tUd9Dg0R9CA",
+                    "https://youtube.com/watch?v=tUd9Dg0R9CA&t=30",
+                    "https://youtu.be/tUd9Dg0R9CA"):
+            self.assertEqual(Material(type=Material.LINK, url=url).source_url, embed)
+        # Not YouTube, or no video id -> untouched.
+        for url in ("https://example.com/watch?v=x", "https://www.youtube.com/watch"):
+            self.assertEqual(Material(type=Material.LINK, url=url).source_url, url)
+
 
 class ChoiceFormSetTests(TestCase):
     # BUS-001: exactly one correct choice per question.

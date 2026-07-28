@@ -51,7 +51,7 @@ def material_view(request, pk):
         request,
         "material.html",
         {"material": material, "progress": progress, "has_quiz": has_quiz,
-         "file_url": material.file.url},  # presigned, 15-min
+         "file_url": material.source_url},  # file: presigned, 15-min · link: the URL as-is
     )
 
 

@@ -47,6 +47,13 @@
           container.dispatchEvent(new Event('scroll'));
         });
       </script>
+    {% elif material.type == 'link' %}
+      {# ponytail: an X-Frame-Options block can't be detected cross-origin (the frame still fires `load`), so a blocked site just renders blank — prefer embeddable URLs. #}
+      {# Django's SECURE_REFERRER_POLICY default (same-origin) sends no Referer cross-origin, which YouTube rejects with error 153 — override it for this frame only. #}
+      <iframe src="{{ file_url }}" title="{{ material.title }}" allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"
+              @load="reviewed = true"
+              style="width:100%;height:70vh;border:1px solid var(--line);border-radius:12px;background:var(--surface)"></iframe>
     {% else %}
       <video controls src="{{ file_url }}" @ended="reviewed = true" @error="reviewed = true"
              style="width:100%;max-height:70vh;border-radius:12px;background:#000"></video>
