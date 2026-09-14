@@ -182,6 +182,21 @@ class NoQuizViewTests(TestCase):
         self.assertContains(resp, "response-content-type=application%2Fpdf")
         self.assertContains(resp, 'role="region"')
 
+    def test_file_urls_force_safe_response_type(self):
+        # SEC-020: a disguised HTML upload must never render as a same-origin page.
+        pdf = Material(title="P", type=Material.PDF, file="materials/x.pdf")
+        video = Material(title="V", type=Material.VIDEO, file="materials/v.mp4")
+        self.assertIn("response-content-type=application%2Fpdf", pdf.source_url)
+        self.assertIn("response-content-disposition=attachment", video.source_url)
+
+    def test_fileless_material_redirects_home_not_500(self):
+        # ROB-005
+        empty = Material.objects.create(title="Empty", type=Material.PDF, file="")
+        for name in ("material", "mark_complete", "quiz"):
+            resp = self.client.get(reverse(name, args=[empty.pk])) if name == "material" else \
+                self.client.post(reverse(name, args=[empty.pk]))
+            self.assertRedirects(resp, reverse("home"), fetch_redirect_response=False)
+
 
 @override_settings(SECURE_SSL_REDIRECT=False)
 class ChecklistChapterTests(TestCase):

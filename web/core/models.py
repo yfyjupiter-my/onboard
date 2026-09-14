@@ -50,7 +50,13 @@ class Material(models.Model):
 
     @property
     def source_url(self):
-        return embeddable(self.url) if self.type == self.LINK else self.file.url
+        if self.type == self.LINK:
+            return embeddable(self.url)
+        # SEC-020: never let an upload render as a same-origin page, whatever its stored type.
+        # PDF.js and <video> ignore these overrides; a direct top-level visit gets a PDF / a download.
+        params = ({"ResponseContentType": "application/pdf"} if self.type == self.PDF
+                  else {"ResponseContentDisposition": "attachment"})
+        return self.file.storage.url(self.file.name, parameters=params)
 
     def is_locked_for(self, user):
         # T6.5: locked materials wait on every active, *unlocked* material in the same chapter

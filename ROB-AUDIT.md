@@ -38,14 +38,14 @@ Gate: **PASS**, no blocker, nothing pending.
 ## QA check — COM-007..012 changes — 2026-09-14
 
 ROB-004: a PDF whose object is missing from MinIO unlocks "Mark complete"
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: reproduced with a material pointing at `materials/never-uploaded.pdf`. The page returns 200 and the presign returns 404. PDF.js throws, and the `.catch` fallback swaps in the native iframe (it shows MinIO's XML error) **and sets `reviewed = true`**. The joiner can then mark complete a document that was never shown. The server-side gate is unaffected (review is a UX gate), but the experience is wrong and HR gets a false completion.
-- [ ] ROB-004a in the `.catch`, if `err.name === 'MissingPDFException' || err.name === 'UnexpectedResponseException'` (both present in the vendored pdf.js 4.6.82), show "This file is unavailable — contact HR" in `#pdfview` and **don't** unlock. Keep the iframe fallback only for real "not a PDF" parse errors.
+- [x] ROB-004a in the `.catch`, if `err.name === 'MissingPDFException' || err.name === 'UnexpectedResponseException'` (both present in the vendored pdf.js 4.6.82), show "This file is unavailable — contact HR" in `#pdfview` and **don't** unlock. Keep the iframe fallback only for real "not a PDF" parse errors.
 
 ROB-005: a PDF or video material with an empty `file` → HTTP 500 on its page
-Verdict: ⚠️ Pending (low: the admin `clean()` prevents it; only reachable through shell, data import or direct DB edits)
+Verdict: ✅ Correct (fixed)
 Action Needed: reproduced in a rolled-back transaction: `type=pdf, file=''` → 500 and `type=video, file=''` → 500. `source_url` calls `self.file.url` → `ValueError`. This pre-dates COM-007; the new `pdf_open_url` hits the same path.
-- [ ] ROB-005a in `_open_material`, treat `type != LINK and not file` like a locked or inactive material: return `None` so the view redirects home instead of crashing. One condition.
+- [x] ROB-005a in `_open_material`, treat `type != LINK and not file` like a locked or inactive material: return `None` so the view redirects home instead of crashing. One condition.
 
 ROB-OK (verified good):
 - No JS: Alpine never binds `:disabled`, so the button is enabled and the hint stays visible. PDF.js doesn't run, but the **Open PDF link still works**, which is sensible degradation. `mark_complete` server rules are unchanged.
@@ -53,4 +53,9 @@ ROB-OK (verified good):
 - Log rotation is active on all 4 containers (`docker inspect`), and `docker compose logs` still works.
 - Probe object deleted and rolled-back users/materials show leftover = 0.
 
-Gate: **PASS**, no blocker. Two pending items: ROB-004 (false completion on a missing file) and ROB-005 (low).
+Fix (2026-09-14), verified:
+- ROB-004: the PDF.js `.catch` no longer unlocks. It shows "This file is unavailable. Please contact HR." for `MissingPDFException`/`UnexpectedResponseException`, and "This file can't be displayed. Please contact HR." otherwise (`role="alert"`). Real Chromium (Playwright) running the vendored pdf.js on the public origin: valid PDF → renders; HTML disguised as PDF → `InvalidPDFException` (can't-display message, locked); missing object → `MissingPDFException` (unavailable message, locked).
+- ROB-005: `_open_material` returns `None` for a PDF/video with no file, so `material`, `mark_complete` and `quiz` redirect home instead of 500. Test `test_fileless_material_redirects_home_not_500`.
+- Tests 37/37.
+
+Gate: **PASS**, no blocker, nothing pending.

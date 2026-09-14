@@ -264,9 +264,9 @@ Gate: **PASS**, no vulnerabilities, nothing pending.
 ## QA check — COM-007..012 changes (Open PDF link, unlock hint, login markup, log rotation) — 2026-09-14
 
 SEC-020: the plain presigned file URL still serves an upload's stored Content-Type, so a disguised HTML file renders as a same-origin page if opened directly
-Verdict: ⚠️ Pending (low: requires a staff-uploaded malicious file plus luring a joiner to the URL within 15 min)
+Verdict: ✅ Correct (fixed)
 Action Needed: `file_url` (used by PDF.js and `<video>`) is presigned without a forced type. Verified live: an HTML body stored as `qa-probe/evil2.pdf` with `text/html` → plain presign `200 text/html`. The sandboxed fallback iframe and nosniff (SEC-010) cover the in-page paths, but a top-level navigation to that URL (it's visible in the page source) runs script on the app's origin. The new Open PDF link is **not** affected: it forces `application/pdf`.
-- [ ] SEC-020a in `Material.source_url`, presign PDFs with `ResponseContentType=application/pdf` and videos with `ResponseContentDisposition=attachment` (`<video>` and PDF.js fetch ignore disposition; a top-level visit downloads instead of rendering). Trade-off: a non-PDF mis-typed as "pdf" (an image, `.md`) no longer displays in the fallback iframe; it shows the browser's PDF error. Use type Link, or a correct upload, for those.
+- [x] SEC-020a in `Material.source_url`, presign PDFs with `ResponseContentType=application/pdf` and videos with `ResponseContentDisposition=attachment` (`<video>` and PDF.js fetch ignore disposition; a top-level visit downloads instead of rendering). Trade-off: a non-PDF mis-typed as "pdf" (an image, `.md`) no longer displays in the fallback iframe; it shows the browser's PDF error. Use type Link, or a correct upload, for those.
 
 SEC-021: presigned URLs are written to nginx access logs
 Verdict: ✅ Correct (accepted)
@@ -282,4 +282,11 @@ SEC-OK (verified good):
   - `role="alert"` wraps Django's own escaped form error.
 - Log rotation doesn't touch secrets or change network exposure. The export audit-trail cap is noted in COM-012.
 
-Gate: **PASS**, no exploitable vulnerability for joiners. SEC-020 is pending, low severity.
+Fix (2026-09-14), verified live:
+- SEC-020: `Material.source_url` presigns PDFs with `ResponseContentType=application/pdf` and videos with `ResponseContentDisposition=attachment`, so every file URL (PDF.js, `<video>`, Open PDF link) carries the forced type. The separate `pdf_open_url` was removed; the link reuses `file_url`.
+  - An HTML body stored as a "pdf" is now served `200 application/pdf`.
+  - A video range request returns `206 video/mp4` + `content-disposition: attachment`; `<video>` ignores the disposition.
+  - The PDF.js sandboxed-iframe fallback is **removed**, so the SEC-010 in-page path no longer exists. Agreed trade-off: mis-typed non-PDFs aren't displayed.
+- Probe objects deleted (`qa-probe/` empty). Tests 37/37 (`test_file_urls_force_safe_response_type`).
+
+Gate: **PASS**, no vulnerabilities, nothing pending.

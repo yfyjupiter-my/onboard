@@ -36,21 +36,19 @@
           // Whole doc fits without scrolling (e.g. single page) -> unlock immediately.
           container.dispatchEvent(new Event('scroll'));
         })().catch((err) => {
-          // Not a real PDF (e.g. image/text uploaded as "pdf") or corrupt: fall back to the
-          // browser's native viewer so it still displays, and unlock (can't scroll-gate it).
-          console.error('PDF.js could not render this file, using native viewer:', err);
-          container.innerHTML = '';
-          const frame = document.createElement('iframe');
-          frame.sandbox = '';  // SEC-010: /media/ is same-origin — never let an upload run script
-          frame.src = "{{ file_url|escapejs }}";
-          frame.title = "{{ material.title|escapejs }}";
-          frame.style.cssText = 'width:100%;height:100%;border:0';
-          container.appendChild(frame);
-          container.dispatchEvent(new Event('scroll'));
+          // ROB-004: missing object, bad response or not a real PDF. Nothing was shown, so stay
+          // locked (no false completion). SEC-020 forces application/pdf, so a native-viewer
+          // fallback couldn't display a mis-typed file anyway.
+          console.error('PDF.js could not render this file:', err);
+          const missing = err.name === 'MissingPDFException' || err.name === 'UnexpectedResponseException';
+          container.textContent = missing
+            ? 'This file is unavailable. Please contact HR.'
+            : "This file can't be displayed. Please contact HR.";
+          container.setAttribute('role', 'alert');
         });
       </script>
       <p style="margin:8px 0 0;font-size:14px">
-        <a href="{{ pdf_open_url }}" target="_blank" rel="noopener">Open PDF in browser viewer</a>
+        <a href="{{ file_url }}" target="_blank" rel="noopener">Open PDF in browser viewer</a>
         <span style="color:var(--muted)">— works with screen readers, search and zoom</span>
       </p>
     {% elif material.type == 'link' %}
