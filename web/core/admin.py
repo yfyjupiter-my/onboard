@@ -1,7 +1,7 @@
 import csv
 import logging
 
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -27,9 +27,8 @@ def _csv_safe(value):
 
 
 class ReplaceableFileInput(AdminFileWidget):
-    # Django rejects "Clear" ticked + new file as a contradiction; a new upload is a replace, so let it win.
-    def value_from_datadict(self, data, files, name):
-        return files.get(name) or super().value_from_datadict(data, files, name)
+    # "Clear" checkbox swapped for a Remove button (MaterialAdmin.remove_file_view); a new upload is a replace.
+    template_name = "admin/widgets/removable_file_input.html"
 
 
 class QuizInline(admin.StackedInline):
@@ -79,6 +78,40 @@ class MaterialAdmin(admin.ModelAdmin):
             # Replaced or cleared: drop the orphaned MinIO object, only once the row is committed.
             storage, name = old.storage, old.name
             transaction.on_commit(lambda: storage.delete(name))
+
+    def get_urls(self):
+        return [
+            path(
+                "<int:pk>/remove-file/",
+                self.admin_site.admin_view(self.remove_file_view),
+                name="core_material_remove_file",
+            ),
+        ] + super().get_urls()
+
+    def remove_file_view(self, request, pk):
+        # POST only (the widget button submits the change form, so its CSRF token rides along).
+        if request.method != "POST":
+            return redirect("admin:core_material_change", pk)
+        obj = get_object_or_404(self.get_queryset(request), pk=pk)
+        if not self.has_change_permission(request, obj):
+            raise PermissionDenied
+        if obj.file and not obj.url:
+            # Nothing left to show: PDF/video render from the file, removing it would break the joiner page.
+            self.message_user(
+                request,
+                "Can't remove the only content. Add a URL and save, or upload a replacement file.",
+                messages.ERROR,
+            )
+        elif obj.file:
+            # File + URL conflict: drop the file and let the URL take over as a Link material.
+            storage, name = obj.file.storage, obj.file.name
+            with transaction.atomic():
+                obj.file = ""
+                obj.type = Material.LINK
+                obj.save(update_fields=["file", "type"])
+                transaction.on_commit(lambda: storage.delete(name))
+            self.message_user(request, "File removed. This material now shows its URL (type: Link).", messages.SUCCESS)
+        return redirect("admin:core_material_change", pk)
 
 
 @admin.register(Quiz)
