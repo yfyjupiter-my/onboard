@@ -120,3 +120,5 @@
 - **QA check (Business Logic + Security) on per-chapter locks ✅ PASS, no blocker** — Security is clean. **BUS-011 ✅ accepted (option a)**: a chapter where every material is locked opens right away, so HR keeps at least one unlocked material in any chapter that uses locks. BUS-012: T6.5 docs text fixed.
 
 - **T6.6 Isolated admin/frontend sessions ✅** — `/admin/` now uses its own `admin_sessionid` cookie (Path `/admin/`); frontend keeps `sessionid`. Logging into admin no longer logs into the frontend, and the reverse is also true; logout is independent. `CSRF_USE_SESSIONS=True`. `core/middleware.py` + settings. Tests 30/30; SEC-016 PASS. Existing admins must re-login once.
+
+- **QA check T6.6 (Robustness + Business Logic) — PASS, 2 pending** — ROB-001 `CSRF_USE_SESSIONS` makes every anonymous login-page GET write a session row and nothing runs `clearsessions` (recommend dropping the setting + clearsessions on startup). BUS-013 admin "View site" → frontend login that rejects staff (set `site_url=None`). BUS-014 promoted-staff keeps frontend session: accepted. See `ROB-AUDIT.md`, `BUS-AUDIT.md`.
