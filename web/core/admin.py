@@ -4,7 +4,9 @@ import logging
 from django.contrib import admin
 from django.contrib.admin.options import IncorrectLookupParameters
 from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import models, transaction
 from django.db.models import Count, Max, Q, Value
+from django.forms import ClearableFileInput
 from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -22,6 +24,12 @@ def _csv_safe(value):
     if s and s[0] in ("=", "+", "-", "@", "\t", "\r"):
         return "'" + s
     return s
+
+
+class ReplaceableFileInput(ClearableFileInput):
+    # Django rejects "Clear" ticked + new file as a contradiction; a new upload is a replace, so let it win.
+    def value_from_datadict(self, data, files, name):
+        return files.get(name) or super().value_from_datadict(data, files, name)
 
 
 class QuizInline(admin.StackedInline):
@@ -62,6 +70,15 @@ class MaterialAdmin(admin.ModelAdmin):
     list_filter = ("type", "is_active")
     search_fields = ("title",)
     inlines = [QuizInline]
+    formfield_overrides = {models.FileField: {"widget": ReplaceableFileInput}}
+
+    def save_model(self, request, obj, form, change):
+        old = form.initial.get("file") if change and "file" in form.changed_data else None
+        super().save_model(request, obj, form, change)
+        if old and old.name != obj.file.name:
+            # Replaced or cleared: drop the orphaned MinIO object, only once the row is committed.
+            storage, name = old.storage, old.name
+            transaction.on_commit(lambda: storage.delete(name))
 
 
 @admin.register(Quiz)

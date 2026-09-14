@@ -100,3 +100,5 @@
 
 ## Next
 - **Deploy prerequisites (operator, not code):** set real `.env` secrets (clears W009), scope MinIO service account (SEC-004), put Cloudflare Access on `/admin/` (SEC-006/P14). Repo already under git (`.gitignore` in place). App code is deploy-ready.
+
+- **Admin file replace (Material) fixed** — `ReplaceableFileInput` lets a new upload win over the Clear tick; `MaterialAdmin.save_model` deletes the old MinIO object on replace/clear (on_commit). Added missing migration `0005_alter_joiner_options` (Meta only). Verified vs live MinIO: new object exists, old gone; `makemigrations --check` clean; core tests green.
