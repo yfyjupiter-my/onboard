@@ -8,9 +8,16 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .admin import _csv_safe
+from .middleware import ADMIN_SESSION_COOKIE
 from .models import Choice, JoinerProgress, Material, Question, Quiz
 
 User = get_user_model()
+
+
+def _admin_login(client, user):
+    # T6.6: force_login sets the frontend cookie; /admin/ only reads its own.
+    client.force_login(user)
+    client.cookies[ADMIN_SESSION_COOKIE] = client.cookies.pop("sessionid").value
 
 
 class CsvSafeTests(TestCase):
@@ -242,7 +249,7 @@ class JoinerLoginFormTests(TestCase):
 @override_settings(SECURE_SSL_REDIRECT=False)
 class JoinerAdminTests(TestCase):
     def setUp(self):
-        self.client.force_login(User.objects.create_superuser("hr2", password="pw-testing-123"))
+        _admin_login(self.client, User.objects.create_superuser("hr2", password="pw-testing-123"))
         material = Material.objects.create(title="Doc", type=Material.PDF, file="materials/x.pdf")
         Material.objects.create(title="Doc 2", type=Material.PDF, file="materials/y.pdf")
         for name in ("aaa", "bbb"):
@@ -287,7 +294,7 @@ class JoinerAdminTests(TestCase):
         # denial must land before the pk lookup so 403-vs-404 isn't an existence oracle.
         clerk = User.objects.create_user("clerk", password="pw-testing-123", is_staff=True)
         clerk.user_permissions.add(Permission.objects.get(codename="view_joiner"))
-        self.client.force_login(clerk)
+        _admin_login(self.client, clerk)
         joiner = User.objects.get(username="aaa")
         self.assertEqual(self.client.get(reverse("admin:core_joiner_export")).status_code, 403)
         self.assertEqual(
@@ -304,7 +311,32 @@ class JoinerAdminTests(TestCase):
 @override_settings(SECURE_SSL_REDIRECT=False)
 class OldProgressUrlRedirectTests(TestCase):
     def test_old_progress_admin_urls_redirect_to_joiners(self):
-        self.client.force_login(User.objects.create_superuser("hr3", password="pw-testing-123"))
+        _admin_login(self.client, User.objects.create_superuser("hr3", password="pw-testing-123"))
         for old in ("/admin/core/joinerprogress/", "/admin/core/joinerprogress/26/change/?_facets=True"):
             resp = self.client.get(old)
             self.assertRedirects(resp, reverse("admin:core_joiner_changelist"), status_code=301)
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
+class SessionIsolationTests(TestCase):
+    def test_admin_and_frontend_sessions_are_independent(self):
+        User.objects.create_superuser("hr4", password="pw-testing-123")
+        User.objects.create_user("j4", password="pw-testing-123")
+        self.client.post(reverse("admin:login"), {"username": "hr4", "password": "pw-testing-123"})
+        self.assertIn(ADMIN_SESSION_COOKIE, self.client.cookies)
+        self.assertNotIn("sessionid", self.client.cookies)
+        self.assertEqual(self.client.get(reverse("home")).status_code, 302)  # admin login ≠ frontend login
+
+        self.client.post(reverse("login"), {"username": "j4", "password": "pw-testing-123"})
+        self.assertEqual(self.client.get(reverse("home")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("admin:index")).status_code, 200)  # admin still in
+
+        self.client.post(reverse("logout"))  # frontend logout leaves admin alone
+        self.assertEqual(self.client.get(reverse("admin:index")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("home")).status_code, 302)
+
+        # A frontend cookie must never authenticate /admin/.
+        self.client.cookies.pop(ADMIN_SESSION_COOKIE)
+        self.client.post(reverse("login"), {"username": "j4", "password": "pw-testing-123"})
+        self.client.cookies["sessionid"] = self.client.cookies["sessionid"].value
+        self.assertEqual(self.client.get(reverse("admin:index")).status_code, 302)

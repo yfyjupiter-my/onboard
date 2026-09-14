@@ -118,3 +118,5 @@
 - **BUS-009/BUS-010 fixed** — a completed locked material stays open when new materials are added (model + checklist). A locked URL now redirects to the checklist instead of a bare 403. 29/29 tests green.
 - **Locked materials scoped per chapter ✅ (T6.5)** — a locked material now waits only on the unlocked materials in its own chapter (model + checklist). Label: "Locked until the rest of its chapter is completed". Edited `0007` metadata only, so no new migration. 29/29 tests.
 - **QA check (Business Logic + Security) on per-chapter locks ✅ PASS, no blocker** — Security is clean. **BUS-011 ✅ accepted (option a)**: a chapter where every material is locked opens right away, so HR keeps at least one unlocked material in any chapter that uses locks. BUS-012: T6.5 docs text fixed.
+
+- **T6.6 Isolated admin/frontend sessions ✅** — `/admin/` now uses its own `admin_sessionid` cookie (Path `/admin/`); frontend keeps `sessionid`. Logging into admin no longer logs into the frontend, and the reverse is also true; logout is independent. `CSRF_USE_SESSIONS=True`. `core/middleware.py` + settings. Tests 30/30; SEC-016 PASS. Existing admins must re-login once.
