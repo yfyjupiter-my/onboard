@@ -19,7 +19,19 @@
         <span class="tag {% if chapter.done == chapter.rows|length %}done{% else %}neutral{% endif %}">{{ chapter.done }} / {{ chapter.rows|length }} done</span>
       </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
-    {% for material, progress, has_quiz in chapter.rows %}
+    {% for material, progress, has_quiz, locked in chapter.rows %}
+      {% if locked %}
+      <div class="tile article locked" aria-disabled="true">
+        <span class="cover">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </span>
+        <span class="body">
+          <span class="kicker">{{ material.get_type_display }}{% if has_quiz %} · Quiz{% endif %}</span>
+          <span class="headline">{{ material.title }}</span>
+          <span class="foot"><span class="tag neutral">Locked · complete the rest of this chapter first</span></span>
+        </span>
+      </div>
+      {% else %}
       <a href="{% url 'material' material.id %}" class="tile article type-{{ material.type }}">
         <span class="cover">
         {% if material.type == 'video' %}
@@ -44,6 +56,7 @@
           </span>
         </span>
       </a>
+      {% endif %}
     {% endfor %}
     </div>
     </section>
@@ -59,6 +72,10 @@
       color-mix(in srgb,var(--accent) 45%,transparent),
       color-mix(in srgb,var(--accent) 16%,transparent) 42%,transparent 72%)}
   body.spot-on #spot{opacity:1}
+  /* No opacity fade: keeps AA contrast (COM-006); lock icon + tag text carry the state. */
+  .tile.locked{cursor:not-allowed}
+  .tile.locked .cover{color:var(--muted)}
+  .tile.locked:hover{border-color:var(--line);box-shadow:none;transform:none}
   @media (hover:none),(prefers-reduced-motion:reduce){#spot{display:none}}
   </style>
 

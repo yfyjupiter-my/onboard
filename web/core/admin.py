@@ -65,8 +65,8 @@ class QuestionInline(admin.TabularInline):
 
 @admin.register(Material)
 class MaterialAdmin(admin.ModelAdmin):
-    list_display = ("title", "chapter", "type", "is_active", "created_at")
-    list_filter = ("chapter", "type", "is_active")
+    list_display = ("title", "chapter", "type", "is_active", "locked", "created_at")
+    list_filter = ("chapter", "type", "is_active", "locked")
     search_fields = ("title",)
     inlines = [QuizInline]
     formfield_overrides = {models.FileField: {"widget": ReplaceableFileInput}}

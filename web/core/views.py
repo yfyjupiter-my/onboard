@@ -23,6 +23,14 @@ class JoinerLoginForm(AuthenticationForm):
             )
 
 
+def _open_material(request, pk):
+    # T6.5: server-side gate for every material endpoint, so a locked material can't be
+    # reached by typing its URL. BUS-010: returns None when locked; callers redirect home
+    # (the checklist explains the lock) instead of a bare 403 page.
+    material = get_object_or_404(Material, pk=pk, is_active=True)
+    return None if material.is_locked_for(request.user) else material
+
+
 @login_required
 def checklist(request):
     # All active materials left-joined to this user's progress. No lazy create here
@@ -31,14 +39,21 @@ def checklist(request):
     quiz_material_ids = set(
         Material.objects.filter(is_active=True, quiz__isnull=False).values_list("id", flat=True)
     )
-    materials = Material.objects.filter(is_active=True).order_by("chapter", "created_at")
+    materials = list(Material.objects.filter(is_active=True).order_by("chapter", "created_at"))
+    # T6.5: same rule as Material.is_locked_for, computed once instead of per tile.
+    # BUS-009: a material the joiner already completed is never locked.
+    completed = {mid for mid, p in progress.items() if p.status == JoinerProgress.COMPLETED}
     # BUS-008: group by the chapters materials actually have, not CHAPTER_CHOICES, so an unlisted
     # chapter value can never hide an active material. Empty chapters simply don't appear.
     names = dict(Material.CHAPTER_CHOICES)
     chapters = []
     for number, group in groupby(materials, key=attrgetter("chapter")):
-        rows = [(m, progress.get(m.id), m.id in quiz_material_ids) for m in group]
-        done = sum(1 for _, p, _ in rows if p and p.status == JoinerProgress.COMPLETED)
+        group = list(group)
+        chapter_open = all(m.id in completed for m in group if not m.locked)  # T6.5: per chapter
+        rows = [(m, progress.get(m.id), m.id in quiz_material_ids,
+                 m.locked and m.id not in completed and not chapter_open)
+                for m in group]
+        done = sum(1 for _, p, _, _ in rows if p and p.status == JoinerProgress.COMPLETED)
         chapters.append({"number": number, "name": names.get(number, f"Chapter {number}"),
                          "rows": rows, "done": done})
     return render(request, "checklist.html", {"chapters": chapters})
@@ -46,7 +61,9 @@ def checklist(request):
 
 @login_required
 def material_view(request, pk):
-    material = get_object_or_404(Material, pk=pk, is_active=True)
+    material = _open_material(request, pk)
+    if material is None:
+        return redirect("home")
     progress, _ = JoinerProgress.objects.get_or_create(user=request.user, material=material)
     has_quiz = hasattr(material, "quiz")
 
@@ -67,7 +84,9 @@ def material_view(request, pk):
 @login_required
 @require_POST
 def mark_complete(request, pk):
-    material = get_object_or_404(Material, pk=pk, is_active=True)
+    material = _open_material(request, pk)
+    if material is None:
+        return redirect("home")
     if hasattr(material, "quiz"):
         raise Http404("quiz materials complete via the quiz")  # can't shortcut the quiz gate
     # BUS-005: the "reviewed" gate is client-side, so at minimum require a real
@@ -82,7 +101,9 @@ def mark_complete(request, pk):
 
 @login_required
 def quiz(request, pk):
-    material = get_object_or_404(Material, pk=pk, is_active=True)
+    material = _open_material(request, pk)
+    if material is None:
+        return redirect("home")
     if not hasattr(material, "quiz"):
         raise Http404("no quiz for this material")
     quiz_obj = material.quiz

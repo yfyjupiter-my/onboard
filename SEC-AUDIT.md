@@ -191,3 +191,27 @@ Gate verdict: **PASS** — no blocker, no joiner-reachable issue. Two one-liners
 - SEC-013 ✅ Fixed — `export_all_view` wraps `get_changelist_instance` in `try/except IncorrectLookupParameters` → 302 to the joiner changelist. Verified: `?is_active__exact=bogus` → **302 /admin/core/joiner/** (was 500).
 - SEC-014 — unchanged, accepted as inherited Django behaviour. Revisit with a `lookup_allowed` allowlist if staff access widens past HR/IT.
 - Regression cover: `core/tests.py` gains `test_export_needs_progress_permission` + `test_export_survives_a_bad_filter_value`. `manage.py test core` **27/27**. `check --deploy` (DEBUG=False) clean except W009 (placeholder SECRET_KEY = operator value).
+
+## QA check — locked materials (T6.5) — 2026-09-14
+
+SEC-015: presigned file URL issued before a material was locked stays valid until expiry
+Verdict: ✅ Correct — accepted, informational
+Action Needed: none. A URL handed out before HR ticks "locked" works for ≤15 min (`X-Amz-Expires=900`). The lock is about completion order, not confidentiality, and no new URL is generated while the material is locked.
+
+SEC-OK (verified good):
+- Every material endpoint goes through `_open_material`: `material_view` (GET), `mark_complete` (POST), and `quiz` (GET + POST). No path reaches `source_url`/presign, scoring or progress writes before the lock check. Tests assert 403 on all three.
+- The locked tile renders no `href`, file URL or link URL, only the title (autoescaped) and type.
+- No existence oracle: inactive/unknown → 404 before the lock check, and active locked → 403. Active materials are already listed to every joiner on the checklist, so nothing new is revealed.
+- Authorization is scoped to `request.user`, so one joiner's progress can't unlock another's. There's no new joiner input (the lock state is computed only), no raw SQL, and `pk` uses the `<int:>` converter.
+- Admin: `locked` sits behind the existing `change_material` permission. CSRF on `mark_complete`/quiz POST is unchanged.
+
+Gate: **PASS**, no vulnerabilities, no blocker.
+
+## QA check — locked materials scoped per chapter (T6.5) — 2026-09-14
+
+SEC-OK (verified good):
+- The gate hasn't moved: `material_view`, `mark_complete` and `quiz` still call `_open_material` before any presign, scoring or progress write. The only change is an extra ORM filter, `chapter=self.chapter`, whose value comes from the DB row, not from the request. There's no raw SQL.
+- No new joiner input and no new template output (the tile text is static). Authorization is still scoped to `request.user`.
+- Relaxing the scope doesn't let a joiner skip their own chapter. A locked material still needs every unlocked material in its chapter completed, checked server-side.
+
+Gate: **PASS**, no vulnerabilities, no blocker.

@@ -36,6 +36,10 @@ class Material(models.Model):
     file = models.FileField(upload_to="materials/", blank=True)  # blank for LINK
     url = models.URLField(blank=True)  # LINK only; embedded in an iframe
     is_active = models.BooleanField(default=True)
+    locked = models.BooleanField(
+        "locked until the rest of its chapter is completed", default=False,
+        help_text="Joiners can only open this once every other active, unlocked material in the same chapter is completed.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
@@ -47,6 +51,17 @@ class Material(models.Model):
     @property
     def source_url(self):
         return embeddable(self.url) if self.type == self.LINK else self.file.url
+
+    def is_locked_for(self, user):
+        # T6.5: locked materials wait on every active, *unlocked* material in the same chapter
+        # (locked ones never block each other, so two locked materials can't deadlock).
+        if not self.locked:
+            return False
+        done = JoinerProgress.objects.filter(user=user, status=JoinerProgress.COMPLETED)
+        if done.filter(material=self).exists():
+            return False  # BUS-009: already completed stays open when new materials are added
+        return (Material.objects.filter(is_active=True, locked=False, chapter=self.chapter)
+                .exclude(pk__in=done.values("material_id")).exists())
 
     def __str__(self):
         return self.title

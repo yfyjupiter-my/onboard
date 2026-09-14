@@ -114,3 +114,41 @@ Gate: **PASS**, no blocker. One latent item (BUS-008) with a view-only fix.
 
 ### Fixes applied — 2026-09-14
 - BUS-008 ✅ Fixed — `checklist()` now groups with `itertools.groupby(materials, attrgetter("chapter"))` over the existing `order_by("chapter", "created_at")`, and the name comes from `dict(CHAPTER_CHOICES).get(n, f"Chapter {n}")`. Every active material always renders; a chapter value that isn't listed shows as "Chapter N" instead of disappearing. `ChecklistChapterTests` asserts that a `chapter=9` material shows up. `manage.py test core` 28/28.
+
+## QA check — locked materials (T6.5) — 2026-09-14
+
+BUS-009: a completed locked material locks again when a new material is added
+Verdict: ✅ Fixed — `is_locked_for` and `checklist()` now treat an already-completed material as never locked. The regression assert is in `LockedMaterialTests`.
+Action Needed: `Material.is_locked_for()` ignores the joiner's own progress on the locked material. Example: a joiner passes "Final assessment", then HR adds or re-activates any unlocked material. The final assessment locks again, so its tile shows "Locked · complete the other materials first" instead of "Completed". The chapter count still counts it as done (`done / total`), so the tile and the count disagree, and the joiner can't reopen what they already passed. Fix: a material the user has already `COMPLETED` is never locked. Add that check in `is_locked_for` (`JoinerProgress … material=self, status=COMPLETED`) and in `checklist()` (`m.locked and m.id not in completed and not unlocked_all_done`). Then add one assert to `LockedMaterialTests`: complete the locked one, add a new unlocked material, and check it stays open.
+
+BUS-010: a locked URL shows Django's bare "403 Forbidden" page
+Verdict: ✅ Fixed — `_open_material` returns None when locked and all 3 endpoints redirect to `home`. The gate still runs before `get_or_create`, and the tests now expect 302.
+Action Needed: there's no `403.html`, so a stale tab or bookmark to a locked material shows an unstyled error with no way back. Fix (no new template): in `_open_material`, redirect to `home` instead of raising `PermissionDenied`. The checklist already explains the lock. Keep the check before any `get_or_create`, and update the 3 status assertions in `LockedMaterialTests` from 403 to 302.
+
+BUS-OK (verified good):
+- The checklist and the server agree: `unlocked_all_done` (in-memory) and `is_locked_for` (DB) use the same set of active, `locked=False` materials and count `COMPLETED` only. A failed quiz (`VIEWED`) does not unlock anything.
+- No deadlock: locked materials never block each other, and with everything locked, `all([])` / `.exists()` both return open.
+- Deactivating a material removes it from the requirement on both sides, and inactive materials 404 before the lock check.
+- A quiz on a locked material can't be scored: the gate runs before `get_or_create`, so no `JoinerProgress` row is written (asserted in the test).
+- Migration `0007` is an additive `AddField(default=False)`, so existing materials stay unlocked. Applied on the live DB.
+
+Gate: **PASS**, no blocker. BUS-009 and BUS-010 fixed, 29/29 tests green.
+
+## QA check — locked materials scoped per chapter (T6.5) — 2026-09-14
+
+BUS-011: a chapter whose materials are all locked opens straight away
+Verdict: ✅ Accepted (option a, 2026-09-14) — HR keeps at least one unlocked material in any chapter that uses locks. No code change.
+Action Needed: locks now look only at the material's own chapter, and locked materials never block each other. So if a chapter contains only locked materials, for example a "Final assessment" on its own in Chapter 3, it opens immediately and doesn't wait for Chapters 1–2. The admin help text says "in the same chapter", so this is documented. Pick one: (a) accept it and tell HR to keep at least one unlocked material in a chapter that uses locks, or (b) extend the rule so that a chapter with no unlocked materials waits on the earlier chapters. Recommend (a), since it needs no code.
+
+BUS-012: TASKS.md T6.5 still quotes the old label and tile text
+Verdict: ✅ Fixed — T6.5 now says "locked until the rest of its chapter is completed" / "Locked · complete the rest of this chapter first" / "all-locked chapter = open".
+Action Needed: docs only.
+
+BUS-OK (verified good):
+- The checklist and the server agree. `checklist()` checks each `groupby` chapter group, which holds active materials ordered by chapter. `is_locked_for` filters `is_active=True, locked=False, chapter=self.chapter`. Both use the same set and count `COMPLETED` only. The old `unlocked_all_done` from the earlier BUS-OK note is gone.
+- An unfinished material in another chapter doesn't block. This is asserted in `LockedMaterialTests` on the checklist and in `is_locked_for`.
+- Moving a material to another chapter recomputes its lock against the new chapter on both sides, and progress stays attached to the material. BUS-009 still holds: a completed material is never locked.
+- No deadlock: locked materials still never block each other.
+- `0007` changed only `verbose_name`/`help_text`, so there's no schema change and `makemigrations --check` reports no changes.
+
+Gate: **PASS**, no blocker. One product decision is open (BUS-011). 29/29 tests.

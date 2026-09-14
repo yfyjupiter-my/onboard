@@ -110,3 +110,11 @@
 - **QA fixes ✅ (BUS-008 + COM-006)** — checklist groups by the chapters materials actually have (a chapter value outside the list renders as "Chapter N" instead of hiding the material). Tokens darkened for AA: `--accent #a84e08`, `--muted #6f6457` (app.css + DESIGN.md), and every small amber/grey text now clears 4.5:1. 28/28 tests; served CSS verified.
 
 - **Admin file "Remove" button ✅** — Material change form: "Clear" checkbox replaced by a **Remove** button (`core/templates/admin/widgets/removable_file_input.html`, `formaction` → `MaterialAdmin.remove_file_view`, POST + CSRF + change-perm). Empties `file` and deletes the MinIO object on commit. If a URL exists, removal switches type to Link (URL takes over); refused only when the file is the sole content. Verified in-container; `test core` green.
+
+- **Locked materials ✅ (T6.5)** — Material admin gets a "Locked until all other materials are completed" checkbox. It's gated on the server (viewer, Mark complete, quiz → 403), and the checklist shows a lock tile. Migration `0007` (additive). 29/29 tests; web redeployed.
+
+- **QA check (Business Logic + Security) on T6.5 ✅ PASS, 2 open (none blocking)** — Security clean (SEC-015 informational only). **BUS-009**: a completed locked material locks again when HR adds a new material (the tile says Locked while the count says done), so completed should never be locked. **BUS-010**: a locked URL shows the bare Django 403 page, so redirect to the checklist instead.
+
+- **BUS-009/BUS-010 fixed** — a completed locked material stays open when new materials are added (model + checklist). A locked URL now redirects to the checklist instead of a bare 403. 29/29 tests green.
+- **Locked materials scoped per chapter ✅ (T6.5)** — a locked material now waits only on the unlocked materials in its own chapter (model + checklist). Label: "Locked until the rest of its chapter is completed". Edited `0007` metadata only, so no new migration. 29/29 tests.
+- **QA check (Business Logic + Security) on per-chapter locks ✅ PASS, no blocker** — Security is clean. **BUS-011 ✅ accepted (option a)**: a chapter where every material is locked opens right away, so HR keeps at least one unlocked material in any chapter that uses locks. BUS-012: T6.5 docs text fixed.

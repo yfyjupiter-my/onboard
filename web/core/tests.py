@@ -179,6 +179,42 @@ class ChecklistChapterTests(TestCase):
         self.assertEqual((chapters[-1]["name"], [r[0] for r in chapters[-1]["rows"]]), ("Chapter 9", [stray]))
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
+class LockedMaterialTests(TestCase):
+    def test_locked_until_other_materials_completed(self):
+        user = User.objects.create_user("j4", password="pw-testing-123")
+        self.client.force_login(user)
+        intro = Material.objects.create(title="Intro", type=Material.LINK, url="https://x.test")
+        final = Material.objects.create(title="Final", type=Material.LINK, url="https://x.test", locked=True)
+        also_locked = Material.objects.create(title="Also", type=Material.LINK, url="https://x.test", locked=True)
+        Material.objects.create(title="Retired", type=Material.LINK, url="https://x.test", is_active=False)
+        Quiz.objects.create(material=final)
+
+        rows = self.client.get(reverse("home")).context["chapters"][0]["rows"]
+        self.assertEqual([(r[0], r[3]) for r in rows], [(intro, False), (final, True), (also_locked, True)])
+        # Every endpoint is gated server-side, not just hidden on the checklist.
+        self.assertEqual(self.client.get(reverse("material", args=[final.pk])).status_code, 302)
+        self.assertEqual(self.client.post(reverse("quiz", args=[final.pk]), {}).status_code, 302)
+        self.assertEqual(self.client.post(reverse("mark_complete", args=[also_locked.pk])).status_code, 302)
+        self.assertFalse(JoinerProgress.objects.filter(material__locked=True).exists())
+
+        # Completing the unlocked one opens both locked ones (inactive + locked never block),
+        # and an unfinished material in another chapter doesn't block chapter 1.
+        Material.objects.create(title="Ch2", type=Material.LINK, url="https://x.test", chapter=2)
+        JoinerProgress.objects.create(user=user, material=intro, status=JoinerProgress.COMPLETED)
+        rows = self.client.get(reverse("home")).context["chapters"][0]["rows"]
+        self.assertEqual([r[3] for r in rows], [False, False, False])
+        self.assertFalse(final.is_locked_for(user))
+        self.assertEqual(self.client.get(reverse("material", args=[final.pk])).status_code, 200)
+
+        # BUS-009: once completed, a newly added unlocked material doesn't re-lock it.
+        JoinerProgress.objects.filter(user=user, material=final).update(status=JoinerProgress.COMPLETED)
+        Material.objects.create(title="New", type=Material.LINK, url="https://x.test")
+        self.assertFalse(final.is_locked_for(user))
+        rows = self.client.get(reverse("home")).context["chapters"][0]["rows"]
+        self.assertEqual([r[3] for r in rows if r[0] == final], [False])
+
+
 class PresignTests(TestCase):
     def test_file_url_is_presigned_and_scoped_to_media(self):
         material = Material.objects.create(title="Doc", type=Material.PDF, file="materials/x.pdf")
