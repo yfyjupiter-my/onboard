@@ -124,3 +124,5 @@
 - **QA check T6.6 (Robustness + Business Logic) — PASS, 2 pending** — ROB-001 `CSRF_USE_SESSIONS` makes every anonymous login-page GET write a session row and nothing runs `clearsessions` (recommend dropping the setting + clearsessions on startup). BUS-013 admin "View site" → frontend login that rejects staff (set `site_url=None`). BUS-014 promoted-staff keeps frontend session: accepted. See `ROB-AUDIT.md`, `BUS-AUDIT.md`.
 
 - **ROB-001 + BUS-013 fixed ✅** — dropped `CSRF_USE_SESSIONS` (the healthcheck alone was writing ~8.6k session rows/day); `clearsessions` runs on `web` start + README daily cron (verified: expired 18→0, anonymous GETs +0 rows). Admin "View site" link hidden (`site_url=None`). Tests 32/32. No open items from the T6.6 QA check.
+
+- **QA check (Robustness + Runtime) — PASS, 1 pending** — ROB-002/003 `clearsessions` startup + cron failure modes are safe (single indexed DELETE, restart policy). RUN-002 startup cost 1.5s, OK. **RUN-001 pending:** gunicorn runs 1 sync worker / 30s timeout, so one big admin upload or export blocks all joiners + the healthcheck → add `--workers 3 --timeout 120`. See `ROB-AUDIT.md`, `RUN-AUDIT.md`.
