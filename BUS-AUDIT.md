@@ -173,3 +173,32 @@ BUS-OK (verified good):
 Fix (2026-09-14): `admin.site.site_url = None` in `core/admin.py`; test `test_admin_has_no_view_site_link`. 32/32.
 
 Gate: **PASS**, no blocker, nothing pending.
+
+---
+
+## QA check — Business Logic & State (2026-09-14, commit 07a4ace: Joiners admin "last activity" / "completed")
+
+BUS-015: "last activity" is login or completion time, not a live presence status
+Verdict: ⚠️ Pending (low)
+Action Needed: Sessions last 2 weeks (`SESSION_COOKIE_AGE=1209600`) and `last_login` only changes on a fresh login. A joiner who stays logged in and only *views* materials keeps an old time (viewing has no timestamp). Completing a material or passing a quiz does update it. Choose one:
+- [x] BUS-015a rename the column to "last login / completion" so HR doesn't read it as online status. One line. **Recommended.**
+- [ ] BUS-015b accept as is. A live "last seen" would need a new field, middleware and a DB write on every request, and a new TASKS item.
+
+BUS-016: joiners with no login and no completion sort to the top of "last activity ↓"
+Verdict: ⚠️ Pending (low, cosmetic)
+Action Needed: Postgres sorts NULL first in descending order, so a newly created joiner who never logged in lands above active joiners. No current data triggers this (all 3 joiners have logged in).
+- [x] BUS-016a `ordering=F("last_activity").asc(nulls_first=True)`. Declared ascending because the admin reverses it for "newest first", which then puts empty values last (declaring `desc` would make the sort arrows backwards).
+
+BUS-OK (verified good):
+- `completed / total` agree: both only count **active** materials. Checked live: angie.ong 0/10, chris.goh 2/10, john.chen 10/10. Deactivating a material no longer pushes the count past the total (3 progress rows point at inactive materials today).
+- The extra `progress → material` join is a foreign key (one row each), so completed counts don't double.
+- `GREATEST(last_login, MAX(completed_at))` ignores NULLs on Postgres (the only supported database). A joiner who has logged in but completed nothing shows their login time (angie.ong 2026-08-05).
+- Frontend login updates `last_login` (Django's `user_logged_in` receiver is connected; checked against chris.goh's live data).
+- Staff are still excluded (`is_staff=False`), so admin logins never show up as joiner activity.
+- CSV export is unchanged and still lists every progress row, including inactive materials. That's intended as the historical record.
+
+Gate: **PASS**, no blocker. 2 low items waiting for your decision.
+
+Fix (2026-09-14): column now "Last login / completion"; ordering `asc(nulls_first=True)` → newest-first reverses to `desc nulls_last` (verified via `reverse_ordering()`); both sort directions 200 with correct order live. Tests 37/37.
+
+Gate: **PASS**, no blocker, nothing pending.

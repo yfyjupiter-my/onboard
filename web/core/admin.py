@@ -196,7 +196,8 @@ class JoinerAdmin(admin.ModelAdmin):
     def completed(self, obj):
         return f"{obj.completed_count} / {obj.total_count}"
 
-    @admin.display(description="last activity", ordering="last_activity")
+    # BUS-015/016: login or completion time, not live presence; never-active joiners sort last when newest-first (admin reverses this).
+    @admin.display(description="last login / completion", ordering=F("last_activity").asc(nulls_first=True))
     def last_activity(self, obj):
         return obj.last_activity
 

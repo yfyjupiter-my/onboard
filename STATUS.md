@@ -148,3 +148,7 @@
 - **Joiners admin "not updating" ✅ diagnosed** — not a caching/real-time bug: DB has **0 completed rows** for any joiner (chris.goh/john.chen only `viewed`; angie.ong none); logs show material GETs but no `POST /material/<id>/complete/`. Completion requires clicking **Mark complete** (or passing the quiz). Admin list is not live — refresh page. Side fix: `JoinerAdmin` `completed_count` now counts only **active** materials (inactive ones inflated "X / total"). Tests green.
 
 - **Joiners admin "always offline" ✅** — there was never online tracking: `active` = account enabled, `last activity` = last *completion* only (blank when nothing finished). `last activity` now = `GREATEST(last_login, last completed_at)` (Postgres skips NULLs), so it fills in on login. No migration. Live presence badge deliberately skipped (would need a per-request DB write). Tests 37/37.
+
+- **QA check (Business Logic) on 07a4ace — PASS, 2 low pending** — BUS-015 "last activity" ≠ presence (2-week sessions, views not timestamped) → rename column (recommended) or accept. BUS-016 never-logged-in joiners sort first on desc → `nulls_last`. Verified: completed/total both active-only, no join inflation, GREATEST NULL-safe, frontend login updates `last_login`. See `BUS-AUDIT.md`.
+
+- **BUS-015a + BUS-016 fixed ✅** — Joiners column renamed "Last login / completion"; newest-first sort puts never-active joiners last (`asc(nulls_first=True)`, admin reverses). Verified live both directions. Tests 37/37. No open audit items.
