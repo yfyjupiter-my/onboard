@@ -105,6 +105,7 @@ Log in at `/admin/`.
 In `/admin/`:
 
 1. **Materials** — title, type (`pdf` or `video`), and the file itself (uploaded straight into MinIO; nginx allows up to 512 MB).
+   **Videos must have captions burned in** (COM-009, WCAG 1.2.2). There's no separate captions file, so export the MP4 with open captions (e.g. HandBrake "Burn In", or your video tool's caption export) before uploading.
 2. **Quiz** (optional, 0 or 1 per material) — `pass_mark` defaults to 80, max 100.
 3. **Questions / Choices** — edited inline under the quiz. Each question must have **exactly one** correct choice; the admin form rejects anything else (a question with zero correct answers would be unpassable).
 

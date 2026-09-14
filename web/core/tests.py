@@ -168,6 +168,20 @@ class NoQuizViewTests(TestCase):
         resp = self.client.post(reverse("mark_complete", args=[self.material.pk]))
         self.assertEqual(resp.status_code, 404)
 
+    def test_locked_button_explains_itself(self):
+        # COM-008
+        resp = self.client.get(reverse("material", args=[self.material.pk]))
+        self.assertContains(resp, 'aria-describedby="mc-hint"')
+        self.assertContains(resp, "Watch the video to the end to enable")
+
+    def test_pdf_has_accessible_open_link_forced_to_pdf(self):
+        # COM-007b: native-viewer link; forced content type keeps SEC-010 (no same-origin HTML).
+        pdf = Material.objects.create(title="Doc", type=Material.PDF, file="materials/x.pdf")
+        resp = self.client.get(reverse("material", args=[pdf.pk]))
+        self.assertContains(resp, "Open PDF in browser viewer")
+        self.assertContains(resp, "response-content-type=application%2Fpdf")
+        self.assertContains(resp, 'role="region"')
+
 
 @override_settings(SECURE_SSL_REDIRECT=False)
 class ChecklistChapterTests(TestCase):
@@ -238,6 +252,11 @@ class JoinerLoginFormTests(TestCase):
         resp = self.client.post(reverse("login"), {"username": "hr", "password": "pw-testing-123"})
         self.assertEqual(resp.status_code, 200)  # re-rendered, not logged in
         self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_login_error_is_announced(self):
+        # COM-011
+        resp = self.client.post(reverse("login"), {"username": "nobody", "password": "wrong-pass-123"})
+        self.assertContains(resp, 'role="alert"')
 
     def test_joiner_allowed_at_frontend_login(self):
         User.objects.create_user("joiner", password="pw-testing-123")

@@ -1,7 +1,15 @@
+# COM-012: rotate container logs (nginx client IPs, export audit lines) — ≤ 50 MB per service.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-onboard}
       POSTGRES_USER: ${POSTGRES_USER:-onboard}
@@ -17,6 +25,7 @@ services:
   minio:
     image: minio/minio:latest
     restart: unless-stopped
+    logging: *logging
     command: server /data --console-address ":9001"
     ports:
       # SEC-009: loopback only — the console logs in with MinIO root creds. Use an SSH
@@ -36,6 +45,7 @@ services:
   web:
     build: ./web
     restart: unless-stopped
+    logging: *logging
     env_file: .env
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-onboard}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-onboard}
@@ -62,6 +72,7 @@ services:
   nginx:
     image: nginx:alpine
     restart: unless-stopped
+    logging: *logging
     ports:
       - "8080:80"
     environment:

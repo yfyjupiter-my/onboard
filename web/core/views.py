@@ -73,11 +73,18 @@ def material_view(request, pk):
         progress.status = JoinerProgress.VIEWED
         progress.save()
 
+    # COM-007b: top-level "Open PDF" link. Forcing the response type means a non-PDF upload
+    # (HTML/SVG saved as "pdf") can't render as a same-origin page (SEC-010 still holds).
+    pdf_open_url = (
+        material.file.storage.url(material.file.name, parameters={"ResponseContentType": "application/pdf"})
+        if material.type == Material.PDF else None
+    )
     return render(
         request,
         "material.html",
         {"material": material, "progress": progress, "has_quiz": has_quiz,
-         "file_url": material.source_url},  # file: presigned, 15-min · link: the URL as-is
+         "file_url": material.source_url,  # file: presigned, 15-min · link: the URL as-is
+         "pdf_open_url": pdf_open_url},
     )
 
 

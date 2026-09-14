@@ -84,35 +84,35 @@ Gate: **PASS**, no blocker. COM-006 is an existing token contrast issue, now vis
 Scope: `base.html`, `_topbar.html`, `registration/login.html`, `checklist.html`, `material.html`, `quiz.html`, `app.css`; log and session retention, erasure.
 
 COM-007: PDFs are canvas images only, so their text is invisible to screen readers
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: `material.html` renders each PDF page with PDF.js into a bare `<canvas>`, with no text layer and no accessible name. A screen reader announces nothing, and the text can't be selected, searched or reflowed when zoomed (WCAG 1.1.1 / 1.4.5, Level A/AA). The `#pdfview` scroll box also has no `tabindex`, so in Safari keyboard users can't scroll it, which means they can't reach the end and "Mark complete" stays locked.
-- [ ] COM-007a give `#pdfview` `tabindex="0"` + `role="region"` + `aria-label="{{ material.title }} (PDF)"`, and give each canvas `role="img" aria-label="Page n of N"`.
-- [ ] COM-007b **new element, needs confirmation:** add an "Open PDF in browser viewer" link (the presigned `file_url`, sandbox rules unchanged) under the viewer, so screen-reader users get the native, accessible PDF view. Alternative: turn on PDF.js's text layer (more code, plus vendoring `pdf_viewer.css`).
+- [x] COM-007a give `#pdfview` `tabindex="0"` + `role="region"` + `aria-label="{{ material.title }} (PDF)"`, and give each canvas `role="img" aria-label="Page n of N"`.
+- [x] COM-007b **new element, needs confirmation:** add an "Open PDF in browser viewer" link (the presigned `file_url`, sandbox rules unchanged) under the viewer, so screen-reader users get the native, accessible PDF view. Alternative: turn on PDF.js's text layer (more code, plus vendoring `pdf_viewer.css`).
 
 COM-008: a disabled "Mark complete" button gives no reason
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: the button is disabled with `:disabled="!reviewed"`, and no text says what unlocks it. Screen-reader users hear only "dimmed". Sighted users also have to guess that they need to scroll the PDF or watch the video to the end (WCAG 3.3.2).
-- [ ] COM-008a add a short hint next to the button, shown while locked ("Scroll to the end to enable" / "Watch to the end to enable" / "Loading…" for links), and point the button at it with `aria-describedby`. **New text element, needs confirmation.**
+- [x] COM-008a add a short hint next to the button, shown while locked ("Scroll to the end to enable" / "Watch to the end to enable" / "Loading…" for links), and point the button at it with `aria-describedby`. **New text element, needs confirmation.**
 
 COM-009: videos have no captions
-Verdict: ⚠️ Pending, needs a product decision
+Verdict: ✅ Correct (fixed)
 Action Needed: `<video>` has no `<track kind="captions">`, and `Material` has nowhere to store a caption file. WCAG 1.2.2 (Level A) requires captions for prerecorded video with audio, which matters for deaf or hard-of-hearing joiners and for anyone watching without sound.
-- [ ] COM-009a decide: (a) add an optional `Material.captions` WebVTT file (MinIO, presigned like the video) plus `<track>`, which is a new field and migration; or (b) policy only: HR uploads videos with burned-in captions, noted in README Step 5. (b) needs no code.
+- [x] COM-009a decide: (a) add an optional `Material.captions` WebVTT file (MinIO, presigned like the video) plus `<track>`, which is a new field and migration; or (b) policy only: HR uploads videos with burned-in captions, noted in README Step 5. (b) needs no code.
 
 COM-010: the "Signing you in…" status is never announced
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: `#login-loading` has `aria-hidden="true"` on the container. That hides its child `<p role="status">`, so the 3-second hold after pressing Log in is silent for screen-reader users.
-- [ ] COM-010a remove `aria-hidden="true"` from `#login-loading` only. Its decorative children (ring, orbits, mark) already have their own `aria-hidden`.
+- [x] COM-010a remove `aria-hidden="true"` from `#login-loading` only. Its decorative children (ring, orbits, mark) already have their own `aria-hidden`.
 
 COM-011: login errors aren't announced
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: after a failed login the page re-renders with `<p class="tag todo">Please enter a correct username…</p>`. There's no `role="alert"`, and the message isn't linked to the fields, so a screen reader doesn't read it (WCAG 3.3.1 / 4.1.3).
-- [ ] COM-011a add `role="alert"` to the error `<p>` in `registration/login.html`.
+- [x] COM-011a add `role="alert"` to the error `<p>` in `registration/login.html`.
 
 COM-012: container logs keep client IPs and staff usernames forever, with no size limit
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: Docker uses the `json-file` driver with an empty `LogConfig` (no `/etc/docker/daemon.json`, no compose `logging:`). The nginx access log (client IP, path, user agent) and the `core` export audit line (staff username) go to stdout and are never rotated. That's personal data kept without any time limit (GDPR storage limitation), and unbounded disk use.
-- [ ] COM-012a compose: one shared `x-logging: &logging {driver: json-file, options: {max-size: "10m", max-file: "5"}}` and `logging: *logging` on all 4 services. Trade-off: this also caps the COM-004 export audit trail (~50 MB per service). If exports must be auditable longer, ship logs to a retained store and note that in README.
+- [x] COM-012a compose: one shared `x-logging: &logging {driver: json-file, options: {max-size: "10m", max-file: "5"}}` and `logging: *logging` on all 4 services. Trade-off: this also caps the COM-004 export audit trail (~50 MB per service). If exports must be auditable longer, ship logs to a retained store and note that in README.
 
 A11y and compliance (verified good):
 - `<html lang="en">`. Global `prefers-reduced-motion` switches off every animation (`app.css:129`), and the login typewriter and loader also have their own reduced-motion rules.
@@ -123,7 +123,15 @@ A11y and compliance (verified good):
 - Erasure: deleting a `User` cascades to `JoinerProgress` (`on_delete=CASCADE`). Their session rows then hold only a dead user id and are purged by `clearsessions` (ROB-001). CSV copies outside the system are covered by the README handling note (COM-005).
 - Sessions last 2 weeks (Django default) and expired rows are purged on start and by daily cron.
 
-Gate: **PASS**, no blocker for internal use. Six pending items:
-- COM-007, COM-009 and COM-012 matter most. COM-007 is a Level A failure for PDF content, COM-009 is a Level A failure for video, and COM-012 is unbounded personal-data retention.
-- COM-008, COM-010 and COM-011 are small fixes.
-- COM-007b, COM-008a and COM-009a add new elements or fields, so they need confirmation before implementing.
+Gate: **PASS**, no blocker for internal use.
+
+### Fixes applied — 2026-09-14 (user-approved: COM-007a/b, COM-008, COM-010, COM-011, COM-012, COM-009 option b)
+- COM-007 ✅ `#pdfview` gets `tabindex="0" role="region" aria-label="<title> (PDF)"`; each canvas gets `role="img" aria-label="Page n of N"`. New **"Open PDF in browser viewer"** link (new tab, `rel=noopener`), presigned with `ResponseContentType=application/pdf`. Verified live against an HTML file uploaded as "pdf": the plain presign serves `text/html`, the forced link serves `application/pdf` + nosniff, so the link can't become a same-origin HTML page (SEC-010 holds). Probe object deleted.
+- COM-008 ✅ a hint next to "Mark complete" while it's locked ("Scroll to the end of the document…" / "Watch the video to the end…" / "Enables once the page has loaded"), hidden via `x-show` once reviewed; the button has `aria-describedby="mc-hint"`.
+- COM-009 ✅ option (b): README Step 5 requires burned-in captions for videos. No code or schema change.
+- COM-010 ✅ `aria-hidden` removed from `#login-loading` (it's still `hidden` until submit; decorative children keep their own `aria-hidden`).
+- COM-011 ✅ `role="alert"` on login error messages.
+- COM-012 ✅ `x-logging` anchor (`json-file`, `max-size 10m`, `max-file 5`) on all 4 services. `docker inspect` confirms the LogConfig on db, minio, web and nginx. The COM-004 export audit trail is now capped at ~50 MB of web logs; ship logs elsewhere if longer retention is needed.
+- Tests: `manage.py test core` 35/35 (+3: `test_locked_button_explains_itself`, `test_pdf_has_accessible_open_link_forced_to_pdf`, `test_login_error_is_announced`).
+
+Gate: **PASS**, nothing pending.

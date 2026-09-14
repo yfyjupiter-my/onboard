@@ -11,7 +11,7 @@
 
     {% if material.type == 'pdf' %}
       {% load static %}
-      <div id="pdfview"
+      <div id="pdfview" tabindex="0" role="region" aria-label="{{ material.title }} (PDF)"
            @scroll="if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 8) reviewed = true"
            style="width:100%;height:70vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px"></div>
       <script type="module">
@@ -25,6 +25,8 @@
             const scale = (container.clientWidth - 24) / page.getViewport({ scale: 1 }).width;
             const viewport = page.getViewport({ scale });
             const canvas = document.createElement('canvas');
+            canvas.setAttribute('role', 'img');  // COM-007: pages are pixels; name them, link to the native viewer below
+            canvas.setAttribute('aria-label', `Page ${n} of ${pdf.numPages}`);
             canvas.width = viewport.width;
             canvas.height = viewport.height;
             canvas.style.cssText = 'display:block;margin:0 auto 12px;max-width:100%';
@@ -47,6 +49,10 @@
           container.dispatchEvent(new Event('scroll'));
         });
       </script>
+      <p style="margin:8px 0 0;font-size:14px">
+        <a href="{{ pdf_open_url }}" target="_blank" rel="noopener">Open PDF in browser viewer</a>
+        <span style="color:var(--muted)">— works with screen readers, search and zoom</span>
+      </p>
     {% elif material.type == 'link' %}
       {# ponytail: an X-Frame-Options block can't be detected cross-origin (the frame still fires `load`), so a blocked site just renders blank — prefer embeddable URLs. #}
       {# Django's SECURE_REFERRER_POLICY default (same-origin) sends no Referer cross-origin, which YouTube rejects with error 153 — override it for this frame only. #}
@@ -65,9 +71,14 @@
           {% if progress.status == 'completed' %}Retake quiz{% else %}Take the quiz{% endif %}
         </a>
     {% elif progress.status != 'completed' %}
-        <form method="post" action="{% url 'mark_complete' material.id %}">
+        <form method="post" action="{% url 'mark_complete' material.id %}"
+              style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
           {% csrf_token %}
-          <button type="submit" class="btn primary" :disabled="!reviewed">Mark complete</button>
+          {# COM-008: say what unlocks the button (x-show hides it once reviewed) #}
+          <span id="mc-hint" x-show="!reviewed" style="color:var(--muted);font-size:14px">
+            {% if material.type == 'pdf' %}Scroll to the end of the document to enable{% elif material.type == 'video' %}Watch the video to the end to enable{% else %}Enables once the page has loaded{% endif %}
+          </span>
+          <button type="submit" class="btn primary" :disabled="!reviewed" aria-describedby="mc-hint">Mark complete</button>
         </form>
     {% endif %}
     </div>

@@ -11,7 +11,7 @@
     <p style="color:var(--muted);margin:0 0 18px;text-align:center">Log in to continue your onboarding.</p>
     {% if form.non_field_errors %}
       {% for error in form.non_field_errors %}
-        <p class="tag todo" style="margin-bottom:14px">{{ error }}</p>
+        <p class="tag todo" role="alert" style="margin-bottom:14px">{{ error }}</p>
       {% endfor %}
     {% endif %}
     <form method="post" id="login-form">
@@ -25,7 +25,7 @@
   </div>
   </div>
 
-  <div id="login-loading" hidden aria-hidden="true">
+  <div id="login-loading" hidden>{# COM-010: not aria-hidden, so role=status is announced #}
     <div class="wrap">
       <div class="ring">
         <svg viewBox="0 0 120 120" aria-hidden="true">
