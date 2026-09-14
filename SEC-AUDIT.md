@@ -260,3 +260,26 @@ Fix (2026-09-14), verified live:
 - `nginx -t` OK; `/login/` 200.
 
 Gate: **PASS**, no vulnerabilities, nothing pending.
+
+## QA check — COM-007..012 changes (Open PDF link, unlock hint, login markup, log rotation) — 2026-09-14
+
+SEC-020: the plain presigned file URL still serves an upload's stored Content-Type, so a disguised HTML file renders as a same-origin page if opened directly
+Verdict: ⚠️ Pending (low: requires a staff-uploaded malicious file plus luring a joiner to the URL within 15 min)
+Action Needed: `file_url` (used by PDF.js and `<video>`) is presigned without a forced type. Verified live: an HTML body stored as `qa-probe/evil2.pdf` with `text/html` → plain presign `200 text/html`. The sandboxed fallback iframe and nosniff (SEC-010) cover the in-page paths, but a top-level navigation to that URL (it's visible in the page source) runs script on the app's origin. The new Open PDF link is **not** affected: it forces `application/pdf`.
+- [ ] SEC-020a in `Material.source_url`, presign PDFs with `ResponseContentType=application/pdf` and videos with `ResponseContentDisposition=attachment` (`<video>` and PDF.js fetch ignore disposition; a top-level visit downloads instead of rendering). Trade-off: a non-PDF mis-typed as "pdf" (an image, `.md`) no longer displays in the fallback iframe; it shows the browser's PDF error. Use type Link, or a correct upload, for those.
+
+SEC-021: presigned URLs are written to nginx access logs
+Verdict: ✅ Correct (accepted)
+Action Needed: none. `docker compose logs nginx` holds full `/media/…X-Amz-Signature=…` request lines (5 present). Each is a 15-minute GET bearer token for one object (SEC-005). Logs are host-only (Docker socket/root) and rotate at 10m×5 (COM-012). Anyone who can read them already controls the stack.
+
+SEC-OK (verified good):
+- The forced type can't be tampered with. Editing `response-content-type=application%2Fpdf` → `text%2Fhtml` gives **403**, and dropping the parameter gives **403** (SigV4 signs every query parameter).
+- The Open PDF link has `target="_blank" rel="noopener"`, so there's no `window.opener` handle. The new tab is same-origin, so `Referrer-Policy: same-origin` sends only `/material/<pk>/` to MinIO, not the signed URL.
+- No new XSS sink:
+  - `aria-label="{{ material.title }} (PDF)"` and `href="{{ pdf_open_url }}"` are auto-escaped attributes.
+  - The canvas `aria-label` interpolates only integers.
+  - The hint text is static.
+  - `role="alert"` wraps Django's own escaped form error.
+- Log rotation doesn't touch secrets or change network exposure. The export audit-trail cap is noted in COM-012.
+
+Gate: **PASS**, no exploitable vulnerability for joiners. SEC-020 is pending, low severity.
