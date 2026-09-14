@@ -82,7 +82,7 @@ docker compose up --build -d
 docker compose ps          # all four services should be healthy
 ```
 
-On startup the `web` container runs `ensure_bucket` (creates the private MinIO bucket, idempotent) → `migrate` → `collectstatic` → gunicorn on `:8000`. `db` and `minio` are health-gated, so `web` waits for them.
+On startup the `web` container runs `ensure_bucket` (creates the private MinIO bucket, idempotent) → `migrate` → `clearsessions` → `collectstatic` → gunicorn on `:8000` (3 workers, 120s timeout). `db` and `minio` are health-gated, so `web` waits for them.
 
 Open your chosen URL, e.g. `http://localhost:8080/` — it redirects to the login page.
 
