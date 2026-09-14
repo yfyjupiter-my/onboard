@@ -96,8 +96,6 @@ CSRF_TRUSTED_ORIGINS = [
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
-# T6.6: token lives in each portal's own session, so logging into one side doesn't rotate the other's.
-CSRF_USE_SESSIONS = True
 
 # Prod-only (TLS terminates at nginx/Cloudflare, proxy header above lets Django see it). SEC-003.
 if not DEBUG:

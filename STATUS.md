@@ -122,3 +122,5 @@
 - **T6.6 Isolated admin/frontend sessions ✅** — `/admin/` now uses its own `admin_sessionid` cookie (Path `/admin/`); frontend keeps `sessionid`. Logging into admin no longer logs into the frontend, and the reverse is also true; logout is independent. `CSRF_USE_SESSIONS=True`. `core/middleware.py` + settings. Tests 30/30; SEC-016 PASS. Existing admins must re-login once.
 
 - **QA check T6.6 (Robustness + Business Logic) — PASS, 2 pending** — ROB-001 `CSRF_USE_SESSIONS` makes every anonymous login-page GET write a session row and nothing runs `clearsessions` (recommend dropping the setting + clearsessions on startup). BUS-013 admin "View site" → frontend login that rejects staff (set `site_url=None`). BUS-014 promoted-staff keeps frontend session: accepted. See `ROB-AUDIT.md`, `BUS-AUDIT.md`.
+
+- **ROB-001 + BUS-013 fixed ✅** — dropped `CSRF_USE_SESSIONS` (the healthcheck alone was writing ~8.6k session rows/day); `clearsessions` runs on `web` start + README daily cron (verified: expired 18→0, anonymous GETs +0 rows). Admin "View site" link hidden (`site_url=None`). Tests 32/32. No open items from the T6.6 QA check.

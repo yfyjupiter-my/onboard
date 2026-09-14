@@ -340,3 +340,15 @@ class SessionIsolationTests(TestCase):
         self.client.post(reverse("login"), {"username": "j4", "password": "pw-testing-123"})
         self.client.cookies["sessionid"] = self.client.cookies["sessionid"].value
         self.assertEqual(self.client.get(reverse("admin:index")).status_code, 302)
+
+    def test_admin_login_page_creates_no_session_row(self):
+        # ROB-001: anonymous GETs (healthcheck hits /admin/login/ every 10s) must not write sessions.
+        from django.contrib.sessions.models import Session
+        self.client.get(reverse("admin:login"))
+        self.client.get(reverse("login"))
+        self.assertEqual(Session.objects.count(), 0)
+
+    def test_admin_has_no_view_site_link(self):
+        # BUS-013
+        _admin_login(self.client, User.objects.create_superuser("hr5", password="pw-testing-123"))
+        self.assertNotContains(self.client.get(reverse("admin:index")), "View site")

@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 from .models import Choice, Joiner, JoinerProgress, Material, Question, Quiz
 
+# BUS-013: "View site" pointed at the joiner frontend, which rejects staff (T6.6 split sessions).
+admin.site.site_url = None
+
 
 def _csv_safe(value):
     # Neutralize spreadsheet formula injection: cells starting with = + - @ (or a

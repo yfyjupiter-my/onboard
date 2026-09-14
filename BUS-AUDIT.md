@@ -156,9 +156,9 @@ Gate: **PASS**, no blocker. One product decision is open (BUS-011). 29/29 tests.
 ## QA check — isolated admin/frontend sessions (T6.6) — 2026-09-14
 
 BUS-013: the admin "View site" link leads nowhere useful for staff
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: `admin.site.site_url` defaults to `/`. For a staff user that's the frontend login page, which rejects staff accounts, so the link is a dead end now that the sessions are split.
-- [ ] BUS-013a set `admin.site.site_url = None` in `core/admin.py` (hides the link). One line.
+- [x] BUS-013a set `admin.site.site_url = None` in `core/admin.py` (hides the link). One line.
 
 BUS-014: a joiner promoted to staff keeps their live frontend session
 Verdict: ✅ Correct (accepted)
@@ -170,4 +170,6 @@ BUS-OK (verified good):
 - `/login/?next=/admin/` sends a joiner to the admin login page. There's no bypass.
 - The messages cookie is shared (`Path=/`), but the frontend templates never render messages, so admin messages can't leak to the frontend.
 
-Gate: **PASS**, no blocker. Two one-line pending items (ROB-001, BUS-013).
+Fix (2026-09-14): `admin.site.site_url = None` in `core/admin.py`; test `test_admin_has_no_view_site_link`. 32/32.
+
+Gate: **PASS**, no blocker, nothing pending.
