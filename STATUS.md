@@ -130,3 +130,5 @@
 - **RUN-001 fixed ✅** — gunicorn `--workers 3 --timeout 120` (was 1 worker / 30s). Verified 3 workers boot, web healthy, login/admin 200. No open audit items.
 
 - **QA check (Runtime + Code Quality) — PASS, 3 pending** — RUN-003 gunicorn not `exec`'d → `sh` PID 1 ignores SIGTERM, restarts SIGKILL after 10s (measured 11s). RUN-004 stale DB connections after Postgres restart → one 500 per worker (reproduced 3×500) → `conn_health_checks=True`. RUN-005 nginx `proxy_read_timeout` 60s < gunicorn 120s → add `proxy_read_timeout 120s`. CODE-004/005/006 accepted (middleware sound; CLAUDE.md "current state" section outdated, not edited). See `RUN-AUDIT.md`, `CODE-AUDIT.md`.
+
+- **RUN-003/004/005 fixed ✅** — `exec gunicorn` (graceful SIGTERM, restart 11s→1s); `conn_health_checks=True` (DB restart: 0 errors, was 3×500); nginx `proxy_read_timeout 120s` (matches gunicorn). Tests 32/32. No open audit items. Nginx template changes need `docker compose restart nginx`.

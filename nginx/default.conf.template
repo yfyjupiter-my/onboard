@@ -27,6 +27,7 @@ server {
     # whitenoise serves /static/ from within gunicorn; just pass through.
     location / {
         proxy_pass http://web;
+        proxy_read_timeout 120s;   # RUN-005: match gunicorn --timeout 120
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
