@@ -53,3 +53,27 @@ Gate verdict: **PASS** — no accessibility blocker. Two documentation/logging a
 ### Fixes applied — 2026-07-28
 - COM-004 ✅ Fixed — `_csv()` emits `logger.info("joiner CSV export by %s: %d rows", ...)`, so every export (all three paths) is attributable to a staff username in the container log. Django configures no root logger, so an INFO record from `core` would have been dropped silently — `settings.LOGGING` now adds a console handler for the `core` logger at INFO. Verified: the line appears in the test run and in `docker compose logs web`.
 - COM-005 ✅ Fixed — `README.md` Step 8 rewritten for the T6.2/T6.3 admin (it still described the removed ticked-rows-only flow): a table of the three export routes, a note that each one is logged, and a "handle the file" warning that the CSV is joiner personal data to be kept off shared drives and deleted when the reporting need ends.
+
+---
+
+## QA check — T6.4 dashboard chapters — 2026-09-14
+Scope: `checklist.html` chapter sections (headings, landmarks, progress tag).
+
+COM-006: amber "Chapter N" label and grey tag text fail WCAG AA contrast
+Verdict: ⚠️ Pending — design-token issue, needs DESIGN.md sign-off
+Action Needed: measured on the white card (`--surface #fff`):
+- `--accent #d97706` 11px/700 "Chapter 1" label: **3.19:1**. AA needs 4.5:1 for small text. The existing card kickers (`.tile .kicker`) use the same token and already fail, so T6.4 repeats an existing issue rather than introducing a new one.
+- `.tag.neutral` (`--muted #8a7d6d` on its own 12% tint), used for "0 / 3 done" and "Not started": **3.5:1**, fail.
+- `.tag.done` (`--ok #0f766e`): 4.64:1, pass.
+Fix: darken the text tokens without changing the look. Use `#b45309` for accent text (5.02:1) and `#6f6457` for muted (4.9:1 on the tag tint, 5.41:1 on `--bg`). These are token edits in `app.css` plus DESIGN.md §1, and they affect all 28 uses of the two tokens. Because DESIGN.md is the approved theme, confirm with the user first. An alternative is to split off an `--accent-ink` token for text only and keep the decorative amber shapes unchanged.
+
+A11y (verified good):
+- Heading order: one `h1` for the page, then one `h2` per chapter, with no skipped level. Each `h2` has the accessible name "Chapter 1 Internal information", because the label span sits inside the heading.
+- Each chapter is a `<section aria-labelledby>`, so it appears as a named region in a screen reader's landmark list.
+- Progress is written out as text ("2 / 5 done"). The green tag colour is extra, not the only signal.
+- No new motion, focus traps or interactive controls. Cards are still real `<a>` links in DOM order, chapter by chapter.
+
+Gate: **PASS**, no blocker. COM-006 is an existing token contrast issue, now visible in more places.
+
+### Fixes applied — 2026-09-14
+- COM-006 ✅ Fixed (user-approved token change) — `--accent #d97706 → #a84e08` and `--muted #8a7d6d → #6f6457` in `app.css` and DESIGN.md (§1 table, contrast notes, kicker note, token block). Re-measured: amber 5.6:1 on white, 5.2:1 on `--bg`, 4.7:1 on the `.tag.todo` tint; muted 5.8:1 on white, 5.4:1 on `--bg`, 4.9:1 on the `.tag.neutral` tint. All pass AA for small text. The first candidate `#b45309` fixed the kicker but left the "In progress" tag at 4.25:1, so it was darkened one more step. This is a global token swap, so kickers, tags, labels, the focus outline and the decorative shapes all get slightly deeper. Served CSS verified.

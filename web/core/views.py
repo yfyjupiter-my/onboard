@@ -1,3 +1,6 @@
+from itertools import groupby
+from operator import attrgetter
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.core.exceptions import ValidationError
@@ -29,12 +32,15 @@ def checklist(request):
         Material.objects.filter(is_active=True, quiz__isnull=False).values_list("id", flat=True)
     )
     materials = Material.objects.filter(is_active=True).order_by("chapter", "created_at")
+    # BUS-008: group by the chapters materials actually have, not CHAPTER_CHOICES, so an unlisted
+    # chapter value can never hide an active material. Empty chapters simply don't appear.
+    names = dict(Material.CHAPTER_CHOICES)
     chapters = []
-    for number, name in Material.CHAPTER_CHOICES:
-        rows = [(m, progress.get(m.id), m.id in quiz_material_ids) for m in materials if m.chapter == number]
-        if rows:  # an empty chapter is just noise for the joiner
-            done = sum(1 for _, p, _ in rows if p and p.status == JoinerProgress.COMPLETED)
-            chapters.append({"number": number, "name": name, "rows": rows, "done": done})
+    for number, group in groupby(materials, key=attrgetter("chapter")):
+        rows = [(m, progress.get(m.id), m.id in quiz_material_ids) for m in group]
+        done = sum(1 for _, p, _ in rows if p and p.status == JoinerProgress.COMPLETED)
+        chapters.append({"number": number, "name": names.get(number, f"Chapter {number}"),
+                         "rows": rows, "done": done})
     return render(request, "checklist.html", {"chapters": chapters})
 
 

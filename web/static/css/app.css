@@ -9,8 +9,8 @@
 @font-face{font-family:"Bricolage Grotesque";src:url(../fonts/bricolage.woff2) format("woff2");
   font-weight:200 800;font-display:swap}
 :root{
-  --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#8a7d6d;
-  --primary:#0f766e; --primary-ink:#fff; --accent:#d97706;
+  --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#6f6457;
+  --primary:#0f766e; --primary-ink:#fff; --accent:#a84e08;
   --line:#ece3d6; --ok:#0f766e; --radius:16px;
   --shadow:0 2px 6px rgba(120,90,40,.08);
 }

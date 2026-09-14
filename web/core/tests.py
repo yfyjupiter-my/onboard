@@ -173,6 +173,10 @@ class ChecklistChapterTests(TestCase):
         chapters = self.client.get(reverse("home")).context["chapters"]
         self.assertEqual([(c["number"], [r[0] for r in c["rows"]], c["done"]) for c in chapters],
                          [(1, [info], 0), (2, [sec], 1)])
+        # BUS-008: a chapter value outside CHAPTER_CHOICES must still render, not vanish.
+        stray = Material.objects.create(title="Stray", type=Material.LINK, url="https://x.test", chapter=9)
+        chapters = self.client.get(reverse("home")).context["chapters"]
+        self.assertEqual((chapters[-1]["name"], [r[0] for r in chapters[-1]["rows"]]), ("Chapter 9", [stray]))
 
 
 class PresignTests(TestCase):

@@ -11,10 +11,10 @@
 | `--bg` | `#FBF7F0` | App background (warm paper) |
 | `--surface` | `#FFFFFF` | Cards, top bar, inputs, media chrome |
 | `--text` | `#25201B` | Primary text |
-| `--muted` | `#8A7D6D` | Secondary text, labels, captions |
+| `--muted` | `#6F6457` | Secondary text, labels, captions |
 | `--primary` | `#0F766E` | Buttons, links, progress fill, focus ring, brand mark |
 | `--primary-ink` | `#FFFFFF` | Text/icon on primary |
-| `--accent` | `#D97706` | Amber — "to do" / attention tags, secondary CTA only |
+| `--accent` | `#A84E08` | Amber — "to do" / attention tags, secondary CTA only |
 | `--line` | `#ECE3D6` | Borders, dividers |
 | `--ok` | `#0F766E` | Success / completed (same teal — keep the palette tight) |
 
@@ -22,7 +22,7 @@ Status tag colors derive from tokens via `color-mix` (12% tint bg, 45% border):
 - **Done** → `--ok` teal · **To do / Quiz** → `--accent` amber · **Neutral** → `--muted`.
 
 Rules:
-- Body text on `--surface`/`--bg` clears 4.5:1. Never put `--muted` on `--accent`.
+- Body text on `--surface`/`--bg` clears 4.5:1; `--muted` 5.4:1 on `--bg`, 4.9:1 on its own 12% tag tint (COM-006, was `#8A7D6D` 3.5:1). Never put `--muted` on `--accent`.
 - Color is never the only signal — pair every status color with an icon or label.
 - No gradients, no colored shadows (flat design).
 
@@ -48,7 +48,7 @@ Title settings: `font-weight:800`, `letter-spacing:-.04em`, `line-height:.95`, `
 
 **Accent word** — `<em>` inside any title renders as `font-weight:500` + `--primary`, *not* italic. Use it for one word per title (`Welcome <em>Onboard</em>`, `Your onboarding <em>checklist</em>`). The weight drop is the effect; the colour reinforces it.
 
-Kickers are `--accent` amber at 11px/700/uppercase only — amber is 3.1:1, so it never goes on body text. Fallbacks: `"Bricolage Grotesque", system-ui, sans-serif` / `Inter, system-ui, sans-serif`.
+Kickers are `--accent` amber at 11px/700/uppercase only — amber is 5.6:1 on white, 4.7:1 on its own 12% `.tag.todo` tint (COM-006: darkened from `#D97706`, which was 3.19:1 and failed AA) — still never body text. Fallbacks: `"Bricolage Grotesque", system-ui, sans-serif` / `Inter, system-ui, sans-serif`.
 
 > Replaced the original Fraunces + Inter pairing (2026-07-27). Fraunces was the warmth signal; warmth now comes from the palette and radii, with the grotesque carrying a modern, deliberately-designed voice.
 
@@ -69,8 +69,8 @@ Design tokens live on a root/app wrapper; components read the vars.
 
 ```css
 :root{
-  --bg:#fbf7f0; --surface:#ffffff; --text:#25201b; --muted:#8a7d6d;
-  --primary:#0f766e; --primary-ink:#fff; --accent:#d97706;
+  --bg:#fbf7f0; --surface:#ffffff; --text:#25201b; --muted:#6f6457;
+  --primary:#0f766e; --primary-ink:#fff; --accent:#a84e08;
   --line:#ece3d6; --ok:#0f766e; --radius:16px;
   --shadow:0 2px 6px rgba(120,90,40,.08);
 }

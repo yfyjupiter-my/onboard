@@ -92,3 +92,25 @@ Gate: three open items — BUS-005 and BUS-007 are cheap one-liners, BUS-006 is 
 - BUS-005 ✅ Fixed — `mark_complete` now `get_object_or_404`s an existing `JoinerProgress` and only completes from `VIEWED`; never-opened material → 404, already-completed → idempotent redirect. Tests: `test_mark_complete_button_completes` (views first), `test_mark_complete_rejects_unopened_material` (404, no row created).
 - BUS-007 ✅ Fixed — `<video @error="reviewed = true">` mirrors the PDF fallback, so an unplayable/mislabeled video can't strand the joiner.
 - BUS-006 ⚠️ Accepted, unchanged — client-side gate by design; server-side proof of reading is out of MVP scope.
+
+---
+
+## QA check — T6.4 dashboard chapters — 2026-09-14
+Scope: `Material.chapter` + migration `0006`, `checklist()` grouping/counts, `checklist.html` sections, `MaterialAdmin` list.
+
+BUS-008: a material whose `chapter` is not in `CHAPTER_CHOICES` disappears from the joiner dashboard
+Verdict: ⚠️ Pending — latent data trap (no bad rows today)
+Action Needed: `checklist()` loops over `CHAPTER_CHOICES` and only shows materials matching one of them. `choices` is checked by the admin form but not by the database, so a chapter value that isn't in the list hides the material from joiners while it is still active. That can happen through a shell/ORM write, a data import, or a later edit that removes or renumbers a chapter. HR's joiner admin (T6.2) still counts it in `completed / active materials`, so every joiner looks permanently behind on an item they cannot see. Fix (view only, no migration): build the sections from the chapters the active materials actually have, e.g. `itertools.groupby(materials, key=attrgetter("chapter"))` over the existing `order_by("chapter", "created_at")`, with the name from `dict(CHAPTER_CHOICES).get(n, f"Chapter {n}")`. Every active material then always renders. Add one assert to `ChecklistChapterTests` with a `chapter=9` row.
+
+BUS-OK (verified good):
+- Counts match the admin: both use active materials only, and `done` counts `COMPLETED` only, so a quiz item counts only once passed. The BUS-003 guard is unchanged.
+- Moving a material to another chapter keeps joiner progress (`JoinerProgress` is keyed by material, not chapter).
+- Migration `0006` is an additive `AddField` with `default=1`, so existing rows land in Chapter 1 and no data is rewritten. Verified applied on the live DB.
+- No authorization change: progress is still `request.user.progress` and every lookup keeps its `is_active` filter. No new joiner input.
+- Hiding empty chapters is display-only. Locking is out of scope by decision, so joiners can take items in any order.
+- Still 3 queries on the checklist, grouped in Python (O(chapters × materials), trivial at onboarding scale).
+
+Gate: **PASS**, no blocker. One latent item (BUS-008) with a view-only fix.
+
+### Fixes applied — 2026-09-14
+- BUS-008 ✅ Fixed — `checklist()` now groups with `itertools.groupby(materials, attrgetter("chapter"))` over the existing `order_by("chapter", "created_at")`, and the name comes from `dict(CHAPTER_CHOICES).get(n, f"Chapter {n}")`. Every active material always renders; a chapter value that isn't listed shows as "Chapter N" instead of disappearing. `ChecklistChapterTests` asserts that a `chapter=9` material shows up. `manage.py test core` 28/28.
