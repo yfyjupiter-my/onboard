@@ -77,3 +77,53 @@ Gate: **PASS**, no blocker. COM-006 is an existing token contrast issue, now vis
 
 ### Fixes applied — 2026-09-14
 - COM-006 ✅ Fixed (user-approved token change) — `--accent #d97706 → #a84e08` and `--muted #8a7d6d → #6f6457` in `app.css` and DESIGN.md (§1 table, contrast notes, kicker note, token block). Re-measured: amber 5.6:1 on white, 5.2:1 on `--bg`, 4.7:1 on the `.tag.todo` tint; muted 5.8:1 on white, 5.4:1 on `--bg`, 4.9:1 on the `.tag.neutral` tint. All pass AA for small text. The first candidate `#b45309` fixed the kicker but left the "In progress" tag at 4.25:1, so it was darkened one more step. This is a global token swap, so kickers, tags, labels, the focus outline and the decorative shapes all get slightly deeper. Served CSS verified.
+
+---
+
+## QA check — Compliance & Accessibility, joiner UI + data retention — 2026-09-14
+Scope: `base.html`, `_topbar.html`, `registration/login.html`, `checklist.html`, `material.html`, `quiz.html`, `app.css`; log and session retention, erasure.
+
+COM-007: PDFs are canvas images only, so their text is invisible to screen readers
+Verdict: ⚠️ Pending
+Action Needed: `material.html` renders each PDF page with PDF.js into a bare `<canvas>`, with no text layer and no accessible name. A screen reader announces nothing, and the text can't be selected, searched or reflowed when zoomed (WCAG 1.1.1 / 1.4.5, Level A/AA). The `#pdfview` scroll box also has no `tabindex`, so in Safari keyboard users can't scroll it, which means they can't reach the end and "Mark complete" stays locked.
+- [ ] COM-007a give `#pdfview` `tabindex="0"` + `role="region"` + `aria-label="{{ material.title }} (PDF)"`, and give each canvas `role="img" aria-label="Page n of N"`.
+- [ ] COM-007b **new element, needs confirmation:** add an "Open PDF in browser viewer" link (the presigned `file_url`, sandbox rules unchanged) under the viewer, so screen-reader users get the native, accessible PDF view. Alternative: turn on PDF.js's text layer (more code, plus vendoring `pdf_viewer.css`).
+
+COM-008: a disabled "Mark complete" button gives no reason
+Verdict: ⚠️ Pending
+Action Needed: the button is disabled with `:disabled="!reviewed"`, and no text says what unlocks it. Screen-reader users hear only "dimmed". Sighted users also have to guess that they need to scroll the PDF or watch the video to the end (WCAG 3.3.2).
+- [ ] COM-008a add a short hint next to the button, shown while locked ("Scroll to the end to enable" / "Watch to the end to enable" / "Loading…" for links), and point the button at it with `aria-describedby`. **New text element, needs confirmation.**
+
+COM-009: videos have no captions
+Verdict: ⚠️ Pending, needs a product decision
+Action Needed: `<video>` has no `<track kind="captions">`, and `Material` has nowhere to store a caption file. WCAG 1.2.2 (Level A) requires captions for prerecorded video with audio, which matters for deaf or hard-of-hearing joiners and for anyone watching without sound.
+- [ ] COM-009a decide: (a) add an optional `Material.captions` WebVTT file (MinIO, presigned like the video) plus `<track>`, which is a new field and migration; or (b) policy only: HR uploads videos with burned-in captions, noted in README Step 5. (b) needs no code.
+
+COM-010: the "Signing you in…" status is never announced
+Verdict: ⚠️ Pending
+Action Needed: `#login-loading` has `aria-hidden="true"` on the container. That hides its child `<p role="status">`, so the 3-second hold after pressing Log in is silent for screen-reader users.
+- [ ] COM-010a remove `aria-hidden="true"` from `#login-loading` only. Its decorative children (ring, orbits, mark) already have their own `aria-hidden`.
+
+COM-011: login errors aren't announced
+Verdict: ⚠️ Pending
+Action Needed: after a failed login the page re-renders with `<p class="tag todo">Please enter a correct username…</p>`. There's no `role="alert"`, and the message isn't linked to the fields, so a screen reader doesn't read it (WCAG 3.3.1 / 4.1.3).
+- [ ] COM-011a add `role="alert"` to the error `<p>` in `registration/login.html`.
+
+COM-012: container logs keep client IPs and staff usernames forever, with no size limit
+Verdict: ⚠️ Pending
+Action Needed: Docker uses the `json-file` driver with an empty `LogConfig` (no `/etc/docker/daemon.json`, no compose `logging:`). The nginx access log (client IP, path, user agent) and the `core` export audit line (staff username) go to stdout and are never rotated. That's personal data kept without any time limit (GDPR storage limitation), and unbounded disk use.
+- [ ] COM-012a compose: one shared `x-logging: &logging {driver: json-file, options: {max-size: "10m", max-file: "5"}}` and `logging: *logging` on all 4 services. Trade-off: this also caps the COM-004 export audit trail (~50 MB per service). If exports must be auditable longer, ship logs to a retained store and note that in README.
+
+A11y and compliance (verified good):
+- `<html lang="en">`. Global `prefers-reduced-motion` switches off every animation (`app.css:129`), and the login typewriter and loader also have their own reduced-motion rules.
+- Focus is visible: tiles and buttons have a 2px `--accent` outline on `:focus-visible`; inputs change border colour on focus.
+- The quiz is fully native: `<fieldset>`/`<legend>` per question, radios wrapped in `<label>`, `required`, keyboard-operable.
+- Link iframes and the fallback iframe have a `title`. Locked tiles are non-interactive `div`s with a text reason (not colour alone). Chapter landmarks and headings are fine (COM-006 note). Contrast tokens were fixed in COM-006.
+- Login inputs have `<label for>`.
+- Erasure: deleting a `User` cascades to `JoinerProgress` (`on_delete=CASCADE`). Their session rows then hold only a dead user id and are purged by `clearsessions` (ROB-001). CSV copies outside the system are covered by the README handling note (COM-005).
+- Sessions last 2 weeks (Django default) and expired rows are purged on start and by daily cron.
+
+Gate: **PASS**, no blocker for internal use. Six pending items:
+- COM-007, COM-009 and COM-012 matter most. COM-007 is a Level A failure for PDF content, COM-009 is a Level A failure for video, and COM-012 is unbounded personal-data retention.
+- COM-008, COM-010 and COM-011 are small fixes.
+- COM-007b, COM-008a and COM-009a add new elements or fields, so they need confirmation before implementing.
