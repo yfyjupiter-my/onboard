@@ -3,10 +3,10 @@ import logging
 
 from django.contrib import admin
 from django.contrib.admin.options import IncorrectLookupParameters
+from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
 from django.db.models import Count, Max, Q, Value
-from django.forms import ClearableFileInput
 from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -26,7 +26,7 @@ def _csv_safe(value):
     return s
 
 
-class ReplaceableFileInput(ClearableFileInput):
+class ReplaceableFileInput(AdminFileWidget):
     # Django rejects "Clear" ticked + new file as a contradiction; a new upload is a replace, so let it win.
     def value_from_datadict(self, data, files, name):
         return files.get(name) or super().value_from_datadict(data, files, name)
