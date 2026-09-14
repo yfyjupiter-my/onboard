@@ -98,3 +98,6 @@ Small changes requested after the 6 phases closed. Each is done + tested; no pha
 - ✅ **T6.3** **Per-joiner CSV export** — `admin:core_joiner_export_one` (`<int:pk>/export-csv/`) + "Export CSV" button in the joiner change-form toolbar (`templates/admin/core/joiner/change_form.html`). Reuses the T6.2 writer and columns. Staff pks 404 (admin queryset is joiners only).
   - Acceptance: `manage.py test core` 25/25. Commit `da914f6`.
   - **QA follow-up (`0fb743c`)** — SEC-012 all export paths require `view_joiner` + `view_joinerprogress`, checked before lookup (no 403/404 oracle); SEC-013 bad filter → 302 not 500; COM-004 every export logged; COM-005 README export/PII section. 27/27 tests. See `SEC-AUDIT.md` / `COM-AUDIT.md`.
+
+- ✅ **T6.4** **Dashboard chapters** — `Material.chapter` (fixed choices: 1 · Internal information, 2 · Security awareness; default 1, so existing materials land in Chapter 1). Migration `0006_material_chapter` (additive). Admin: chapter column + filter. Checklist renders stacked sections per chapter (heading + "done / total" tag); empty chapters hidden; no locking (any order). Adding a chapter = one entry in `CHAPTER_CHOICES`.
+  - Acceptance: `manage.py test core` 28/28 (new `ChecklistChapterTests`); `makemigrations --check` clean.

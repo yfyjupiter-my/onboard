@@ -162,6 +162,19 @@ class NoQuizViewTests(TestCase):
         self.assertEqual(resp.status_code, 404)
 
 
+@override_settings(SECURE_SSL_REDIRECT=False)
+class ChecklistChapterTests(TestCase):
+    def test_materials_grouped_by_chapter_with_counts(self):
+        user = User.objects.create_user("j3", password="pw-testing-123")
+        self.client.force_login(user)
+        sec = Material.objects.create(title="Phishing", type=Material.LINK, url="https://x.test", chapter=2)
+        info = Material.objects.create(title="Handbook", type=Material.LINK, url="https://x.test")  # default ch 1
+        JoinerProgress.objects.create(user=user, material=sec, status=JoinerProgress.COMPLETED)
+        chapters = self.client.get(reverse("home")).context["chapters"]
+        self.assertEqual([(c["number"], [r[0] for r in c["rows"]], c["done"]) for c in chapters],
+                         [(1, [info], 0), (2, [sec], 1)])
+
+
 class PresignTests(TestCase):
     def test_file_url_is_presigned_and_scoped_to_media(self):
         material = Material.objects.create(title="Doc", type=Material.PDF, file="materials/x.pdf")

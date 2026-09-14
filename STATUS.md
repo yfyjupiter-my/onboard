@@ -101,4 +101,6 @@
 ## Next
 - **Deploy prerequisites (operator, not code):** set real `.env` secrets (clears W009), scope MinIO service account (SEC-004), put Cloudflare Access on `/admin/` (SEC-006/P14). Repo already under git (`.gitignore` in place). App code is deploy-ready.
 
-- **Admin file replace (Material) fixed** — `ReplaceableFileInput` lets a new upload win over the Clear tick; `MaterialAdmin.save_model` deletes the old MinIO object on replace/clear (on_commit). Added missing migration `0005_alter_joiner_options` (Meta only). Verified vs live MinIO: new object exists, old gone; `makemigrations --check` clean; core tests green.
+- **Admin file replace (Material) fixed** — `ReplaceableFileInput` (subclasses `AdminFileWidget` to keep admin layout) lets a new upload win over the Clear tick; `MaterialAdmin.save_model` deletes the old MinIO object on replace/clear (on_commit). Added missing migration `0005_alter_joiner_options` (Meta only). Verified vs live MinIO: new object exists, old gone; `makemigrations --check` clean; core tests green.
+
+- **Dashboard chapters ✅ (T6.4)** — checklist split into Chapter 1 · Internal information / Chapter 2 · Security awareness (stacked sections, done/total per chapter, no locking). `Material.chapter` fixed choices, default 1; migration `0006`. HR must move security materials to Chapter 2 in admin. 28/28 tests.

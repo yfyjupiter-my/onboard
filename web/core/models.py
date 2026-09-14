@@ -27,8 +27,11 @@ class Material(models.Model):
     VIDEO = "video"
     LINK = "link"
     TYPE_CHOICES = [(PDF, "PDF"), (VIDEO, "Video"), (LINK, "Link")]
+    # ponytail: fixed list; promote to a Chapter model if HR needs to add/rename chapters themselves.
+    CHAPTER_CHOICES = [(1, "Internal information"), (2, "Security awareness")]
 
     title = models.CharField(max_length=200)
+    chapter = models.PositiveSmallIntegerField(choices=CHAPTER_CHOICES, default=1)
     type = models.CharField(max_length=5, choices=TYPE_CHOICES)
     file = models.FileField(upload_to="materials/", blank=True)  # blank for LINK
     url = models.URLField(blank=True)  # LINK only; embedded in an iframe

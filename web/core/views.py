@@ -28,11 +28,14 @@ def checklist(request):
     quiz_material_ids = set(
         Material.objects.filter(is_active=True, quiz__isnull=False).values_list("id", flat=True)
     )
-    rows = [
-        (m, progress.get(m.id), m.id in quiz_material_ids)
-        for m in Material.objects.filter(is_active=True).order_by("created_at")
-    ]
-    return render(request, "checklist.html", {"rows": rows})
+    materials = Material.objects.filter(is_active=True).order_by("chapter", "created_at")
+    chapters = []
+    for number, name in Material.CHAPTER_CHOICES:
+        rows = [(m, progress.get(m.id), m.id in quiz_material_ids) for m in materials if m.chapter == number]
+        if rows:  # an empty chapter is just noise for the joiner
+            done = sum(1 for _, p, _ in rows if p and p.status == JoinerProgress.COMPLETED)
+            chapters.append({"number": number, "name": name, "rows": rows, "done": done})
+    return render(request, "checklist.html", {"chapters": chapters})
 
 
 @login_required
