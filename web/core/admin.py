@@ -6,7 +6,8 @@ from django.contrib.admin.options import IncorrectLookupParameters
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
-from django.db.models import Count, Max, Q, Value
+from django.db.models import Count, F, Max, Q, Value
+from django.db.models.functions import Greatest
 from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -179,9 +180,11 @@ class JoinerAdmin(admin.ModelAdmin):
         total = Material.objects.filter(is_active=True).count()
         return (
             super().get_queryset(request).filter(is_staff=False).annotate(
-                completed_count=Count("progress", filter=Q(progress__status=JoinerProgress.COMPLETED)),
+                completed_count=Count("progress", filter=Q(progress__status=JoinerProgress.COMPLETED,
+                                                            progress__material__is_active=True)),
                 total_count=Value(total),
-                last_activity=Max("progress__completed_at"),
+                # Postgres GREATEST skips NULLs: last login or last completion, whichever is later.
+                last_activity=Greatest(F("last_login"), Max("progress__completed_at")),
             )
         )
 
