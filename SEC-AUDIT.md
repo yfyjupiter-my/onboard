@@ -227,15 +227,15 @@ Gate: **PASS**, no vulnerabilities, no blocker.
 ## QA check — infra after RUN-001/003/004/005 (gunicorn, nginx, DB, cookies) — 2026-09-14
 
 SEC-017: with TLS terminated in front of nginx (the README's documented setup), `DEBUG=False` gives an endless redirect loop
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: nginx sets `X-Forwarded-Proto $scheme`. When Cloudflare, a tunnel or a host proxy terminates https and forwards plain http to `:8080`, `$scheme` is `http`. Django (`SECURE_SSL_REDIRECT`) then answers every request with a 301 to https, forever. Verified: forwarded proto `http` → `301 https://…/admin/login/`, `https` → 200. The practical risk is operators "fixing" it by running `DEBUG=True` in production, which turns off Secure cookies, HSTS and the SSL redirect (STATUS already records DEBUG=True as a workaround for LAN).
-- [ ] SEC-017a nginx: keep an upstream `https` and fall back to `$scheme` otherwise (`map $http_x_forwarded_proto $fwd_proto { default $scheme; https https; }` → `proxy_set_header X-Forwarded-Proto $fwd_proto;`). A client talking to `:8080` directly could only claim https for its own connection: no redirect, Secure cookies that it then won't send back. No cross-user impact.
-- [ ] SEC-017b README Production step 1: correct the "nginx already passes X-Forwarded-Proto" line, and advise publishing `127.0.0.1:8080:80` when the TLS proxy/tunnel runs on the same host, so `:8080` isn't reachable around it.
+- [x] SEC-017a nginx: keep an upstream `https` and fall back to `$scheme` otherwise (`map $http_x_forwarded_proto $fwd_proto { default $scheme; https https; }` → `proxy_set_header X-Forwarded-Proto $fwd_proto;`). A client talking to `:8080` directly could only claim https for its own connection: no redirect, Secure cookies that it then won't send back. No cross-user impact.
+- [x] SEC-017b README Production step 1: correct the "nginx already passes X-Forwarded-Proto" line, and advise publishing `127.0.0.1:8080:80` when the TLS proxy/tunnel runs on the same host, so `:8080` isn't reachable around it.
 
 SEC-018: nginx advertises its exact version (`Server: nginx/1.31.3`)
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: `server_tokens` is at its default (on), which helps attackers match CVEs. Low severity.
-- [ ] SEC-018a add `server_tokens off;` to the `server` block in `nginx/default.conf.template`.
+- [x] SEC-018a add `server_tokens off;` to the `server` block in `nginx/default.conf.template`.
 
 SEC-019: slow-request DoS against the longer 120s timeouts / 3 sync workers
 Verdict: ✅ Correct
@@ -254,4 +254,9 @@ SEC-OK (verified good):
 - Response headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`.
 - `exec gunicorn` and `conn_health_checks` add no attack surface.
 
-Gate: **PASS**, no exploitable vulnerability. Two pending items: SEC-017 must be fixed before production over TLS, and SEC-018 is low severity.
+Fix (2026-09-14), verified live:
+- SEC-017: nginx `map $http_x_forwarded_proto $fwd_proto` (keep `https`, else `$scheme`), and `location /` forwards `$fwd_proto`. Tested end to end with a throwaway `DJANGO_DEBUG=False` gunicorn behind the real nginx map: upstream `X-Forwarded-Proto: https` → 200 (no loop); junk or missing → falls back to `http` → 301 to https. The probe container and temp conf were removed afterwards. README Production step 1 is corrected and now recommends `127.0.0.1:8080:80` when the proxy runs on the same host. The compose port is unchanged, because LAN access is in use.
+- SEC-018: `server_tokens off`. The header is now `Server: nginx` with no version.
+- `nginx -t` OK; `/login/` 200.
+
+Gate: **PASS**, no vulnerabilities, nothing pending.

@@ -1,3 +1,10 @@
+# SEC-017: keep https from a TLS proxy/tunnel in front (else Django's SSL redirect loops);
+# otherwise use our own scheme. A direct :8080 client can only claim https for itself.
+map $http_x_forwarded_proto $fwd_proto {
+    default $scheme;
+    https   https;
+}
+
 upstream web {
     server web:8000;
 }
@@ -5,6 +12,7 @@ upstream web {
 server {
     listen 80;
     server_name _;
+    server_tokens off;   # SEC-018: no nginx version in Server header / error pages
     client_max_body_size 512m;   # allow PDF/MP4 admin uploads
 
     # P2/P8: /media/<key> is rewritten to /<bucket>/<key> and proxied to MinIO.
@@ -31,6 +39,6 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
     }
 }

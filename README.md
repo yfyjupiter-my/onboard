@@ -139,7 +139,7 @@ Each export writes a line to the container log (`docker compose logs web`) namin
 
 ## Production deployment
 
-1. **TLS in front.** Terminate https at a reverse proxy / Cloudflare and forward to host `:8080`. nginx already passes `X-Forwarded-Proto`, so Django sees https.
+1. **TLS in front.** Terminate https at a reverse proxy / Cloudflare and forward to host `:8080`. The proxy must send `X-Forwarded-Proto: https` (Cloudflare and most proxies do); nginx keeps it, otherwise Django's SSL redirect loops forever (SEC-017). If the proxy or tunnel runs on the same host, publish nginx on loopback only (`"127.0.0.1:8080:80"` in `docker-compose.yml`) so nobody can reach `:8080` around it.
 2. **`DJANGO_DEBUG=False`** — turns on SSL redirect, HSTS (1 year, subdomains, preload) and secure cookies. Verify:
    ```bash
    docker compose run --rm web python manage.py check --deploy
