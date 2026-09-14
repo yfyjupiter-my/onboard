@@ -223,3 +223,35 @@ Verdict: ✅ Correct (fixed)
 Action Needed: none. `SplitSessionMiddleware` gives `/admin/` its own `admin_sessionid` cookie (`Path=/admin/`, HttpOnly, SameSite=Lax, Secure when `DEBUG=False`); the frontend `sessionid` is dropped from admin requests before the session loads, so a joiner cookie can't authenticate admin (test-verified). Session expiry, save and delete logic is still Django's own (the subclass only swaps the cookie name). Login still cycles the session key, so fixation protection is unchanged. CSRF protection is the standard cookie-based token (`CSRF_USE_SESSIONS` was later removed by ROB-001); forms and htmx use `{{ csrf_token }}`.
 
 Gate: **PASS**, no vulnerabilities, no blocker.
+
+## QA check — infra after RUN-001/003/004/005 (gunicorn, nginx, DB, cookies) — 2026-09-14
+
+SEC-017: with TLS terminated in front of nginx (the README's documented setup), `DEBUG=False` gives an endless redirect loop
+Verdict: ⚠️ Pending
+Action Needed: nginx sets `X-Forwarded-Proto $scheme`. When Cloudflare, a tunnel or a host proxy terminates https and forwards plain http to `:8080`, `$scheme` is `http`. Django (`SECURE_SSL_REDIRECT`) then answers every request with a 301 to https, forever. Verified: forwarded proto `http` → `301 https://…/admin/login/`, `https` → 200. The practical risk is operators "fixing" it by running `DEBUG=True` in production, which turns off Secure cookies, HSTS and the SSL redirect (STATUS already records DEBUG=True as a workaround for LAN).
+- [ ] SEC-017a nginx: keep an upstream `https` and fall back to `$scheme` otherwise (`map $http_x_forwarded_proto $fwd_proto { default $scheme; https https; }` → `proxy_set_header X-Forwarded-Proto $fwd_proto;`). A client talking to `:8080` directly could only claim https for its own connection: no redirect, Secure cookies that it then won't send back. No cross-user impact.
+- [ ] SEC-017b README Production step 1: correct the "nginx already passes X-Forwarded-Proto" line, and advise publishing `127.0.0.1:8080:80` when the TLS proxy/tunnel runs on the same host, so `:8080` isn't reachable around it.
+
+SEC-018: nginx advertises its exact version (`Server: nginx/1.31.3`)
+Verdict: ⚠️ Pending
+Action Needed: `server_tokens` is at its default (on), which helps attackers match CVEs. Low severity.
+- [ ] SEC-018a add `server_tokens off;` to the `server` block in `nginx/default.conf.template`.
+
+SEC-019: slow-request DoS against the longer 120s timeouts / 3 sync workers
+Verdict: ✅ Correct
+Action Needed: none. nginx buffers request bodies before proxying (`proxy_request_buffering` default on) and enforces its default 60s client header/body timeouts, so a slow client only holds a cheap nginx connection, not a gunicorn worker. gunicorn `:8000` isn't published. Long upstream requests (upload, CSV export) need an authenticated admin with permissions.
+
+SEC-OK (verified good):
+- Cookies with `DEBUG=False` settings (tested in a rolled-back transaction; `qa-probe-*` users leftover = 0):
+  - `admin_sessionid`: Secure, HttpOnly, SameSite=Lax, `Path=/admin/`
+  - `sessionid`: Secure, HttpOnly, Lax, `Path=/`
+  - `csrftoken`: Secure, Lax
+  - The middleware's rename keeps every flag.
+- Clients can't spoof `X-Forwarded-Proto` today: nginx `proxy_set_header` overwrites whatever the client sends.
+- Any `Host` value is passed through to Django, which validates it against `ALLOWED_HOSTS`. On `/media/`, a forged Host only breaks the presign signature (403).
+- No app code reads `REMOTE_ADDR` or `X-Forwarded-For`, so a forged XFF has no effect.
+- Only nginx `:8080` and the MinIO console on `127.0.0.1:9001` are published; gunicorn, Postgres and MinIO `:9000` stay internal.
+- Response headers: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`.
+- `exec gunicorn` and `conn_health_checks` add no attack surface.
+
+Gate: **PASS**, no exploitable vulnerability. Two pending items: SEC-017 must be fixed before production over TLS, and SEC-018 is low severity.
