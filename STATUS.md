@@ -128,3 +128,5 @@
 - **QA check (Robustness + Runtime) — PASS, 1 pending** — ROB-002/003 `clearsessions` startup + cron failure modes are safe (single indexed DELETE, restart policy). RUN-002 startup cost 1.5s, OK. **RUN-001 pending:** gunicorn runs 1 sync worker / 30s timeout, so one big admin upload or export blocks all joiners + the healthcheck → add `--workers 3 --timeout 120`. See `ROB-AUDIT.md`, `RUN-AUDIT.md`.
 
 - **RUN-001 fixed ✅** — gunicorn `--workers 3 --timeout 120` (was 1 worker / 30s). Verified 3 workers boot, web healthy, login/admin 200. No open audit items.
+
+- **QA check (Runtime + Code Quality) — PASS, 3 pending** — RUN-003 gunicorn not `exec`'d → `sh` PID 1 ignores SIGTERM, restarts SIGKILL after 10s (measured 11s). RUN-004 stale DB connections after Postgres restart → one 500 per worker (reproduced 3×500) → `conn_health_checks=True`. RUN-005 nginx `proxy_read_timeout` 60s < gunicorn 120s → add `proxy_read_timeout 120s`. CODE-004/005/006 accepted (middleware sound; CLAUDE.md "current state" section outdated, not edited). See `RUN-AUDIT.md`, `CODE-AUDIT.md`.
