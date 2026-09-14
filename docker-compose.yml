@@ -49,7 +49,7 @@ services:
       sh -c "python manage.py migrate --noinput &&
              python manage.py clearsessions &&
              python manage.py collectstatic --noinput &&
-             gunicorn onboard.wsgi:application --bind 0.0.0.0:8000"
+             gunicorn onboard.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/admin/login/"]
       interval: 10s
