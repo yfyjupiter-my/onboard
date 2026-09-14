@@ -220,6 +220,6 @@ Gate: **PASS**, no vulnerabilities, no blocker.
 
 SEC-016: admin and frontend shared one session cookie → admin login carried into the joiner frontend
 Verdict: ✅ Correct (fixed)
-Action Needed: none. `SplitSessionMiddleware` gives `/admin/` its own `admin_sessionid` cookie (`Path=/admin/`, HttpOnly, SameSite=Lax, Secure when `DEBUG=False`); the frontend `sessionid` is dropped from admin requests before the session loads, so a joiner cookie can't authenticate admin (test-verified). Session expiry, save and delete logic is still Django's own (the subclass only swaps the cookie name). Login still cycles the session key, so fixation protection is unchanged. `CSRF_USE_SESSIONS=True` takes the CSRF token out of a cookie and stores it per portal; forms/htmx use `{{ csrf_token }}`, and no JS reads the cookie.
+Action Needed: none. `SplitSessionMiddleware` gives `/admin/` its own `admin_sessionid` cookie (`Path=/admin/`, HttpOnly, SameSite=Lax, Secure when `DEBUG=False`); the frontend `sessionid` is dropped from admin requests before the session loads, so a joiner cookie can't authenticate admin (test-verified). Session expiry, save and delete logic is still Django's own (the subclass only swaps the cookie name). Login still cycles the session key, so fixation protection is unchanged. CSRF protection is the standard cookie-based token (`CSRF_USE_SESSIONS` was later removed by ROB-001); forms and htmx use `{{ csrf_token }}`.
 
 Gate: **PASS**, no vulnerabilities, no blocker.
