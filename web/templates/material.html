@@ -65,7 +65,7 @@
       {# T6.11 / ROB-011: like ROB-004, a failed image stays locked and says so (no false completion). #}
       {# ROB-009: static onload/onerror flags let x-init catch events that fire before Alpine binds. #}
       <div x-data="{ failed: false }">
-        <img src="{{ file_url }}" alt="{{ material.title }}" x-show="!failed"
+        <img src="{{ file_url }}" alt="{{ material.description|default:material.title }}" x-show="!failed"
              onload="this.dataset.loaded = '1'" onerror="this.dataset.failed = '1'"
              x-init="if ($el.dataset.failed) failed = true; else if ($el.dataset.loaded) reviewed = true"
              @load="reviewed = true" @error="failed = true"

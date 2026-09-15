@@ -136,10 +136,11 @@ Action Needed: `<img @error="reviewed = true">`, and `x-init` checked `$el.compl
 - Browser-verified on the live stack: real PNG → image visible, button enabled; missing object → alert visible, button disabled. Probe user/materials/file deleted. Tests 39/39.
 
 ROB-012: switching type on an existing file
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: switching a `.pdf` to Image, an empty upload, or a file with no extension are all rejected; `.JPEG` in uppercase and storage name suffixes work. But **Image → PDF/Video with the `.png` still attached is accepted**, because PDF/video have no extension check (this is older than T6.11). The joiner then sees "This file can't be displayed" (PDF) or the video unlocks on error (BUS-007).
-- [ ] ROB-012a **Recommended:** add the same extension allowlist for PDF (`.pdf`) and video (`.mp4`, `.webm`, `.mov`) in `Material.clean()`. It's a small change, but it tightens an existing rule, so it needs your confirmation.
-- [ ] ROB-012b accept: HR sees the problem immediately when previewing.
+- [x] ROB-012a **Applied (2026-09-15):** add the same extension allowlist for PDF (`.pdf`) and video (`.mp4`, `.webm`, `.mov`) in `Material.clean()`. It's a small change, but it tightens an existing rule, so it needs your confirmation.
+- [ ] ROB-012b ~~accept~~ (not chosen)
+- Done: `Material.FILE_EXTENSIONS` (PDF `.pdf`, video `.mp4/.webm/.mov`, image `.jpg/.jpeg/.png`) is checked in `clean()`, not case-sensitive. All 17 existing materials still validate. Tests 40/40.
 
 ROB-013: upload size, link expiry
 Verdict: ✅ Correct

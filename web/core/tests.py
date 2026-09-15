@@ -107,6 +107,12 @@ class ModelValidationTests(TestCase):
         for name, data in (("a.html", b"\xff\xd8\xff"), ("a.jpg", b"<html>"), ("a.png", b"\xff\xd8\xff")):
             with self.assertRaises(ValidationError):
                 clean(name, data)
+        # ROB-012: PDF/video need a matching extension too, so switching type can't keep the wrong file.
+        with self.assertRaises(ValidationError):
+            Material(title="P", type=Material.PDF, file="materials/a.png").full_clean()
+        with self.assertRaises(ValidationError):
+            Material(title="V", type=Material.VIDEO, file="materials/a.pdf").full_clean()
+        Material(title="V", type=Material.VIDEO, file="materials/a.MP4").full_clean()
         img = Material(title="I", type=Material.IMAGE, file="materials/a.png")
         self.assertIn("response-content-type=image%2Fpng", img.source_url)
 
@@ -188,6 +194,14 @@ class NoQuizViewTests(TestCase):
         resp = self.client.get(reverse("material", args=[self.material.pk]))
         self.assertContains(resp, 'aria-describedby="mc-hint"')
         self.assertContains(resp, "Watch the video to the end to enable")
+
+    def test_image_alt_uses_description_else_title(self):
+        # COM-022
+        img = Material.objects.create(title="Org chart", type=Material.IMAGE, file="materials/o.png")
+        self.assertContains(self.client.get(reverse("material", args=[img.pk])), 'alt="Org chart"')
+        img.description = "CEO at top, three teams below"
+        img.save()
+        self.assertContains(self.client.get(reverse("material", args=[img.pk])), 'alt="CEO at top, three teams below"')
 
     def test_pdf_has_accessible_open_link_forced_to_pdf(self):
         # COM-007b: native-viewer link; forced content type keeps SEC-010 (no same-origin HTML).

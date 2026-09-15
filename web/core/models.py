@@ -35,6 +35,7 @@ class Material(models.Model):
         ".jpeg": (b"\xff\xd8\xff", "image/jpeg"),
         ".png": (b"\x89PNG\r\n\x1a\n", "image/png"),
     }
+    FILE_EXTENSIONS = {PDF: (".pdf",), VIDEO: (".mp4", ".webm", ".mov"), IMAGE: tuple(IMAGE_FORMATS)}
     # ponytail: fixed list; promote to a Chapter model if HR needs to add/rename chapters themselves.
     CHAPTER_CHOICES = [(1, "Internal information"), (2, "Security awareness")]
 
@@ -42,6 +43,10 @@ class Material(models.Model):
     chapter = models.PositiveSmallIntegerField(choices=CHAPTER_CHOICES, default=1)
     type = models.CharField(max_length=5, choices=TYPE_CHOICES)
     file = models.FileField(upload_to="materials/", blank=True)  # blank for LINK; PDF/video/image need one
+    description = models.CharField(
+        "image description", max_length=300, blank=True,
+        help_text="Image materials: describe what the image shows for screen-reader users. Leave blank to use the title.",
+    )  # COM-022: used as the <img> alt text
     url = models.URLField(blank=True)  # LINK only; embedded in an iframe
     is_active = models.BooleanField(default=True)
     locked = models.BooleanField(
@@ -55,16 +60,19 @@ class Material(models.Model):
             raise ValidationError({"url": "Link materials need a URL."})
         if self.type != self.LINK and not self.file:
             raise ValidationError({"file": "PDF, video and image materials need a file."})
-        if self.type == self.IMAGE and self.file:
-            fmt = self.image_format
-            if not fmt:
-                raise ValidationError({"file": "Image materials must be a .jpg, .jpeg or .png file."})
-            if not self.file._committed:  # new upload only; don't re-download stored files on every save
-                self.file.seek(0)
-                head = self.file.read(len(fmt[0]))
-                self.file.seek(0)
-                if head != fmt[0]:
-                    raise ValidationError({"file": "This file isn't a real JPEG/PNG image."})
+        # ROB-012: the file must match the type, so switching type can't leave e.g. a .png behind a PDF.
+        # ponytail: extension only for PDF/video (PDF.js / <video> fail safely on junk); images also check bytes (T6.11).
+        ext = os.path.splitext(self.file.name)[1].lower() if self.file else ""
+        if self.type in self.FILE_EXTENSIONS and self.file and ext not in self.FILE_EXTENSIONS[self.type]:
+            allowed = ", ".join(self.FILE_EXTENSIONS[self.type])
+            raise ValidationError({"file": f"{self.get_type_display()} materials must be a {allowed} file."})
+        if self.type == self.IMAGE and self.file and not self.file._committed:  # new upload only; don't re-download stored files
+            magic = self.image_format[0]
+            self.file.seek(0)
+            head = self.file.read(len(magic))
+            self.file.seek(0)
+            if head != magic:
+                raise ValidationError({"file": "This file isn't a real JPEG/PNG image."})
 
     @property
     def image_format(self):

@@ -253,10 +253,10 @@ Gate: **PASS**, no open items.
 ## T6.11 Image material type: business logic check (2026-09-15)
 
 BUS-020: a tall image unlocks "Mark complete" without scrolling
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (accepted 2026-09-15)
 Action Needed: PDFs unlock only after scrolling to the end; images unlock as soon as they load. For a long infographic, a joiner can complete it after seeing only the top.
 - [ ] BUS-020a put the image in the same 70vh scroll box as PDFs and unlock on reaching the bottom (short images unlock at once, as 1-page PDFs do). This changes an existing element, so it needs confirmation.
-- [ ] BUS-020b **Recommended:** accept. Onboarding images are usually one screen, and it's a UX gate only (the server gate is unchanged).
+- [x] BUS-020b **Accepted:** Onboarding images are usually one screen, and it's a UX gate only (the server gate is unchanged).
 
 BUS-021: completion, lock, quiz and export rules for images
 Verdict: ✅ Correct

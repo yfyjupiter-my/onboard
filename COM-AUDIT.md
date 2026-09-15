@@ -260,16 +260,17 @@ Gate: **PASS**, 1 pending (COM-020, low, decision). COM-017 still open (needs an
 ## T6.11 Image material type: accessibility check (2026-09-15)
 
 COM-022: image alt text is only the material title
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (fixed)
 Action Needed: `alt="{{ material.title }}"` names the image but doesn't describe it. An informative image (org chart, floor plan, poster with text) has no real text alternative for screen-reader users (WCAG 1.1.1, Level A).
-- [ ] COM-022a **Recommended, new element, needs confirmation:** add an optional `Material.description` field ("Image description"), used as `alt` when set and falling back to the title. Additive migration.
-- [ ] COM-022b accept: tell HR to put the key text in the title or attach a quiz.
+- [x] COM-022a **Applied (2026-09-15, confirmed):** add an optional `Material.description` field ("Image description"), used as `alt` when set and falling back to the title. Additive migration.
+- [ ] COM-022b ~~accept~~ (not chosen)
+- Done: `Material.description` ("image description", max 300, optional, with help text in the admin); `<img alt>` uses the description, or the title if it's blank (escaped). Migration `0009_material_description` (additive). Test `test_image_alt_uses_description_else_title`.
 
 COM-023: no way to open a detailed image at full size
-Verdict: ⚠️ Pending
+Verdict: ✅ Correct (accepted 2026-09-15)
 Action Needed: the image is scaled to the card width. On a phone, small text in a large image can only be read by pinch-zooming the whole page. PDFs have an "Open PDF in browser viewer" link (COM-007b); images have nothing similar.
 - [ ] COM-023a **new element, needs confirmation:** add an "Open image full size" link under the image (the same presigned `file_url`, with the image type forced so SEC-021 still holds).
-- [ ] COM-023b accept: pinch-zoom works.
+- [x] COM-023b accept: pinch-zoom works.
 
 COM-024: hint, icon, layout
 Verdict: ✅ Correct
