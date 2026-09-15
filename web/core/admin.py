@@ -72,6 +72,7 @@ class MaterialAdmin(admin.ModelAdmin):
     list_display = ("title", "chapter", "type", "is_active", "locked", "created_at")
     list_filter = ("chapter", "type", "is_active", "locked")
     search_fields = ("title",)
+    exclude = ("description",)  # user request: hide "Image description" row; alt falls back to title
     inlines = [QuizInline]
     formfield_overrides = {models.FileField: {"widget": ReplaceableFileInput}}
 

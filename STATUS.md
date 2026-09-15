@@ -194,3 +194,5 @@
 - **T6.14 fix (PDF→Video)** — switching a PDF material to Video with a URL failed validation (old .pdf still attached) and Remove was blocked (no saved URL), a dead end. `Material.clean()` now drops a non-video file when a Video has a URL; `save_model` deletes the orphaned MinIO object. Same for Link (any file + URL → file dropped); existing orphan on material 13 cleared (row + MinIO object). Regression asserts added; 41/41 tests.
 
 - **QA (BUS/ROB/SEC) on T6.14 fix**: BUS-023, ROB-019/020, SEC-024 ✅. **BUS-022 fixed (022a, user choice)**: only stored files are dropped; a new wrong upload shows an error (Video: extension msg, Link: "Link materials don't use a file."). 41/41 tests.
+
+- **T6.15 ✅** "Image description" row removed from Material admin (all types) via `exclude`; field/data kept, alt falls back to title. Tests pass.
