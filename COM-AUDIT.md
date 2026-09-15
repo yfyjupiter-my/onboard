@@ -197,3 +197,19 @@ Gate: **PASS**, no blocker. 2 pending, both low (COM-015, COM-017).
 - COM-015 ✅ accepted: the bar stays pinned at every screen size, as requested. No code change.
 
 Gate: **PASS**, 1 pending (COM-017, needs an active quiz to test).
+
+## QA check — T6.8 congratulations popup — 2026-09-15
+
+COM-018: popup body text not linked to the dialog
+Verdict: ⚠️ Pending (low)
+Action Needed: `<dialog>` has `aria-labelledby` but no `aria-describedby`. Focus lands on **Close**, so screen readers announce "Congratulations, you did it! dialog, Close button" and may skip "You've completed all your onboarding materials."
+- [x] COM-018a add `id="congrats-desc"` to the paragraph and `aria-describedby="congrats-desc"` to the dialog.
+
+COM-OK (verified live, Chromium): at 320×568 the dialog sits 16px from each edge with no horizontal scroll. Focus opens on Close. The page behind is inert: Tab never reaches a background link or button (it only leaves to the browser UI, which is normal). Esc and Enter on Close both close it without reloading. The emoji is `aria-hidden`. No animation, so reduced motion isn't affected. Contrast uses existing AA tokens (muted, primary on surface).
+
+Gate: **PASS**, no blocker. 1 pending (COM-018, low).
+
+### Decision — 2026-09-15 (user-approved)
+- COM-018 ✅ fixed: the dialog has `aria-describedby="congrats-desc"`. Verified live: the description resolves to "You've completed all your onboarding materials."
+
+Gate: **PASS**, 1 pending (COM-017, needs an active quiz to test).

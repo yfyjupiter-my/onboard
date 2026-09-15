@@ -71,3 +71,19 @@ Action Needed: none. Verified live:
 - `manage.py test core` 38/38. Probe users deleted.
 
 Gate: **PASS**, nothing pending.
+
+## QA check — T6.8 congratulations popup — 2026-09-15
+
+ROB-007: browsers without `<dialog>` show the popup permanently
+Verdict: ⚠️ Pending (low)
+Action Needed: browsers older than Chrome 37 or Safari 15.4 don't know the `<dialog>` element, so it renders as a normal block at the bottom of the checklist on every visit, and Close reloads the page. Current browsers are fine.
+- [x] ROB-007a add `dialog:not([open]){display:none}` to the checklist CSS, so it stays hidden unless opened.
+
+ROB-OK (verified live): if `localStorage` throws, the popup still opens with no JS error. It shows again on every visit, which is acceptable. Without `showModal` it stays hidden. With JS off it's hidden and the checklist works. With 0 active materials the template never renders it (`topbar.total` is falsy).
+
+Gate: **PASS**, no blocker. 1 pending (ROB-007, low).
+
+### Decision — 2026-09-15 (user-approved)
+- ROB-007 ✅ fixed: `dialog:not([open]){display:none}`. Verified live: with a forced `dialog{display:block}` UA-style simulation, a closed dialog stays `display:none`, and the open popup still shows.
+
+Gate: **PASS**, no open items.

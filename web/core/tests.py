@@ -214,6 +214,11 @@ class TopbarProgressTests(TestCase):
         self.assertEqual(resp.context["topbar"], {"done": 1, "total": 2, "ratio": 0.5})
         self.assertContains(resp, "1 of 2 complete")
         self.assertContains(resp, "--p:0.500")
+        self.assertNotContains(resp, 'id="congrats"')
+        # T6.8: congratulations popup only once every active material is complete.
+        JoinerProgress.objects.create(user=user, material=Material.objects.get(title="B"),
+                                      status=JoinerProgress.COMPLETED)
+        self.assertContains(self.client.get(reverse("home")), 'id="congrats"')
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)

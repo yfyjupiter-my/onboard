@@ -65,6 +65,17 @@
     {% endfor %}
   </div>
 
+  {% if topbar.total and topbar.done == topbar.total %}
+  {# T6.8: shown once per browser; total in the key so newly added materials earn a fresh one #}
+  <dialog id="congrats" class="card" aria-labelledby="congrats-title" aria-describedby="congrats-desc"
+          data-key="onboard-congrats-{{ request.user.id }}-{{ topbar.total }}">
+    <div style="font-size:48px;line-height:1" aria-hidden="true">🎉</div>
+    <h2 id="congrats-title" class="title" style="font-size:28px;margin:12px 0 6px">Congratulations, <em>you did it!</em></h2>
+    <p id="congrats-desc" style="color:var(--muted);margin:0">You've completed all your onboarding materials.</p>
+    <form method="dialog"><button class="btn primary" style="width:100%;margin-top:18px" autofocus>Close</button></form>
+  </dialog>
+  {% endif %}
+
   <style>
   /* Cursor spotlight: two CSS vars set on pointermove, no per-frame JS */
   #spot{position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:0;transition:opacity .35s;
@@ -76,6 +87,9 @@
   .tile.locked{cursor:not-allowed}
   .tile.locked .cover{color:var(--muted)}
   .tile.locked:hover{border-color:var(--line);box-shadow:none;transform:none}
+  #congrats{max-width:min(380px,calc(100% - 32px));text-align:center;color:var(--text)}
+  dialog:not([open]){display:none}  /* ROB-007: pre-<dialog> browsers would render it inline */
+  #congrats::backdrop{background:rgba(37,32,27,.45)}
   @media (hover:none),(prefers-reduced-motion:reduce){#spot{display:none}}
   </style>
 
@@ -85,5 +99,12 @@
     document.body.style.setProperty('--mx', e.clientX + 'px');
     document.body.style.setProperty('--my', e.clientY + 'px');
   });
+  (function () {
+    var d = document.getElementById('congrats');
+    if (!d || !d.showModal) return;
+    try { if (localStorage.getItem(d.dataset.key)) return; } catch (e) {}
+    d.showModal();  // native modal: focus trap + Esc to close
+    try { localStorage.setItem(d.dataset.key, '1'); } catch (e) {}
+  })();
   </script>
 {% endblock %}

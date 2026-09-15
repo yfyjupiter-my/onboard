@@ -202,3 +202,25 @@ Gate: **PASS**, no blocker. 2 low items waiting for your decision.
 Fix (2026-09-14): column now "Last login / completion"; ordering `asc(nulls_first=True)` → newest-first reverses to `desc nulls_last` (verified via `reverse_ordering()`); both sort directions 200 with correct order live. Tests 37/37.
 
 Gate: **PASS**, no blocker, nothing pending.
+
+## QA check — T6.8 congratulations popup — 2026-09-15
+
+BUS-017: any change to the active material count shows the popup again
+Verdict: ⚠️ Pending (low)
+Action Needed: the "seen" key is `onboard-congrats-<user>-<total>`. If HR deactivates a material (10→9), a joiner who already finished and saw the popup sees it again. Adding a material that the joiner then completes also shows it again, which is intended.
+- [x] BUS-017a decide: (a) accept, since it's rare and harmless (recommended), or (b) key on user id only, so it never shows twice, even after new materials.
+
+BUS-018: "seen" key stays in a shared browser after logout
+Verdict: ⚠️ Pending (low)
+Action Needed: after logout, `localStorage` keeps `onboard-congrats-25-10` (verified). Someone on the same device could tell that user id 25 finished 10 materials. There are no names, and a different joiner on that browser does **not** get the popup (verified).
+- [x] BUS-018a decide: (a) accept (recommended, since ids only and on that device only), or (b) clear `onboard-congrats-*` keys on logout.
+
+BUS-OK: `done` can't exceed `total` (`unique_user_material_progress` constraint, both counts active-only). Staff get no `topbar`, so no popup. A failing quiz retake never downgrades a completion (BUS-003), so a joiner can't drop out of "all done" and back in. Locked materials count on both sides.
+
+Gate: **PASS**, no blocker. 2 pending (BUS-017, BUS-018, both low, decisions).
+
+### Decision — 2026-09-15 (user-approved: BUS-017a, BUS-018a)
+- BUS-017 ✅ accepted: the popup may show again when the active material count changes. No code change.
+- BUS-018 ✅ accepted: the seen-key (user id + count) stays in device-local storage after logout. No code change.
+
+Gate: **PASS**, no open items.
