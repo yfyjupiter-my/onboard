@@ -417,6 +417,11 @@ class JoinerAdminTests(TestCase):
             self.client.get(reverse("admin:core_joiner_export_one", args=[joiner.pk])).status_code, 403)
         self.assertEqual(
             self.client.get(reverse("admin:core_joiner_export_one", args=[999999])).status_code, 403)
+        # SEC-026: the change page is viewable, but without the progress table or incomplete list.
+        detail = self.client.get(reverse("admin:core_joiner_change", args=[joiner.pk]))
+        self.assertEqual(detail.status_code, 200)
+        self.assertNotContains(detail, "field-progress_table")
+        self.assertNotContains(detail, "field-incomplete_materials")
 
     def test_export_survives_a_bad_filter_value(self):
         # SEC-013: IncorrectLookupParameters used to escape as a 500.

@@ -167,6 +167,12 @@ class JoinerAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def get_readonly_fields(self, request, obj=None):
+        # SEC-026: progress data needs view_joinerprogress, the same rule as the CSV export (SEC-012).
+        if request.user.has_perm("core.view_joinerprogress"):
+            return self.readonly_fields
+        return tuple(f for f in self.readonly_fields if f not in ("incomplete_materials", "progress_table"))
+
     def get_queryset(self, request):
         total = Material.objects.filter(is_active=True).count()
         return (
@@ -202,7 +208,7 @@ class JoinerAdmin(admin.ModelAdmin):
     # T6.16: replaces the progress inline, which only had rows for materials the joiner had opened.
     @admin.display(description="progress")
     def progress_table(self, obj):
-        head = format_html_join("", "<th>{}</th>", ((h,) for h in (
+        head = format_html_join("", '<th scope="col">{}</th>', ((h,) for h in (
             "Material", "Status", "Score", "Passed", "Submitted at", "Completed at")))
         body = format_html_join("", "<tr>{}</tr>", ((format_html_join("", "<td>{}</td>", ((v,) for v in (
             m.title,
@@ -212,7 +218,7 @@ class JoinerAdmin(admin.ModelAdmin):
             display_for_value(p and p.submitted_at, "-"),
             display_for_value(p and p.completed_at, "-"),
         ))),) for m, p in self._active_progress(obj)))
-        return format_html("<table><thead><tr>{}</tr></thead><tbody>{}</tbody></table>", head, body)
+        return format_html('<table aria-label="Progress"><thead><tr>{}</tr></thead><tbody>{}</tbody></table>', head, body)
 
     @admin.display(description="completed", ordering="completed_count")
     def completed(self, obj):
