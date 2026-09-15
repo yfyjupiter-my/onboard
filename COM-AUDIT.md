@@ -287,3 +287,7 @@ Action Needed: `alt` uses the description, or the title when it's blank (tested)
 COM-026: "image description" field shows for PDF/video/link too
 Verdict: ✅ Correct (accepted)
 Action Needed: None. The label and help text say "Image materials only"; for other types it's stored but unused. Hiding it per type would need admin JS, which isn't worth it.
+
+COM-007b (reverted 2026-09-15, on user request)
+Verdict: ⚠️ Pending (accepted gap)
+Action Needed: the "Open PDF in browser viewer — works with screen readers, search and zoom" link under the PDF.js viewer was removed. PDF pages are still canvas images with `role="img"` + "Page n of N" labels (COM-007a), but screen-reader users no longer have a route to the PDF's text (WCAG 1.1.1). If needed later, turn on PDF.js's text layer instead (COM-007b alternative).

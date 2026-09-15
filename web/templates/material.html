@@ -25,7 +25,7 @@
             const scale = (container.clientWidth - 24) / page.getViewport({ scale: 1 }).width;
             const viewport = page.getViewport({ scale });
             const canvas = document.createElement('canvas');
-            canvas.setAttribute('role', 'img');  // COM-007: pages are pixels; name them, link to the native viewer below
+            canvas.setAttribute('role', 'img');  // COM-007: pages are pixels; name them
             canvas.setAttribute('aria-label', `Page ${n} of ${pdf.numPages}`);
             canvas.width = viewport.width;
             canvas.height = viewport.height;
@@ -47,10 +47,6 @@
           container.setAttribute('role', 'alert');
         });
       </script>
-      <p style="margin:8px 0 0;font-size:14px">
-        <a href="{{ file_url }}" target="_blank" rel="noopener">Open PDF in browser viewer</a>
-        <span style="color:var(--muted)">— works with screen readers, search and zoom</span>
-      </p>
     {% elif material.type == 'link' %}
       {# ponytail: an X-Frame-Options block can't be detected cross-origin (the frame still fires `load`), so a blocked site just renders blank — prefer embeddable URLs. #}
       {# Django's SECURE_REFERRER_POLICY default (same-origin) sends no Referer cross-origin, which YouTube rejects with error 153 — override it for this frame only. #}

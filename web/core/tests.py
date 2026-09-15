@@ -206,12 +206,12 @@ class NoQuizViewTests(TestCase):
         img.save()
         self.assertContains(self.client.get(reverse("material", args=[img.pk])), 'alt="CEO at top, three teams below"')
 
-    def test_pdf_has_accessible_open_link_forced_to_pdf(self):
-        # COM-007b: native-viewer link; forced content type keeps SEC-010 (no same-origin HTML).
+    def test_pdf_viewer_region_without_open_link(self):
+        # COM-007a region stays; COM-007b "Open PDF in browser viewer" link removed on request (2026-09-15).
+        # Forced application/pdf on the URL is covered by test_file_urls_force_safe_response_type (SEC-020).
         pdf = Material.objects.create(title="Doc", type=Material.PDF, file="materials/x.pdf")
         resp = self.client.get(reverse("material", args=[pdf.pk]))
-        self.assertContains(resp, "Open PDF in browser viewer")
-        self.assertContains(resp, "response-content-type=application%2Fpdf")
+        self.assertNotContains(resp, "Open PDF in browser viewer")
         self.assertContains(resp, 'role="region"')
 
     def test_file_urls_force_safe_response_type(self):
