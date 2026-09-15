@@ -170,3 +170,4 @@
 - **QA check ROB-008 fix (Business Logic + Robustness + Accessibility) — PASS, 1 low pending** — BUS-019 old v1 keys stay in storage (recommend accept). Verified the real flow end-to-end: 9/10 → Mark complete → checklist → ribbons 1.15s, popup 1.75s, once; other joiner same browser gets nothing; blocked storage no errors; dialog a11y intact. See `BUS-AUDIT.md`, `ROB-AUDIT.md`, `COM-AUDIT.md`.
 - **BUS-019 accepted ✅** — no code change. ROB-008 fix committed.
 - **Leaked template comment removed ✅** — a two-line `{# #}` comment (ROB-008 fix) rendered as visible text on the checklist, because Django `{# #}` is single-line only. Deleted. Verified the rendered page has no comment text and the dialog is still present. 38/38 tests. Not committed.
+- **Popup title trimmed ✅ (user request)** — removed "you did it!" from the congratulations dialog; title now "Congratulations!" (`web/templates/checklist.html`). Not committed.
