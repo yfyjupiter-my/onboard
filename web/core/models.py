@@ -67,6 +67,13 @@ class Material(models.Model):
         # ROB-012: the file must match the type, so switching type can't leave e.g. a .png behind a PDF.
         # ponytail: extension only for PDF/video (PDF.js / <video> fail safely on junk); images also check bytes (T6.11).
         ext = os.path.splitext(self.file.name)[1].lower() if self.file else ""
+        if self.url and self.file and (self.type == self.LINK or (self.type == self.VIDEO and ext not in self.FILE_EXTENSIONS[self.VIDEO])):
+            if self.file._committed:
+                # e.g. PDF -> Link/Video with a URL: the stored file is stale (a Link never shows files). MaterialAdmin.save_model deletes the object.
+                self.file, ext = "", ""
+            elif self.type == self.LINK:
+                # BUS-022a: a new upload is never silently discarded; Video falls through to the extension error below.
+                raise ValidationError({"file": "Link materials don't use a file."})
         if self.type in self.FILE_EXTENSIONS and self.file and ext not in self.FILE_EXTENSIONS[self.type]:
             *rest, last = self.FILE_EXTENSIONS[self.type]
             allowed = f"{', '.join(rest)} or {last}" if rest else last  # ".jpg, .jpeg or .png"

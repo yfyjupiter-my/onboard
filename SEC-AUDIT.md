@@ -317,3 +317,9 @@ Verdict: ✅ Correct
 Action Needed: None. `a.png.html`, `a.pdf.html`, `a.png.` (trailing dot), `a.png ` (trailing space) and `a.svg` are rejected. `a.html.png` with real PNG bytes is accepted, but it is served `image/png` (SEC-021), so it can't render as a page. The extension is checked on the lower-cased `splitext`, the same value `source_url` uses for the forced content type.
 
 Gate: **PASS**, no vulnerabilities.
+
+## T6.14 fix: stale file dropped on switch to Link/Video: security check (2026-09-15)
+
+SEC-024: object deletion path
+Verdict: ✅ Correct
+Action Needed: None. Deletion is reachable only through the admin change form (staff, change permission, CSRF). The object key comes from the DB row, not the request, so there's no arbitrary or path-traversal delete. `URLField` still limits URLs to http(s)/ftp(s), so no `javascript:` in the iframe.

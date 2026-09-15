@@ -174,3 +174,13 @@ Action Needed: When the image fails (`@error`), `failed` is set in the inner `x-
 ROB-018: image load before Alpine binds
 Verdict: ✅ Correct
 Action Needed: None. The ROB-009 `onload`/`onerror` flags plus `x-init` still set `reviewed`/`failed`, so a cached image hides the dots on first paint.
+
+## T6.14 fix: stale file dropped on switch to Link/Video: robustness check (2026-09-15)
+
+ROB-019: orphan delete runs only after the save commits
+Verdict: ✅ Correct
+Action Needed: None. `save_model` compares the stored name with the new one and deletes with `transaction.on_commit`. A save that fails (validation or rollback) deletes nothing. A MinIO outage during delete behaves like the existing replace-file path.
+
+ROB-020: non-admin saves
+Verdict: ✅ Correct
+Action Needed: None. `full_clean()` + `save()` outside the admin (shell/ORM) clears the file reference but leaves the object in MinIO. That leaves an unused object but loses no data. The admin is the only place materials are edited.

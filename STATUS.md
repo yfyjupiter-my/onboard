@@ -190,3 +190,7 @@
 - **T6.13 QA check (COM/ROB)**: COM-027 accepted. **ROB-017 fixed (017a)**: `failed` now lives in the card scope, so a failed image hides the "Loading" dots. Tests 41/41; verified in Chromium (broken image: no dots, alert shown, button locked). Nothing pending.
 
 - **T6.14 ✅** — admin video materials accept a file **or** a URL (URL-only video plays in an iframe like Link; file wins if both). Migration 0011 (help text). 41/41 tests.
+
+- **T6.14 fix (PDF→Video)** — switching a PDF material to Video with a URL failed validation (old .pdf still attached) and Remove was blocked (no saved URL), a dead end. `Material.clean()` now drops a non-video file when a Video has a URL; `save_model` deletes the orphaned MinIO object. Same for Link (any file + URL → file dropped); existing orphan on material 13 cleared (row + MinIO object). Regression asserts added; 41/41 tests.
+
+- **QA (BUS/ROB/SEC) on T6.14 fix**: BUS-023, ROB-019/020, SEC-024 ✅. **BUS-022 fixed (022a, user choice)**: only stored files are dropped; a new wrong upload shows an error (Video: extension msg, Link: "Link materials don't use a file."). 41/41 tests.

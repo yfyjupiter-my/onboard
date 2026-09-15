@@ -261,3 +261,16 @@ Action Needed: PDFs unlock only after scrolling to the end; images unlock as soo
 BUS-021: completion, lock, quiz and export rules for images
 Verdict: ✅ Correct
 Action Needed: None. `mark_complete` / `quiz` / T6.5 lock checks are type-independent; an image material can have a quiz; topbar counts and CSV include it. `remove_file_view` on an image with a URL turns it into a Link (as for PDF/video); on an image without a URL it refuses. File-less image → home redirect (ROB-005 path).
+
+## T6.14 fix: stale file dropped on switch to Link/Video: business logic check (2026-09-15)
+
+BUS-022: new upload silently discarded
+Verdict: ✅ Correct (fixed, 022a)
+Action Needed: `Material.clean()` drops *any* file when the material has a URL and is a Link, or is a Video and the file isn't a video. That includes a file uploaded in the same save. Verified with the admin form: Video + URL + new `new.pdf` upload, and Link + URL + new upload, both save with no error, and the upload just disappears. Before the fix, Video + .pdf showed an error, so the admin knew. Nothing stored is lost (the upload never reaches MinIO), but the admin's intent is ignored without telling them.
+- [x] BUS-022a **Recommended:** only drop a file that's already stored (`self.file._committed`). A new wrong upload goes back to showing an error: the existing extension message for Video, and "Link materials don't use a file." for Link. Add asserts for both.
+- [ ] BUS-022b accept: the URL wins and the upload is ignored.
+- Verified: tests 41/41 (new asserts for Video and Link). With the admin form, Video + new .pdf shows the extension error, Link + new upload shows "Link materials don't use a file.", Video + new .mp4 saves, and stored PDF → Video + URL still drops the PDF.
+
+BUS-023: file deletion can't hit another material
+Verdict: ✅ Correct
+Action Needed: None. Uploads use no-overwrite unique names, and `MaterialAdmin.save_as` is False, so no two rows share an object. Material 13's cleared PDF was checked (1 reference) before it was deleted.

@@ -122,6 +122,18 @@ class ModelValidationTests(TestCase):
         self.assertEqual(url_video.source_url, "https://www.youtube.com/embed/tUd9Dg0R9CA")
         with self.assertRaisesMessage(ValidationError, "Video materials need a file or a URL."):
             Material(title="V", type=Material.VIDEO).full_clean()
+        # PDF -> Video/Link with a URL: the stale PDF is dropped, not a validation dead end.
+        for type_ in (Material.VIDEO, Material.LINK):
+            switched = Material(title="V", type=type_, file="materials/a.pdf", url="https://youtu.be/tUd9Dg0R9CA")
+            switched.full_clean()
+            self.assertFalse(switched.file)
+            self.assertTrue(switched.embeds_url)
+        # BUS-022a: a new wrong upload is an error, not silently dropped.
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        for type_, msg in ((Material.VIDEO, "Video materials must be"), (Material.LINK, "Link materials don't use a file.")):
+            upload = SimpleUploadedFile("new.pdf", b"%PDF")
+            with self.assertRaisesMessage(ValidationError, msg):
+                Material(title="V", type=type_, file=upload, url="https://youtu.be/tUd9Dg0R9CA").full_clean()
         with self.assertRaises(ValidationError):
             Material(title="P", type=Material.PDF, url="https://example.com/a.pdf").full_clean()
         with self.assertRaisesMessage(ValidationError, "Image materials must be a .jpg, .jpeg or .png file."):

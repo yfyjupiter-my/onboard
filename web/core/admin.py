@@ -76,7 +76,7 @@ class MaterialAdmin(admin.ModelAdmin):
     formfield_overrides = {models.FileField: {"widget": ReplaceableFileInput}}
 
     def save_model(self, request, obj, form, change):
-        old = form.initial.get("file") if change and "file" in form.changed_data else None
+        old = form.initial.get("file") if change else None  # clean() may also drop a stale file, so compare names, not changed_data
         super().save_model(request, obj, form, change)
         if old and old.name != obj.file.name:
             # Replaced or cleared: drop the orphaned MinIO object, only once the row is committed.
