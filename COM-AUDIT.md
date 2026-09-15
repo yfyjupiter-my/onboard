@@ -135,3 +135,65 @@ Gate: **PASS**, no blocker for internal use.
 - Tests: `manage.py test core` 35/35 (+3: `test_locked_button_explains_itself`, `test_pdf_has_accessible_open_link_forced_to_pdf`, `test_login_error_is_announced`).
 
 Gate: **PASS**, nothing pending.
+## QA check — T6.7 top bar (option B) — 2026-09-15
+
+Scope: `_topbar.html`, `.topbar` CSS, `core.context_processors.topbar_progress`. Probed live (Chromium via nginx :8080, joiner session minted server-side and deleted after).
+
+COM-013: sticky top bar covers keyboard focus when tabbing backwards (WCAG 2.2 SC 2.4.11 Focus Not Obscured)
+Verdict: ✅ Correct (fixed)
+Action Needed: the browser scrolls a focused element to the viewport top, but the bar comes back on scroll-up and sits over it. Reproduced on the checklist at 1280×500: Shift+Tab put **5 tiles** under the visible bar (tile top −1px, bar bottom 61px), so the focus ring can't be seen.
+- [x] COM-013a add `html{scroll-padding-top:80px}` to `app.css` (one line; focus/anchor scrolling then stops below the bar).
+
+COM-014: on screens under 560px the "N of M complete" text is `display:none`, and the rail is `aria-hidden`
+Verdict: ✅ Correct (fixed, option a)
+Action Needed: on phones the material/quiz/result pages give no progress in text, to sighted users or screen readers. The checklist still has per-chapter counts. Pick one:
+- [x] COM-014a (recommended) hide the count visually but keep it for screen readers (clip pattern instead of `display:none`), or
+- [ ] COM-014b accept it (the rail is decorative; the checklist carries the numbers).
+
+COM-015: the brand link's accessible name is "Welcome back chris.goh", not where it goes (home/checklist)
+Verdict: ✅ Correct (accepted)
+Action Needed: none. The same was true of the old "Welcome <user>" link. An `aria-label` that drops the visible text would break SC 2.5.3 (Label in Name).
+
+COM-OK (verified good):
+- Contrast: the amber 11px/700 kicker is 5.6:1 on white, and the muted 12px count is above 4.5:1 on white.
+- 320px width (400% zoom): no horizontal scroll (`scrollWidth` 320), long usernames get an ellipsis, Log out stays visible.
+- The bar stays shown while it holds focus (`:focus-within`), so keyboard users can always reach Log out. Without JS it is just a sticky bar.
+- Reduced motion: the global rule now also covers `::before/::after`, so the mark ping is off too. The rail and greeting render in their final state.
+- Log out has visible text; the icons are `aria-hidden`. `<header>` landmark. Username auto-escaped.
+- Motion is transform/opacity only; the entrance plays once per page load, with no loop or flashing (SC 2.3.1).
+
+Gate: **PASS**, no blocker. 2 pending (COM-013, COM-014).
+
+### Fixes applied — 2026-09-15 (user-approved: COM-013a, COM-014a)
+- COM-013 ✅ `html{scroll-padding-top:80px}`. Re-probed Shift+Tab through the checklist at 1280×500: page tiles under the visible bar went from 5 to 0. The probe still flagged the bar's own brand link, which is part of the bar and not hidden by it.
+- COM-014 ✅ under 560px `.topbar .count` uses the clip pattern (1×1px, `clip-path:inset(50%)`) instead of `display:none`. At 390px it's in the bar's accessibility tree ("N of M complete"), takes no visible space, and nothing scrolls sideways.
+- `manage.py test core` 38/38. The probe session was deleted.
+
+Gate: **PASS**, nothing pending.
+
+## QA check — top bar always pinned (hide-on-scroll removed) — 2026-09-15
+Probe: Playwright on the live stack (`:8080`), pages `/`, `/material/22/`, `/material/30/`. Viewports 1280×800, 1280×500, 390×844, 740×360 (landscape phone), 320×256 (1280×1024 at 400% zoom). 60 Tab + 60 Shift+Tab steps per page, checking whether focus lands under the bar.
+
+COM-015: at 400% zoom and on landscape phones, the pinned bar takes a large share of the screen, and tall tiles take focus partly under it
+Verdict: ✅ Correct (accepted, option a)
+Action Needed: the bar is a fixed 61px, which is 24% of the viewport at 320×256 and 17% at 740×360. At 320×256, Tab focus on checklist tiles lands 3–24px under the bar (90/90 steps partial, **0 fully hidden**), so it passes SC 2.4.11 (AA) but not 2.4.12 (AAA). There's no horizontal scroll, so SC 1.4.10 passes. Pick one:
+- [x] COM-015a accept: the user asked for the bar to be always pinned, and AA passes.
+- [ ] COM-015b unpin on very short screens only, with one line: `@media (max-height:400px){.topbar{position:static}}`. Desktop and portrait phones stay pinned.
+
+COM-016: Shift+Tab onto the material iframe leaves its top 22–27px under the bar
+Verdict: ✅ Correct (accepted)
+Action Needed: none. At 1280×500 and 740×360, the iframe top is at 34–39px and the bar bottom is at 61px. The browser doesn't scroll because the frame is mostly visible, so focus is not obscured (AA).
+
+COM-017: quiz and result pages not tested live
+Verdict: ⚠️ Pending (low)
+Action Needed: the only quiz (material 13) is inactive, so its page returns 404 and nothing live could be tested. Those pages use the same `_topbar.html` and CSS, so the risk is low.
+- [ ] COM-017a when an active quiz exists, repeat the Tab/Shift+Tab test on `/material/<id>/quiz/` and the result screen (radio focus under the bar).
+
+COM-OK: 0 fully hidden focus in 3 pages × 4 viewports × 120 steps. `scroll-padding-top:80px` (COM-013) still covers the 61px bar. The bar stays at `top=0` after scrolling on every viewport. `scrollWidth` equals the viewport everywhere. There's no motion left on the bar itself (its slide animation is gone).
+
+Gate: **PASS**, no blocker. 2 pending, both low (COM-015, COM-017).
+
+### Decision — 2026-09-15 (user-approved: COM-015a)
+- COM-015 ✅ accepted: the bar stays pinned at every screen size, as requested. No code change.
+
+Gate: **PASS**, 1 pending (COM-017, needs an active quiz to test).

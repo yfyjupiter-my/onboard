@@ -59,3 +59,15 @@ Fix (2026-09-14), verified:
 - Tests 37/37.
 
 Gate: **PASS**, no blocker, nothing pending.
+
+## QA check — top bar always pinned (hide-on-scroll removed) — 2026-09-15
+
+ROB-006: top bar without JS, with long usernames, and in print
+Verdict: ✅ Correct
+Action Needed: none. Verified live:
+- JS disabled: the bar is pure CSS, `top=0` after scrolling on `/`, `/material/22/`, `/material/30/`. It now behaves exactly the same as with JS. Before, JS was needed to hide it.
+- 150-char username (Django max): bar height stays 61px at 320 and 1280, the name is cut off with an ellipsis, nothing scrolls sideways, and Log out stays fully on screen.
+- `docker compose up -d --build web` is required after template/CSS edits (code is baked into the image). This caused the "not pinned" report.
+- `manage.py test core` 38/38. Probe users deleted.
+
+Gate: **PASS**, nothing pending.

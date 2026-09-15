@@ -49,3 +49,31 @@ Fix (2026-09-14), all verified live:
 - `manage.py test core` 32/32.
 
 Gate: **PASS**, no blocker, nothing pending.
+
+## QA check — T6.7 top bar (option B) — 2026-09-15
+
+RUN-006: `topbar_progress` adds 2 COUNT queries to every joiner page
+Verdict: ✅ Correct
+Action Needed: none. Measured on `/` and `/material/<id>/`: 7 queries total, of which 2 are the COUNTs, taking 1–2 ms combined. The progress COUNT uses the `core_joinerprogress_user_id` index (plus the unique `(user_id, material_id)` constraint), and the materials table is small. Staff and anonymous requests (all of `/admin/`, login) return `{}` before any query.
+
+RUN-007: the scroll handler runs on every scroll event
+Verdict: ✅ Correct
+Action Needed: none. It is a passive `@scroll.window` that only reads `scrollY` and flips one boolean. Alpine's `:class` effect depends on `hide`, not `y`, so the DOM updates only on a direction change. No layout reads, no forced reflow.
+
+RUN-008: `body{overflow-x:clip}` is ignored before Safari 16
+Verdict: ✅ Correct (accepted, informational)
+Action Needed: none. The full-bleed bar uses `calc(50% - 50vw)`. On pre-2022 desktop Safari with classic scrollbars, the page could scroll sideways by the scrollbar width (~15px). Mobile Safari has no scrollbar width, so it's unaffected. Chromium verified at 320/390/1280: `scrollWidth` equals the viewport.
+
+RUN-OK: animations are transform/opacity only (the rail uses `scaleX`, the bar uses `translateY`), with no width/height animation. No new static assets or JS files (Alpine was already loaded).
+
+Gate: **PASS**, nothing pending.
+
+## QA check — top bar always pinned (hide-on-scroll removed) — 2026-09-15
+
+RUN-009: cost of scrolling with the sticky bar
+Verdict: ✅ Correct
+Action Needed: none. Checklist at 1280×800, 240 scroll frames driven by `requestAnimationFrame`: **LayoutCount +0**, LayoutDuration 0ms, frame p50 16.7ms / p95 17.6ms / max 21.5ms (60fps). There are **no `scroll` listeners on `window`** now (CDP `getEventListeners`). The bar has no `transform` or `will-change`, so no extra compositor layer. Chromium handles sticky positioning off the main thread.
+
+RUN-007: superseded. The Alpine `@scroll.window` handler was removed, so there's no per-scroll JS left.
+
+Gate: **PASS**, nothing pending.

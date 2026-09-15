@@ -199,6 +199,24 @@ class NoQuizViewTests(TestCase):
 
 
 @override_settings(SECURE_SSL_REDIRECT=False)
+class TopbarProgressTests(TestCase):
+    def test_counts_only_active_materials_for_this_joiner(self):
+        user = User.objects.create_user("j9", password="pw-testing-123")
+        other = User.objects.create_user("j10", password="pw-testing-123")
+        self.client.force_login(user)
+        a = Material.objects.create(title="A", type=Material.LINK, url="https://x.test")
+        Material.objects.create(title="B", type=Material.LINK, url="https://x.test")
+        gone = Material.objects.create(title="Old", type=Material.LINK, url="https://x.test", is_active=False)
+        JoinerProgress.objects.create(user=user, material=a, status=JoinerProgress.COMPLETED)
+        JoinerProgress.objects.create(user=user, material=gone, status=JoinerProgress.COMPLETED)
+        JoinerProgress.objects.create(user=other, material=a, status=JoinerProgress.COMPLETED)
+        resp = self.client.get(reverse("home"))
+        self.assertEqual(resp.context["topbar"], {"done": 1, "total": 2, "ratio": 0.5})
+        self.assertContains(resp, "1 of 2 complete")
+        self.assertContains(resp, "--p:0.500")
+
+
+@override_settings(SECURE_SSL_REDIRECT=False)
 class ChecklistChapterTests(TestCase):
     def test_materials_grouped_by_chapter_with_counts(self):
         user = User.objects.create_user("j3", password="pw-testing-123")

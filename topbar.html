@@ -1,0 +1,224 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Top bar playground — 3 options</title>
+<style>
+@font-face{font-family:Inter;src:url(web/static/fonts/inter.woff2) format("woff2");font-weight:400 700;font-display:swap}
+@font-face{font-family:"Bricolage Grotesque";src:url(web/static/fonts/bricolage.woff2) format("woff2");font-weight:200 800;font-display:swap}
+:root{
+  --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#6f6457;
+  --primary:#0f766e; --primary-ink:#fff; --accent:#a84e08;
+  --line:#ece3d6; --ok:#0f766e; --radius:16px;
+  --shadow:0 2px 6px rgba(120,90,40,.08);
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:400 16px/1.6 Inter,system-ui,sans-serif;padding:18px}
+button{font:inherit}
+.btn{height:36px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:transparent;
+  color:var(--text);font-weight:600;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  transition:background .18s,border-color .18s,color .18s,transform .18s}
+.btn:hover{background:color-mix(in srgb,var(--text) 6%,transparent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.title{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;letter-spacing:-.04em;line-height:.95;
+  margin:0;font-optical-sizing:auto;text-wrap:balance;font-size:34px}
+.title em{font-style:normal;font-weight:500;color:var(--primary)}
+
+/* ---------- playground chrome ---------- */
+.head{max-width:1000px;margin:0 auto 14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.head h1{font-size:15px;margin:0 12px 0 0;font-weight:700}
+.tabs{display:flex;max-width:100%;overflow-x:auto;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:4px}
+.tabs button{border:0;background:transparent;color:var(--muted);padding:6px 14px;border-radius:99px;cursor:pointer;font-size:14px;font-weight:600;white-space:nowrap}
+.tabs button[aria-selected=true]{background:var(--text);color:var(--bg)}
+.note{max-width:1000px;margin:0 auto 10px;font-size:13px;color:var(--muted)}
+.stage{max-width:1000px;margin:0 auto;height:78vh;min-height:520px;overflow:auto;border:1px dashed #d9ccb8;
+  border-radius:20px;background:var(--bg);position:relative;padding:0 18px 18px}
+.stage[hidden]{display:none}
+
+/* fake page content so the bar has something to scroll over */
+.page{padding-top:10px}
+.page .title{margin:26px 0 6px}
+.page p{margin:0 0 18px;color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px}
+.tile i{display:block;height:84px;border-radius:12px;background:color-mix(in srgb,var(--primary) 9%,var(--surface));margin-bottom:10px}
+.tile b{display:block;font-size:15px}.tile span{font-size:12px;color:var(--muted)}
+
+/* shared bar bits */
+.mark{width:30px;height:30px;border-radius:9px;background:var(--primary);color:var(--primary-ink);display:grid;place-items:center;flex:none}
+.mark path{stroke-dasharray:24;stroke-dashoffset:0}
+.spacer{flex:1}
+.who{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avatar{width:30px;height:30px;border-radius:99px;display:grid;place-items:center;font-size:13px;font-weight:700;flex:none;
+  color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,var(--surface));border:1px solid color-mix(in srgb,var(--primary) 30%,transparent)}
+.out svg{transition:transform .18s var(--ease)}
+.out:hover svg,.out:focus-visible svg{transform:translateX(3px)}
+@keyframes draw{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+@keyframes rise{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes slidein{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+
+/* =====================================================================
+   A · Floating dock — detached pill, staggered entrance, lifts when stuck
+   ===================================================================== */
+.a .bar{position:sticky;top:12px;z-index:5;margin:12px auto 0;display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:1px solid var(--line);border-radius:99px;box-shadow:var(--shadow);padding:7px 7px 7px 8px;
+  transition:transform .25s var(--ease),border-color .25s,box-shadow .25s}
+.a.stuck .bar{transform:translateY(2px);border-color:color-mix(in srgb,var(--primary) 35%,var(--line));
+  box-shadow:0 8px 22px rgba(120,90,40,.12)}
+.a .mark{border-radius:99px}
+.a .who small{font-weight:500;color:var(--muted)}
+.a .out{border-radius:99px;height:34px}
+.a .out:hover{border-color:var(--primary);color:var(--primary);background:color-mix(in srgb,var(--primary) 7%,transparent)}
+.a.play .bar{animation:rise .5s var(--ease) both}
+.a.play .mark path{animation:draw .5s .25s var(--ease) both}
+.a.play .who{animation:rise .45s .15s var(--ease) both}
+.a.play .out{animation:slidein .45s .3s var(--ease) both}
+
+/* =====================================================================
+   B · Edge bar + progress rail — hides on scroll down, returns on scroll up
+   ===================================================================== */
+.b{padding-top:0}
+.b .bar{position:sticky;top:0;z-index:5;margin:0 -18px;display:flex;align-items:center;gap:12px;padding:12px 18px;
+  background:var(--surface);border-bottom:1px solid var(--line);transition:transform .3s var(--ease)}
+.b.hide .bar{transform:translateY(-100%)}
+.b .rail{position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--primary);transform-origin:left;
+  transform:scaleX(var(--p,.6))}
+.b.play .rail{animation:fill 1.1s .2s var(--ease) both}
+@keyframes fill{from{transform:scaleX(0)}}
+.b .mark{position:relative}
+.b .mark::after{content:"";position:absolute;inset:-5px;border-radius:12px;border:2px solid var(--primary);opacity:0}
+.b.play .mark::after{animation:ping 1.2s .3s var(--ease) 2}
+@keyframes ping{0%{opacity:.6;transform:scale(.85)}100%{opacity:0;transform:scale(1.35)}}
+.b .greet{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.b .greet small{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.b .count{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.b.play .greet{animation:rise .45s .1s var(--ease) both}
+.b .out:hover{border-color:var(--text)}
+
+/* =====================================================================
+   C · Sliding highlight — one tint pill glides to whatever you hover/focus
+   ===================================================================== */
+.c .bar{position:sticky;top:12px;z-index:5;margin:12px 0 0;display:flex;align-items:center;gap:6px;padding:6px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  transition:box-shadow .25s,border-color .25s}
+.c.stuck .bar{box-shadow:0 8px 22px rgba(120,90,40,.12)}
+/* ponytail: clip-path on a full-width layer = moving highlight with zero layout/width animation */
+.c .glow{position:absolute;inset:6px;border-radius:10px;background:color-mix(in srgb,var(--primary) 9%,transparent);
+  pointer-events:none;opacity:0;clip-path:inset(0 100% 0 0 round 10px);
+  transition:clip-path .32s var(--ease),opacity .2s}
+.c .item{position:relative;display:flex;align-items:center;gap:9px;height:40px;padding:0 10px;border-radius:10px;
+  border:0;background:transparent;color:var(--text);text-decoration:none;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap}
+.c .item.brand{font-weight:700;font-size:16px}
+.c .word{display:inline-grid;overflow:hidden;height:1.6em;vertical-align:bottom}
+.c .word span{grid-area:1/1;transition:transform .35s var(--ease)}
+.c .word span+span{transform:translateY(100%);color:var(--primary)}
+.c .brand:hover .word span:first-child,.c .brand:focus-visible .word span:first-child{transform:translateY(-100%)}
+.c .brand:hover .word span+span,.c .brand:focus-visible .word span+span{transform:none}
+.c .sep{width:1px;height:22px;background:var(--line);margin:0 4px}
+.c .out:hover{color:var(--accent)}
+.c.play .bar{animation:rise .5s var(--ease) both}
+.c.play .mark path{animation:draw .5s .2s var(--ease) both}
+
+@media (max-width:560px){
+  .a .who small,.b .count,.c .item.user .who{display:none}
+  .title{font-size:28px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+
+<div class="head">
+  <h1>Top bar — 3 options</h1>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-t="a">A · Floating dock</button>
+    <button role="tab" aria-selected="false" data-t="b">B · Progress rail</button>
+    <button role="tab" aria-selected="false" data-t="c">C · Sliding highlight</button>
+  </div>
+  <button class="btn" id="replay">Replay entrance</button>
+</div>
+<p class="note" id="note"></p>
+
+<!-- A -->
+<div class="stage a" data-note="Detached pill. Check mark draws in, name and button stagger in. Scroll: bar lifts with a softer shadow and teal-tinted border. Hover Log out: teal tint + arrow nudge.">
+  <header class="bar">
+    <span class="mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+    <span class="who">Welcome <small>chris.goh</small></span>
+    <span class="spacer"></span>
+    <button class="btn out" type="button">Log out
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+  </header>
+  <div class="page"></div>
+</div>
+
+<!-- B -->
+<div class="stage b" hidden style="--p:.6" data-note="Full-width edge bar. Bottom rail fills to overall progress (3 of 5), mark pings twice. Scroll down: bar slides away; scroll up: it comes back. Progress count is new data on the bar — only if you want it.">
+  <header class="bar">
+    <span class="mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+    <span class="greet"><small>Welcome back</small><span class="who">chris.goh</span></span>
+    <span class="spacer"></span>
+    <span class="count">3 of 5 complete</span>
+    <button class="btn out sm" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
+    <span class="rail" aria-hidden="true"></span>
+  </header>
+  <div class="page"></div>
+</div>
+
+<!-- C -->
+<div class="stage c" hidden data-note="Segmented bar. One teal tint slides to whichever item you hover or Tab to (keyboard works). Hover the brand: “Welcome” rolls up to reveal “Onboard”. Scroll: soft lift.">
+  <header class="bar">
+    <span class="glow" aria-hidden="true"></span>
+    <a class="item brand" href="#">
+      <span class="mark"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+      <span class="word"><span>Welcome</span><span aria-hidden="true">Onboard</span></span>
+    </a>
+    <span class="spacer"></span>
+    <span class="item user"><span class="avatar" aria-hidden="true">C</span><span class="who">chris.goh</span></span>
+    <span class="sep" aria-hidden="true"></span>
+    <button class="item out" type="button">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out</button>
+  </header>
+  <div class="page"></div>
+</div>
+
+<script>
+const page = `<h2 class="title">Your onboarding <em>checklist</em></h2><p>Scroll inside this frame to see the bar react.</p>
+<div class="grid">${Array.from({length:12},(_,i)=>`<div class="tile"><i></i><b>Material ${i+1}</b><span>PDF · 5 min</span></div>`).join('')}</div>`;
+document.querySelectorAll('.page').forEach(p => p.innerHTML = page);
+
+const stages = [...document.querySelectorAll('.stage')];
+const note = document.getElementById('note');
+const play = s => { s.classList.remove('play'); void s.offsetWidth; s.classList.add('play'); };
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tabs button').forEach(x => x.setAttribute('aria-selected', x === b));
+  stages.forEach(s => { s.hidden = !s.classList.contains(b.dataset.t); if (!s.hidden) { note.textContent = s.dataset.note; s.scrollTop = 0; play(s); } });
+});
+document.getElementById('replay').onclick = () => play(stages.find(s => !s.hidden));
+
+// scroll reactions: A/C lift when stuck, B hides on scroll down
+stages.forEach(s => {
+  let last = 0;
+  s.addEventListener('scroll', () => {
+    const y = s.scrollTop;
+    s.classList.toggle('stuck', y > 8);
+    if (s.classList.contains('b')) s.classList.toggle('hide', y > last && y > 80);
+    last = y;
+  }, {passive:true});
+});
+
+// C: move the highlight to the hovered/focused item via clip-path
+const c = document.querySelector('.stage.c'), glow = c.querySelector('.glow'), bar = c.querySelector('.bar');
+const moveTo = el => {
+  const g = glow.getBoundingClientRect(), r = el.getBoundingClientRect();
+  glow.style.clipPath = `inset(${r.top-g.top}px ${g.right-r.right}px ${g.bottom-r.bottom}px ${r.left-g.left}px round 10px)`;
+  glow.style.opacity = 1;
+};
+c.querySelectorAll('.item').forEach(el => { el.addEventListener('mouseenter', () => moveTo(el)); el.addEventListener('focus', () => moveTo(el)); });
+bar.addEventListener('mouseleave', () => glow.style.opacity = 0);
+bar.addEventListener('focusout', e => { if (!bar.contains(e.relatedTarget)) glow.style.opacity = 0; });
+
+// open a tab from the URL hash (#a / #b / #c)
+(document.querySelector(`.tabs [data-t="${location.hash.slice(1)}"]`) || document.querySelector('.tabs button')).click();
+</script>

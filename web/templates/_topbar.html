@@ -1,13 +1,17 @@
-<div class="topbar">
-  <a class="brand" href="{% url 'home' %}" style="text-decoration:none;color:inherit">
+<header class="topbar">
+  <a class="brand" href="{% url 'home' %}">
     <span class="mark">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
     </span>
-    Welcome {{ request.user.get_username }}
+    <span class="greet"><small>Welcome back</small><span class="who">{{ request.user.get_username }}</span></span>
   </a>
   <span class="spacer"></span>
+  {% if topbar %}<span class="count">{{ topbar.done }} of {{ topbar.total }} complete</span>{% endif %}
   <form method="post" action="{% url 'logout' %}" style="margin:0">
     {% csrf_token %}
-    <button class="btn ghost sm" type="submit">Log out</button>
+    <button class="btn ghost sm out" type="submit">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out
+    </button>
   </form>
-</div>
+  {% if topbar %}<span class="rail" aria-hidden="true" style="--p:{{ topbar.ratio|stringformat:'.3f' }}"></span>{% endif %}
+</header>
