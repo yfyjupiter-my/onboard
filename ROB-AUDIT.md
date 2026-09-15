@@ -93,3 +93,15 @@ Gate: **PASS**, no open items.
 ROB-OK (verified live): navigating away during the 1.5s delay (tile click at 0.6s) never sets the seen-key, so ribbons and popup play on the next visit. Back navigation mid-delay (bfcache) still opens exactly 1 dialog. Without `showModal` the script exits before spawning ribbons. With no `.topbar` or reduced motion it goes straight to the popup. `color-mix` is already required by the app's tags, so no new browser floor. Blocked storage replays burst + popup on every visit (same degradation accepted in T6.8).
 
 Gate: **PASS**, no open items.
+
+ROB-008: ribbons never play for joiners who already saw the T6.8 popup
+Verdict: ✅ Fixed — 2026-09-15 (user-reported: "progress bar runs to the end, nothing happens")
+Action Needed: none. Root cause: T6.9 reused the T6.8 once-per-browser key. chris.goh and john.chen were already 10/10 and their browsers had stored that key, so the script exited before the burst. Reproduced (old key set, so 0 ribbons and no popup). No completion POST in today's logs. The code is fine in a fresh browser.
+- [x] ROB-008a key renamed `onboard-congrats-v2-<user>-<total>`. Verified live: a browser holding only the old key gets 24 ribbons plus the popup once, then nothing on reload. 38/38 tests.
+- Note: Firefox was not tested (not installed). The features used (`color-mix`, CSS vars in keyframes, `<dialog>`) are all supported in current Firefox.
+
+## QA check — ROB-008 fix (seen-key bumped to v2) — 2026-09-15
+
+ROB-OK (verified live): `data-key` is the only consumer (`checklist.html`), so there's no other reader of the old name. Blocked storage: 24 ribbons, no JS error (degrades as accepted in T6.8). A browser holding only the old key plays once (ROB-008a). 38/38 tests.
+
+Gate: **PASS**, no open items.

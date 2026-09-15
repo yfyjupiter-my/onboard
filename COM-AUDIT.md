@@ -229,3 +229,9 @@ Gate: **PASS**, no blocker. 1 pending (COM-019, low, decision). COM-017 still op
 - COM-019 ✅ accepted: the popup opens 1.5s after load even if the joiner is already Tabbing. It happens once and Esc dismisses it. No code change.
 
 Gate: **PASS**, 1 pending (COM-017, needs an active quiz to test).
+
+## QA check — ROB-008 fix (seen-key bumped to v2) — 2026-09-15
+
+COM-OK (verified live after the real Mark complete flow): the dialog is still named "Congratulations, you did it!", `aria-describedby="congrats-desc"` resolves, and focus opens on Close. The one-time replay for existing joiners has the same properties as the first showing, so COM-018 (fixed) and COM-019 (accepted) stand. No new finding.
+
+Gate: **PASS**, no new items. COM-017 still open (needs an active quiz).

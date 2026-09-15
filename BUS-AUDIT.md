@@ -230,3 +230,20 @@ Gate: **PASS**, no open items.
 BUS-OK (verified live): the seen-key is written only when the popup actually opens, so an interrupted burst is never counted as seen. Two tabs loaded together both celebrate once (harmless, same as T6.8). An incomplete joiner gets no ribbons. The server-side "all complete" rule is unchanged (T6.8 BUS-OK).
 
 Gate: **PASS**, no open items.
+
+## QA check — ROB-008 fix (seen-key bumped to v2) — 2026-09-15
+
+BUS-019: old v1 seen-keys stay in browser storage
+Verdict: ⚠️ Pending (low)
+Action Needed: browsers that saw the T6.8 popup now hold both `onboard-congrats-<user>-<total>` (unused) and `onboard-congrats-v2-...`. It's a few bytes, device-local only, and has the same exposure already accepted in BUS-018.
+- [x] BUS-019a decide: (a) accept (recommended), or (b) remove the old key when writing v2 (one line).
+
+BUS-OK (verified live, real flow): joiner at 9/10 → opens last material → **Mark complete** → redirected to checklist → 24 ribbons at 1.15s, popup at 1.75s, count "10 of 10", v2 key written only when the popup opens. Reload shows nothing, so once per browser holds. Another joiner in the same browser gets nothing (0/10, no dialog). The key still includes user id and total, so the new-material rule (BUS-017) is unchanged.
+- Note for later: any future change to the celebration that should replay must bump the key version again (template comment says so). The quiz → result → checklist path lands on the same checklist code but is untested live (the only quiz is inactive, same as COM-017).
+
+Gate: **PASS**, no blocker. 1 pending (BUS-019, low, decision).
+
+### Decision — 2026-09-15 (user-approved: BUS-019a)
+- BUS-019 ✅ accepted: old v1 seen-keys stay in device-local storage. No code change.
+
+Gate: **PASS**, no open items.
