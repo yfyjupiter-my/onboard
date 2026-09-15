@@ -83,3 +83,11 @@ Gate: **PASS**, nothing pending.
 RUN-OK (verified live, Chromium 390px, CPU throttled 6×, first 3.5s after load): 204 frames, median and p95 frame both 16.7ms, 0 frames over 50ms. One 50ms long task during page load, not during the animation. CLS 0 (ribbons are absolutely positioned). 24 elements animate transform/opacity only, which stays on the compositor. The `.fx` container is removed after 3.5s (0 left). Two one-shot timers, no listeners, nothing retained. An incomplete joiner renders 0 ribbons and pays no cost.
 
 Gate: **PASS**, no open items from T6.9.
+
+## QA check — T6.10 link-material loading dots — 2026-09-15
+
+RUN-008: the loading dots' cost while loading and after
+Verdict: ✅ Correct
+Action Needed: none. There are 3 CSS animations using transform/opacity only (no layout or paint of neighbours). Once the frame loads, `x-show` sets `display:none` and the `mc-bob` animation count drops from 3 to 0 (verified live), so nothing keeps running. CLS 0.0000–0.0002; the 34×20px hint box doesn't move the button. There are no new JS or asset files (inline SVG, about 20 lines of CSS).
+
+Gate: **PASS**, nothing pending.

@@ -56,6 +56,9 @@
       {# Django's SECURE_REFERRER_POLICY default (same-origin) sends no Referer cross-origin, which YouTube rejects with error 153 — override it for this frame only. #}
       <iframe src="{{ file_url }}" title="{{ material.title }}" allowfullscreen
               referrerpolicy="strict-origin-when-cross-origin"
+              {# ROB-009: a fast-failing frame can fire load before Alpine binds @load; the static onload flag lets x-init catch it #}
+              onload="this.dataset.loaded = '1'"
+              x-init="if ($el.dataset.loaded) reviewed = true"
               @load="reviewed = true"
               style="width:100%;height:70vh;border:1px solid var(--line);border-radius:12px;background:var(--surface)"></iframe>
     {% else %}
@@ -73,9 +76,19 @@
               style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
           {% csrf_token %}
           {# COM-008: say what unlocks the button (x-show hides it once reviewed) #}
+          {% if material.type == 'pdf' or material.type == 'video' %}
           <span id="mc-hint" x-show="!reviewed" style="color:var(--muted);font-size:14px">
-            {% if material.type == 'pdf' %}Scroll to the end of the document to enable{% elif material.type == 'video' %}Watch the video to the end to enable{% else %}Enables once the page has loaded{% endif %}
+            {% if material.type == 'pdf' %}Scroll to the end of the document to enable{% else %}Watch the video to the end to enable{% endif %}
           </span>
+          {% else %}
+          {# T6.10: link materials show loading dots instead of a sentence; screen readers still hear the text #}
+          <span id="mc-hint" class="mc-dots" role="status" x-show="!reviewed">
+            <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
+            <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
+            <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
+            <span class="sr-only">Loading, Mark complete enables once the page has loaded</span>
+          </span>
+          {% endif %}
           <button type="submit" class="btn primary" :disabled="!reviewed" aria-describedby="mc-hint">Mark complete</button>
         </form>
     {% endif %}

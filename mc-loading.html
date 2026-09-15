@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mark-complete Loading — Playground</title>
+<style>
+:root{
+  --bg:#fbf7f0; --surface:#fff; --text:#25201b; --muted:#6f6457;
+  --primary:#0f766e; --primary-ink:#fff; --accent:#a84e08;
+  --line:#ece3d6; --radius:16px; --shadow:0 2px 6px rgba(120,90,40,.08);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:400 15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px 16px 48px}
+main{max-width:860px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 20px}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.controls button{height:36px;padding:0 14px;border-radius:10px;font-weight:600;font-size:13px;
+  cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--text)}
+.controls button:hover{border-color:var(--primary)}
+.controls button:focus-visible,.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:20px;margin-bottom:24px}
+.card h2{font-size:15px;margin:0 0 2px}
+.card p.note{color:var(--muted);font-size:13px;margin:0 0 14px}
+.frame{height:160px;border:1px solid var(--line);border-radius:12px;background:var(--bg);
+  display:grid;place-items:center;color:var(--muted);font-size:13px}
+.row{margin-top:18px;display:flex;align-items:center;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;
+  border-radius:12px;font-weight:600;font-size:14px;border:0;cursor:pointer;
+  background:var(--primary);color:var(--primary-ink);transition:opacity .2s}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* hidden once loaded (mirrors x-show="!reviewed") */
+.loaded .loader{display:none}
+
+/* ===== A. Ring spinner beside the button ===== */
+.ring{width:22px;height:22px;animation:spin .8s linear infinite}
+.ring circle{fill:none;stroke-width:3}
+.ring .track{stroke:var(--line)}
+.ring .arc{stroke:var(--primary);stroke-linecap:round;stroke-dasharray:40 100}
+
+/* ===== B. Spinner inside the button ===== */
+.btn .in{width:16px;height:16px;animation:spin .8s linear infinite}
+.btn .in circle{fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-dasharray:28 100}
+
+/* ===== C. Three bouncing dots ===== */
+.dots{display:inline-flex;gap:5px}
+.dots svg{width:8px;height:8px;fill:var(--primary);animation:bob 1s ease-in-out infinite}
+.dots svg:nth-child(2){animation-delay:.15s}
+.dots svg:nth-child(3){animation-delay:.3s}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bob{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-5px);opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .ring,.btn .in{animation-duration:2.4s}
+  .dots svg{animation:none;opacity:.7}
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>Mark complete — loading indicator</h1>
+  <p class="lead">Replaces “Enables once the page has loaded” for link materials. Screen readers still hear “Loading…”.</p>
+
+  <div class="controls">
+    <button id="replay" type="button">Replay loading (3s)</button>
+    <button id="toggle" type="button">Toggle loaded</button>
+  </div>
+
+  <section class="card">
+    <h2>A · Ring spinner beside button</h2>
+    <p class="note">Closest to today’s layout — spinner sits where the sentence was.</p>
+    <div class="frame">iframe loading…</div>
+    <div class="row">
+      <span class="loader" role="status">
+        <svg class="ring" viewBox="0 0 24 24" aria-hidden="true"><circle class="track" cx="12" cy="12" r="9"/><circle class="arc" cx="12" cy="12" r="9"/></svg>
+        <span class="sr">Loading…</span>
+      </span>
+      <button class="btn" disabled>Mark complete</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>B · Spinner inside the button</h2>
+    <p class="note">Most compact — no extra element next to the button.</p>
+    <div class="frame">iframe loading…</div>
+    <div class="row">
+      <button class="btn" disabled>
+        <span class="loader" role="status">
+          <svg class="in" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>
+          <span class="sr">Loading…</span>
+        </span>
+        Mark complete
+      </button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>C · Bouncing dots beside button</h2>
+    <p class="note">Softer, friendlier feel — matches the playful checklist ribbons.</p>
+    <div class="frame">iframe loading…</div>
+    <div class="row">
+      <span class="loader dots" role="status">
+        <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
+        <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
+        <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
+        <span class="sr">Loading…</span>
+      </span>
+      <button class="btn" disabled>Mark complete</button>
+    </div>
+  </section>
+</main>
+<script>
+const setLoaded = on => document.querySelectorAll('.card').forEach(c => {
+  c.classList.toggle('loaded', on);
+  c.querySelector('.btn').disabled = !on;
+  c.querySelector('.frame').textContent = on ? 'page loaded ✓' : 'iframe loading…';
+});
+let t;
+const replay = () => { clearTimeout(t); setLoaded(false); t = setTimeout(() => setLoaded(true), 3000); };
+document.getElementById('replay').onclick = replay;
+document.getElementById('toggle').onclick = () => { clearTimeout(t); setLoaded(!document.querySelector('.card.loaded')); };
+replay();
+</script>
+</body>
+</html>

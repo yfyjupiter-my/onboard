@@ -105,3 +105,22 @@ Action Needed: none. Root cause: T6.9 reused the T6.8 once-per-browser key. chri
 ROB-OK (verified live): `data-key` is the only consumer (`checklist.html`), so there's no other reader of the old name. Blocked storage: 24 ribbons, no JS error (degrades as accepted in T6.8). A browser holding only the old key plays once (ROB-008a). 38/38 tests.
 
 Gate: **PASS**, no open items.
+
+## QA check — T6.10 link-material loading dots — 2026-09-15
+
+ROB-009: if the link frame fails fast (blocked site, offline), the dots animate forever and the button stays disabled
+Verdict: ✅ Correct (fixed)
+Action Needed: reproduced by aborting the YouTube request. The frame's `load` fired at 87ms, **before Alpine bound `@load`**, so `reviewed` never flips. The same happens if the frame hangs (checked for 10s). This race is older than T6.10 (the old sentence also stayed), but a spinning "loading" indicator that never ends looks more broken than a static sentence. The server-side gate is unaffected. Normal load: `load` at 944ms, dots hidden, button enabled.
+- [ ] ROB-009a **Recommended:** accept for now. YouTube and Google embeds load normally on the office network, and a reload fixes it.
+- [x] ROB-009b fix the race: in `x-init`, unlock if the iframe has already loaded (e.g. check a flag set by an inline `onload`). This is a small change.
+- [ ] ROB-009c add a timeout fallback (e.g. after 15s, swap the dots for "Taking too long? Reload the page"). This adds new UI, so it needs your approval.
+
+ROB-010: with Alpine blocked, the dots animate forever while the button is already enabled
+Verdict: ✅ Correct
+Action Needed: none. Alpine is self-hosted (`static/vendor/alpine.min.js`), so this is unlikely. It is the same no-JS degradation as ROB-005 (the old sentence also stayed), and marking complete still works.
+
+Gate: **PASS**, 1 pending (ROB-009, low, decision).
+
+Fix (2026-09-15, user-approved ROB-009b): the link iframe gets a static `onload="this.dataset.loaded = '1'"`, and `x-init` unlocks if the flag is already set, so a load that fires before Alpine binds `@load` is no longer lost. No new UI. There is no CSP in the app or nginx, so the inline handler isn't blocked. Verified live in Chromium: aborted frame ×3 → dots hidden, button enabled; normal load → same; a frame that hangs still shows dots with the button disabled (expected, the page never loaded). 38/38 tests.
+
+Gate: **PASS**, nothing pending.

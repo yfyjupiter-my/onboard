@@ -235,3 +235,22 @@ Gate: **PASS**, 1 pending (COM-017, needs an active quiz to test).
 COM-OK (verified live after the real Mark complete flow): the dialog is still named "Congratulations, you did it!", `aria-describedby="congrats-desc"` resolves, and focus opens on Close. The one-time replay for existing joiners has the same properties as the first showing, so COM-018 (fixed) and COM-019 (accepted) stand. No new finding.
 
 Gate: **PASS**, no new items. COM-017 still open (needs an active quiz).
+
+## QA check — T6.10 link-material loading dots — 2026-09-15
+
+COM-020: sighted joiners no longer read *why* Mark complete is disabled on link materials
+Verdict: ✅ Correct (accepted)
+Action Needed: COM-008 added the sentence so the disabled button explained itself. The dots now say "wait" but not "the button unlocks when this finishes". Screen readers still get the full reason: `aria-describedby="mc-hint"` resolves to "Loading, Mark complete enables once the page has loaded" (verified live). The frame normally loads in about 1s, so the wait is short.
+- [x] COM-020a **Recommended:** accept. You asked for this change, and the dots disappear and the button enables within about 1s.
+- [ ] COM-020b add `title="Mark complete enables once the page has loaded"` on `#mc-hint` (hover-only, so little help on phones).
+
+COM-021: the dots are faint (opacity 0.35–1 teal on white), and stay at 0.35 under reduced motion
+Verdict: ✅ Correct
+Action Needed: none. They are decorative (`aria-hidden`). The information is carried by the disabled button and the screen-reader text, so WCAG 1.4.11 non-text contrast doesn't apply.
+
+COM-OK (verified live, Chromium 1280px + 390px): `role="status"` on the hint; three SVGs `aria-hidden`; `.sr-only` text is in the accessibility tree; with reduced motion there are 0 `mc-bob` animations; no horizontal scroll at 390px; the button position is unchanged (y=810 / 872).
+
+Gate: **PASS**, 1 pending (COM-020, low, decision). COM-017 still open (needs an active quiz).
+
+### Decision — 2026-09-15 (user-approved: COM-020a)
+- COM-020 ✅ accepted: no code change. Screen readers keep the full reason; the dots are gone in about 1s.
