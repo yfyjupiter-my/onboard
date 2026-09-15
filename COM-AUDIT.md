@@ -307,3 +307,14 @@ Action Needed: see ROB-017a.
 COM-029: image alt text is now always the material title
 Verdict: ⚠️ Pending (accepted by user request)
 Action Needed: This reverses COM-022a. Screen-reader users hear only the title (for example "Org chart") instead of what the image shows. Mitigation: give image materials descriptive titles. No code change unless the user wants the row back for image materials only.
+
+## T6.16 joiner page: incomplete materials + full progress table: compliance & accessibility check (2026-09-15)
+
+COM-030: progress table semantics
+Verdict: ⚠️ Pending (minor)
+Action Needed: The table has a real `<thead>`/`<th>` and text values ("Not started", not colour only). "Passed" uses Django's boolean icon, which has alt text. The column headers have no `scope`, and the table has no caption. The field label "Progress:" is a bare `<label>` (Django read-only convention), so screen readers don't tie it to the table.
+- [ ] COM-030a add `scope="col"` to the `<th>` cells and `aria-label="Progress"` on the `<table>` (`progress_table` in `web/core/admin.py`).
+
+COM-031: personal data shown
+Verdict: ✅ Correct
+Action Needed: None. The fields (status, score, passed, timestamps) are the same as the old inline, with no new PII columns; it just adds "Not started" rows. Who can see it is covered by SEC-026.

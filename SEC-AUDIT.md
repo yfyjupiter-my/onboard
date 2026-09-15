@@ -331,3 +331,17 @@ Verdict: ✅ Correct
 Action Needed: None. With `exclude`, the ModelForm has no `description` field, so a posted `description=...` is dropped (verified: the form is valid and `description` isn't in `cleaned_data`). No new endpoint or permission change; alt output is still auto-escaped.
 
 Gate: **PASS**, no vulnerabilities.
+
+## T6.16 joiner page: incomplete materials + full progress table: security check (2026-09-15)
+
+SEC-026: progress data no longer gated by `view_joinerprogress` (least-privilege regression)
+Verdict: ⚠️ Pending (not exploitable today, HR is superuser)
+Action Needed: The old `ProgressInline` was a `JoinerProgress` inline, so Django hid it from staff without `core.view_joinerprogress`. `incomplete_materials` and `progress_table` are plain read-only fields on `JoinerAdmin`, so only `view_joiner` is checked. Verified (rolled-back transaction): a staff account with only `view_joiner` gets 200 and sees statuses, scores and completion times. This is the same gap SEC-012 closed for CSV export.
+- [ ] SEC-026a `JoinerAdmin.get_readonly_fields`: drop `incomplete_materials` and `progress_table` unless `request.user.has_perm("core.view_joinerprogress")`, the same rule as `_require_export_perm`.
+- [ ] SEC-026b extend `test_export_needs_progress_permission`: the change page for the `view_joiner`-only clerk has no `field-progress_table`.
+
+SEC-027: output escaping and object scope
+Verdict: ✅ Correct
+Action Needed: None. Titles go through `format_html_join`, so a material titled `<script>alert(1)</script>` renders as `&lt;script&gt;`. Values come from `display_for_value`, and no `mark_safe` is used on DB data. Queries are scoped to `obj.progress` (the joiner in the URL) and active materials, with no request input. A staff user's pk still redirects out (`get_queryset` filters `is_staff=False`). GET-only, no new endpoint.
+
+Gate: **⚠️ PASS with 1 pending (SEC-026)**. No exploitable vulnerability with current accounts; fix before any staff account gets `view_joiner` without `view_joinerprogress`.

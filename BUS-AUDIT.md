@@ -280,3 +280,18 @@ Action Needed: None. Uploads use no-overwrite unique names, and `MaterialAdmin.s
 BUS-024: hidden, uneditable alt text on existing materials
 Verdict: ✅ Correct
 Action Needed: None. 0 of 18 materials have a description stored, so no image has leftover alt text that HR can no longer see or change. New descriptions can't be entered, so every image uses its title.
+
+## T6.16 joiner page: incomplete materials + full progress table: business logic check (2026-09-15)
+
+BUS-025: table agrees with the Joiners list count
+Verdict: ✅ Correct
+Action Needed: None. Both use active materials and `COMPLETED`. Verified on lily.chen with an extra material added (rolled back): changelist `9 / 17`, table 17 rows, 9 Completed. Never-opened materials show "Not started" without creating a `JoinerProgress` row (the P3/P5 lazy-create rule is kept).
+
+BUS-026: locked materials look like plain "Not started"
+Verdict: ⚠️ Pending (minor)
+Action Needed: A material the joiner can't open yet (T6.5 lock) shows as "Not started", the same as one they skipped. HR can't tell "blocked by chapter" from "hasn't bothered".
+- [ ] BUS-026a optional: append "· locked" to the status when `Material.is_locked_for(joiner)`. Compute it once per chapter as `checklist()` does, not per row. Or accept as is.
+
+BUS-027: inactive materials' progress hidden on the joiner page
+Verdict: ✅ Correct (accepted)
+Action Needed: None. For example, john.chen's `viewed` row for the inactive "Instruction" link is no longer listed (the old inline showed it). This matches the `X / total` count, which ignores inactive materials. The row is kept in the DB and is still in the CSV export.

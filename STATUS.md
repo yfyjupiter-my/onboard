@@ -200,3 +200,4 @@
 
 - **T6.16 incomplete materials on joiner page ✅** — Joiners → joiner detail now shows "Incomplete materials": active materials not completed, with status (Not started / Viewed), including never-opened ones missing from the progress inline. Tests 41/41.
 - **T6.16 follow-up ✅** — joiner page progress table now lists all active materials (never-opened = "Not started"), replacing the inline that only showed opened ones. Tests 41/41.
+- **T6.16 QA check (Security, Business Logic, Compliance/A11y)** — 3 pending, none blocking. **SEC-026** progress table/incomplete list no longer require `view_joinerprogress` (regression vs old inline; superuser-only today). **BUS-026** locked materials look like plain "Not started". **COM-030** table `<th>` lack `scope`. OK: escaping, count matches the Joiners list, inactive rows hidden (CSV keeps them).
