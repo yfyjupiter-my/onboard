@@ -247,3 +247,17 @@ Gate: **PASS**, no blocker. 1 pending (BUS-019, low, decision).
 - BUS-019 ✅ accepted: old v1 seen-keys stay in device-local storage. No code change.
 
 Gate: **PASS**, no open items.
+
+---
+
+## T6.11 Image material type: business logic check (2026-09-15)
+
+BUS-020: a tall image unlocks "Mark complete" without scrolling
+Verdict: ⚠️ Pending
+Action Needed: PDFs unlock only after scrolling to the end; images unlock as soon as they load. For a long infographic, a joiner can complete it after seeing only the top.
+- [ ] BUS-020a put the image in the same 70vh scroll box as PDFs and unlock on reaching the bottom (short images unlock at once, as 1-page PDFs do). This changes an existing element, so it needs confirmation.
+- [ ] BUS-020b **Recommended:** accept. Onboarding images are usually one screen, and it's a UX gate only (the server gate is unchanged).
+
+BUS-021: completion, lock, quiz and export rules for images
+Verdict: ✅ Correct
+Action Needed: None. `mark_complete` / `quiz` / T6.5 lock checks are type-independent; an image material can have a quiz; topbar counts and CSV include it. `remove_file_view` on an image with a URL turns it into a Link (as for PDF/video); on an image without a URL it refuses. File-less image → home redirect (ROB-005 path).

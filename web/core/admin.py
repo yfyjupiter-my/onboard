@@ -100,7 +100,7 @@ class MaterialAdmin(admin.ModelAdmin):
         if not self.has_change_permission(request, obj):
             raise PermissionDenied
         if obj.file and not obj.url:
-            # Nothing left to show: PDF/video render from the file, removing it would break the joiner page.
+            # Nothing left to show: PDF/video/image render from the file, removing it would break the joiner page.
             self.message_user(
                 request,
                 "Can't remove the only content. Add a URL and save, or upload a replacement file.",

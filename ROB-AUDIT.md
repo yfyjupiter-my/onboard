@@ -124,3 +124,23 @@ Gate: **PASS**, 1 pending (ROB-009, low, decision).
 Fix (2026-09-15, user-approved ROB-009b): the link iframe gets a static `onload="this.dataset.loaded = '1'"`, and `x-init` unlocks if the flag is already set, so a load that fires before Alpine binds `@load` is no longer lost. No new UI. There is no CSP in the app or nginx, so the inline handler isn't blocked. Verified live in Chromium: aborted frame ×3 → dots hidden, button enabled; normal load → same; a frame that hangs still shows dots with the button disabled (expected, the page never loaded). 38/38 tests.
 
 Gate: **PASS**, nothing pending.
+
+---
+
+## T6.11 Image material type: robustness check (2026-09-15)
+
+ROB-011: a missing or broken image unlocked "Mark complete"
+Verdict: ✅ Correct (fixed)
+Action Needed: `<img @error="reviewed = true">`, and `x-init` checked `$el.complete`, which is also true for a broken image. So an image that never displayed could be marked complete, which goes against ROB-004 (a failure stays locked).
+- [x] ROB-011a on error, hide the `<img>`, show `role="alert"` "This image is unavailable. Please contact HR." and keep the button locked. Static `onerror`/`onload` data flags cover the ROB-009 race.
+- Browser-verified on the live stack: real PNG → image visible, button enabled; missing object → alert visible, button disabled. Probe user/materials/file deleted. Tests 39/39.
+
+ROB-012: switching type on an existing file
+Verdict: ⚠️ Pending
+Action Needed: switching a `.pdf` to Image, an empty upload, or a file with no extension are all rejected; `.JPEG` in uppercase and storage name suffixes work. But **Image → PDF/Video with the `.png` still attached is accepted**, because PDF/video have no extension check (this is older than T6.11). The joiner then sees "This file can't be displayed" (PDF) or the video unlocks on error (BUS-007).
+- [ ] ROB-012a **Recommended:** add the same extension allowlist for PDF (`.pdf`) and video (`.mp4`, `.webm`, `.mov`) in `Material.clean()`. It's a small change, but it tightens an existing rule, so it needs your confirmation.
+- [ ] ROB-012b accept: HR sees the problem immediately when previewing.
+
+ROB-013: upload size, link expiry
+Verdict: ✅ Correct
+Action Needed: None. nginx `client_max_body_size 512m` covers images. The image loads once when the page opens (well within the 15-min presigned URL); a reload gets a fresh URL. The server never decodes the image, so a decompression bomb isn't a server risk.

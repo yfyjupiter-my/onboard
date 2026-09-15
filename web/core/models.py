@@ -41,7 +41,7 @@ class Material(models.Model):
     title = models.CharField(max_length=200)
     chapter = models.PositiveSmallIntegerField(choices=CHAPTER_CHOICES, default=1)
     type = models.CharField(max_length=5, choices=TYPE_CHOICES)
-    file = models.FileField(upload_to="materials/", blank=True)  # blank for LINK
+    file = models.FileField(upload_to="materials/", blank=True)  # blank for LINK; PDF/video/image need one
     url = models.URLField(blank=True)  # LINK only; embedded in an iframe
     is_active = models.BooleanField(default=True)
     locked = models.BooleanField(
@@ -56,7 +56,7 @@ class Material(models.Model):
         if self.type != self.LINK and not self.file:
             raise ValidationError({"file": "PDF, video and image materials need a file."})
         if self.type == self.IMAGE and self.file:
-            fmt = self.IMAGE_FORMATS.get(os.path.splitext(self.file.name)[1].lower())
+            fmt = self.image_format
             if not fmt:
                 raise ValidationError({"file": "Image materials must be a .jpg, .jpeg or .png file."})
             if not self.file._committed:  # new upload only; don't re-download stored files on every save
@@ -67,6 +67,10 @@ class Material(models.Model):
                     raise ValidationError({"file": "This file isn't a real JPEG/PNG image."})
 
     @property
+    def image_format(self):
+        return self.IMAGE_FORMATS.get(os.path.splitext(self.file.name)[1].lower())  # (magic, content type) or None
+
+    @property
     def source_url(self):
         if self.type == self.LINK:
             return embeddable(self.url)
@@ -75,7 +79,7 @@ class Material(models.Model):
         if self.type == self.PDF:
             params = {"ResponseContentType": "application/pdf"}
         elif self.type == self.IMAGE:
-            fmt = self.IMAGE_FORMATS.get(os.path.splitext(self.file.name)[1].lower())
+            fmt = self.image_format
             params = ({"ResponseContentType": fmt[1]} if fmt else {"ResponseContentDisposition": "attachment"})
         else:
             params = {"ResponseContentDisposition": "attachment"}

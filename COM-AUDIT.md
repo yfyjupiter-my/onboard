@@ -254,3 +254,23 @@ Gate: **PASS**, 1 pending (COM-020, low, decision). COM-017 still open (needs an
 
 ### Decision — 2026-09-15 (user-approved: COM-020a)
 - COM-020 ✅ accepted: no code change. Screen readers keep the full reason; the dots are gone in about 1s.
+
+---
+
+## T6.11 Image material type: accessibility check (2026-09-15)
+
+COM-022: image alt text is only the material title
+Verdict: ⚠️ Pending
+Action Needed: `alt="{{ material.title }}"` names the image but doesn't describe it. An informative image (org chart, floor plan, poster with text) has no real text alternative for screen-reader users (WCAG 1.1.1, Level A).
+- [ ] COM-022a **Recommended, new element, needs confirmation:** add an optional `Material.description` field ("Image description"), used as `alt` when set and falling back to the title. Additive migration.
+- [ ] COM-022b accept: tell HR to put the key text in the title or attach a quiz.
+
+COM-023: no way to open a detailed image at full size
+Verdict: ⚠️ Pending
+Action Needed: the image is scaled to the card width. On a phone, small text in a large image can only be read by pinch-zooming the whole page. PDFs have an "Open PDF in browser viewer" link (COM-007b); images have nothing similar.
+- [ ] COM-023a **new element, needs confirmation:** add an "Open image full size" link under the image (the same presigned `file_url`, with the image type forced so SEC-021 still holds).
+- [ ] COM-023b accept: pinch-zoom works.
+
+COM-024: hint, icon, layout
+Verdict: ✅ Correct
+Action Needed: None. The button has `aria-describedby="mc-hint"` ("Enables once the image has loaded"); the failure message is `role="alert"`; the checklist icon is `aria-hidden` and the kicker text says "Image", so colour isn't the only signal; `width:100%;height:auto` doesn't overflow sideways at 400px.

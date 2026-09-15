@@ -58,3 +58,15 @@ CODE-OK (verified good):
 - No dead code left from the `CSRF_USE_SESSIONS` revert. `makemigrations` isn't affected, since no model changed.
 
 Gate: **PASS**, no blocker, nothing pending.
+
+---
+
+## T6.11 Image material type: code quality check (2026-09-15)
+
+CODE-007: image format lookup duplicated; stale "PDF/video" comments
+Verdict: ✅ Correct (fixed)
+Action Needed: `clean()` and `source_url` each rebuilt the extension lookup. Moved it to one `Material.image_format` property. Updated the comments in `models.py`, `views.py` (ROB-005) and `admin.py` (remove-file) that still said "PDF/video". Tests 39/39.
+
+CODE-008: migration and tests
+Verdict: ✅ Correct
+Action Needed: None. `0008_material_type_image` only changes choices (no SQL). `max_length=5` fits `"image"`. One test covers the extension/header allowlist and the forced content type.

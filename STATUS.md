@@ -176,3 +176,5 @@
 - **COM-020 accepted ✅, ROB-009 fixed ✅ (option b)** — a fast-failing link frame no longer leaves the dots spinning: static `onload` flag + `x-init` check in `material.html`. Verified live (aborted ×3, normal, hang) and 38/38 tests. Committed + pushed `c07d28b`.
 
 - **T6.11 Image material type ✅**: admin Material type now has **Image** (JPEG + PNG). Upload validated by extension and magic bytes; served with a forced image Content-Type; joiner page shows the image, and Mark complete unlocks on load; checklist gets an image icon. Migration `0008` (choices only). Tests 39/39; live PNG served 200 `image/png`. SEC-021 PASS.
+
+- **T6.11 QA check (ROB/COM/BUS/CODE)**: fixed **ROB-011** (broken image unlocked Mark complete → now shows "unavailable, contact HR" and stays locked; browser-verified) and **CODE-007** (one `image_format` property, stale comments). Pending your decision: ROB-012 (extension check for PDF/video), COM-022 (optional image description for alt), COM-023 ("Open image full size" link), BUS-020 (tall image scroll gate; recommend accept). No blockers.
