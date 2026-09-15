@@ -77,3 +77,9 @@ Action Needed: none. Checklist at 1280×800, 240 scroll frames driven by `reques
 RUN-007: superseded. The Alpine `@scroll.window` handler was removed, so there's no per-scroll JS left.
 
 Gate: **PASS**, nothing pending.
+
+## QA check — T6.9 ribbon burst — 2026-09-15
+
+RUN-OK (verified live, Chromium 390px, CPU throttled 6×, first 3.5s after load): 204 frames, median and p95 frame both 16.7ms, 0 frames over 50ms. One 50ms long task during page load, not during the animation. CLS 0 (ribbons are absolutely positioned). 24 elements animate transform/opacity only, which stays on the compositor. The `.fx` container is removed after 3.5s (0 left). Two one-shot timers, no listeners, nothing retained. An incomplete joiner renders 0 ribbons and pays no cost.
+
+Gate: **PASS**, no open items from T6.9.

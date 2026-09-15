@@ -87,3 +87,9 @@ Gate: **PASS**, no blocker. 1 pending (ROB-007, low).
 - ROB-007 ✅ fixed: `dialog:not([open]){display:none}`. Verified live: with a forced `dialog{display:block}` UA-style simulation, a closed dialog stays `display:none`, and the open popup still shows.
 
 Gate: **PASS**, no open items.
+
+## QA check — T6.9 ribbon burst — 2026-09-15
+
+ROB-OK (verified live): navigating away during the 1.5s delay (tile click at 0.6s) never sets the seen-key, so ribbons and popup play on the next visit. Back navigation mid-delay (bfcache) still opens exactly 1 dialog. Without `showModal` the script exits before spawning ribbons. With no `.topbar` or reduced motion it goes straight to the popup. `color-mix` is already required by the app's tags, so no new browser floor. Blocked storage replays burst + popup on every visit (same degradation accepted in T6.8).
+
+Gate: **PASS**, no open items.

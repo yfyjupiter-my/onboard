@@ -213,3 +213,19 @@ Gate: **PASS**, no blocker. 1 pending (COM-018, low).
 - COM-018 ✅ fixed: the dialog has `aria-describedby="congrats-desc"`. Verified live: the description resolves to "You've completed all your onboarding materials."
 
 Gate: **PASS**, 1 pending (COM-017, needs an active quiz to test).
+
+## QA check — T6.9 ribbon burst — 2026-09-15
+
+COM-019: the delayed popup moves keyboard focus mid-interaction
+Verdict: ⚠️ Pending (low)
+Action Needed: the popup now opens 1.5s after load. A keyboard user who Tabs within that window (reproduced: focus on "Log out" at 1.0s) is moved into the dialog at 1.5s ("Close"). Esc returns them to the page. There's no data loss, and it happens once per browser.
+- [x] COM-019a decide: (a) accept, since it's once, short and dismissable (recommended), or (b) open the popup immediately on the first keydown/pointerdown during the delay, so focus moves in response to the user's own action.
+
+COM-OK (verified live): ribbons are `aria-hidden`. The banner's accessibility tree shows only link, count and Log out during the burst. With reduced motion there are no ribbons and the popup opens at once (T6.9 acceptance). WCAG 2.3.1: small moving pieces, no luminance flashes. WCAG 2.2.2: motion ends by itself in under 5s (removed at 3.5s). Ribbons use `pointer-events:none`, so a tile click at 0.6s went through.
+
+Gate: **PASS**, no blocker. 1 pending (COM-019, low, decision). COM-017 still open (needs an active quiz).
+
+### Decision — 2026-09-15 (user-approved: COM-019a)
+- COM-019 ✅ accepted: the popup opens 1.5s after load even if the joiner is already Tabbing. It happens once and Esc dismisses it. No code change.
+
+Gate: **PASS**, 1 pending (COM-017, needs an active quiz to test).

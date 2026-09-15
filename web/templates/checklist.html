@@ -103,8 +103,31 @@
     var d = document.getElementById('congrats');
     if (!d || !d.showModal) return;
     try { if (localStorage.getItem(d.dataset.key)) return; } catch (e) {}
-    d.showModal();  // native modal: focus trap + Esc to close
-    try { localStorage.setItem(d.dataset.key, '1'); } catch (e) {}
+    function open() {
+      d.showModal();  // native modal: focus trap + Esc to close
+      try { localStorage.setItem(d.dataset.key, '1'); } catch (e) {}
+    }
+    var bar = document.querySelector('.topbar');
+    if (!bar || matchMedia('(prefers-reduced-motion: reduce)').matches) return open();
+    // T6.9: ribbons burst from the rail's end as it finishes filling, then the popup opens.
+    var fx = document.createElement('span'), r = Math.random;
+    var colors = ['var(--primary)', 'var(--accent)', 'color-mix(in srgb,var(--accent) 55%,#fff)',
+                  'color-mix(in srgb,var(--primary) 55%,#fff)'];
+    fx.className = 'fx'; fx.setAttribute('aria-hidden', 'true');
+    for (var i = 0; i < 24; i++) {
+      var s = document.createElement('i'); s.className = 'rib';
+      s.style.right = r() * 30 + 'px';
+      s.style.setProperty('--c', colors[i % colors.length]);
+      s.style.setProperty('--x', -(20 + r() * 340) + 'px');
+      s.style.setProperty('--y', (-40 + r() * 130) + 'px');
+      s.style.setProperty('--r', (r() * 360 - 180) + 'deg');
+      s.style.setProperty('--d', (1.6 + r() * .8) + 's');
+      s.style.setProperty('--delay', (.9 + r() * .2) + 's');
+      fx.append(s);
+    }
+    bar.append(fx); bar.classList.add('burst');
+    setTimeout(function () { fx.remove(); }, 3500);
+    setTimeout(open, 1500);
   })();
   </script>
 {% endblock %}

@@ -224,3 +224,9 @@ Gate: **PASS**, no blocker. 2 pending (BUS-017, BUS-018, both low, decisions).
 - BUS-018 ✅ accepted: the seen-key (user id + count) stays in device-local storage after logout. No code change.
 
 Gate: **PASS**, no open items.
+
+## QA check — T6.9 ribbon burst — 2026-09-15
+
+BUS-OK (verified live): the seen-key is written only when the popup actually opens, so an interrupted burst is never counted as seen. Two tabs loaded together both celebrate once (harmless, same as T6.8). An incomplete joiner gets no ribbons. The server-side "all complete" rule is unchanged (T6.8 BUS-OK).
+
+Gate: **PASS**, no open items.

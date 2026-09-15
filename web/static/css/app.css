@@ -129,6 +129,17 @@ html{scroll-padding-top:80px} /* COM-013: focus/anchor scrolling stops below the
 .topbar .rail{position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--primary);
   transform-origin:left;transform:scaleX(var(--p,0));animation:tb-fill 1.1s .2s cubic-bezier(.2,.8,.2,1) both}
 @keyframes tb-fill{from{transform:scaleX(0)}}
+/* T6.9: ribbon burst from the rail's end when everything is complete (spawned by checklist.html) */
+.topbar .fx{position:absolute;inset:0;pointer-events:none}
+.topbar .rib{position:absolute;top:100%;width:7px;height:18px;border-radius:2px;opacity:0;background:var(--c);
+  transform-origin:50% 0;animation:tb-burst var(--d) cubic-bezier(.15,.7,.3,1) var(--delay) forwards}
+.topbar.burst .mark{animation:tb-pop .5s .9s cubic-bezier(.2,.8,.2,1)}
+@keyframes tb-burst{
+  0%  {opacity:1;transform:translate(0,0) rotate(0) rotateY(0)}
+  35% {opacity:1;transform:translate(var(--x),var(--y)) rotate(var(--r)) rotateY(180deg)}
+  100%{opacity:0;transform:translate(calc(var(--x)*1.3),calc(var(--y) + 420px)) rotate(calc(var(--r)*3)) rotateY(900deg)}
+}
+@keyframes tb-pop{40%{transform:scale(1.25)}}
 @keyframes tb-ping{0%{opacity:.6;transform:scale(.85)}100%{opacity:0;transform:scale(1.35)}}
 @keyframes tb-rise{from{opacity:0;transform:translateY(-6px)}}
 /* COM-014: visually hidden on phones, still read by screen readers */
