@@ -393,3 +393,25 @@ Gate: **PASS**, no vulnerabilities.
 - Verified live with the superuser: no params, search `?q=`, sort `?o=`, `?is_active__exact=1/0`, `?_facets=True` and pagination all return 200 on the list and the export; the probe lookups return 400. Tests 43/43 (new `test_only_sidebar_filter_lookups_allowed`).
 - Trade-off: hand-typed URL filters such as `?username__startswith=` no longer work on Joiners. Use the search box, which covers username, name and email.
 - Correction to SEC-014: `/admin/auth/user/?password__startswith=pbkdf2` already returns 400 on Django 5.2.4 (stock `UserAdmin` blocks it), so the earlier "same lookup works on Users admin" note is out of date. With this fix, no admin list accepts the hash probe.
+
+## SEC-030 fix (Joiners lookup allowlist): security check (2026-09-15)
+
+SEC-033: allowlist bypass attempts
+Verdict: ✅ Correct
+Action Needed: None. Probed as superuser on the Joiners list and the CSV export (rolled back):
+- **400**: `password__startswith`, `PASSWORD__startswith` (case), `password=` (bare field), `%70assword__startswith` (URL-encoded), `progress__user__password__startswith` (reverse relation), `groups__name`, `_to_field=password&_popup=1`, and the `export_as_csv` action POSTed to `?password__startswith=…`.
+- **302 to `?e=1`** (IncorrectLookupParameters, SEC-013 path, no data): `is_active__password__startswith`, `is_active__exact__password`, `is_active___exact`. A boolean can't be traversed, so no relation can be reached through the `is_active` prefix.
+- **200** (harmless, boolean only): `is_active__in`, `is_active__isnull`, `is_active__regex`, `_to_field=id`, `q=pbkdf2` (search covers only username, name and email: 0 rows), `o=99`, `e=1`, `all=`.
+- Access: anonymous → login 302, joiner → login 302, staff without Joiner permissions → 403, all before the lookup check.
+
+SEC-034: no hash oracle left
+Verdict: ✅ Correct
+Action Needed: None. With `DEBUG=False`, `?password__startswith=<lily's real 15-char prefix>` and `?password__startswith=zzzz` return byte-identical 400 bodies on both the list and the export. The lookup is rejected before any query runs. (With `DEBUG=True` the bodies differ only in debug-page request details, not in anything that depends on the hash; see SEC-035.)
+
+SEC-035: live stack runs `DJANGO_DEBUG=True` (pre-existing operator config)
+Verdict: ⚠️ Pending (operator config, not code)
+Action Needed: `.env` has `DJANGO_DEBUG=True`, and `DJANGO_CSRF_TRUSTED_ORIGINS` includes `https://onboard.mymaples.com`. Verified via nginx: **anonymous** `GET http://localhost:8080/nope-xyz/` returns Django's debug 404, which lists every URL pattern. Staff-reachable errors (e.g. the new 400) render the full traceback and settings page; Django masks names containing SECRET/PASSWORD/KEY/TOKEN, but paths, installed apps and request META are shown. It is also set because `SESSION_COOKIE_SECURE`/`CSRF_COOKIE_SECURE = not DEBUG` break login over plain-http LAN (see the LAN/CSRF note in STATUS).
+- [ ] SEC-035a when served over HTTPS (Cloudflare → `onboard.mymaples.com`): set `DJANGO_DEBUG=False` and `docker compose up -d`. HSTS, SSL redirect and Secure cookies then turn on (T5.1).
+- [ ] SEC-035b if plain-http LAN access must keep working: instead of `DEBUG=True`, add a separate env flag for Secure cookies and SSL redirect (e.g. `DJANGO_SECURE_COOKIES=False`) so DEBUG can stay off. This is a code change; confirm with the user first.
+
+Gate: **PASS** for the SEC-030 fix, no vulnerabilities in the code. SEC-035 is a deployment setting to change before public exposure.

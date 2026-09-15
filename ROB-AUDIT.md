@@ -184,3 +184,13 @@ Action Needed: None. `save_model` compares the stored name with the new one and 
 ROB-020: non-admin saves
 Verdict: ✅ Correct
 Action Needed: None. `full_clean()` + `save()` outside the admin (shell/ORM) clears the file reference but leaves the object in MinIO. That leaves an unused object but loses no data. The admin is the only place materials are edited.
+
+## SEC-030 fix (Joiners lookup allowlist): robustness check (2026-09-15)
+
+ROB-021: blocked filters fail closed without breaking UI links
+Verdict: ✅ Correct
+Action Needed: None. Every query link Django generates on the Joiners list (`?_facets=True` page) uses only `is_active__exact`, `o` and `_facets`, so nothing in the UI hits the 400. Change pages with preserved filters (`?_changelist_filters=is_active__exact%3D1`) return 200. A bad `is_active` value still redirects to `?e=1` (SEC-013), and an old `/admin/core/joinerprogress/?user__username=…` bookmark 301s to the plain list (query dropped), not to a 400.
+
+ROB-022: blocked lookup is a bare 400 page
+Verdict: ⚠️ Pending (accepted, minor)
+Action Needed: A stale hand-typed bookmark such as `?username__startswith=l` gets Django's plain "Bad Request (400)" (with DEBUG off) and no link back, and a change page opened with a bad `_changelist_filters` renders but its "back to list" lands on that 400. Only staff typing URLs by hand can hit this. Each hit logs one `django.security.DisallowedModelAdminLookup` ERROR line ("Filtering by … not allowed"), which is only reachable after admin login, so no anonymous log flooding and a useful audit trail for probes. No code change unless HR reports stale links; the option is to catch `DisallowedModelAdminLookup` in `changelist_view` and redirect to the plain list with a message.
