@@ -197,3 +197,5 @@
 
 - **T6.15 ✅** "Image description" row removed from Material admin (all types) via `exclude`; field/data kept, alt falls back to title. Tests pass.
 - **T6.15 QA (SEC/BUS/COM/CODE)** PASS: SEC-025, BUS-024 (0 rows had a description), CODE-012 ✅. CODE-011 resolved: field kept (option a). COM-029 accepted: alt = title, so give image materials descriptive titles. Nothing pending.
+
+- **T6.16 incomplete materials on joiner page ✅** — Joiners → joiner detail now shows "Incomplete materials": active materials not completed, with status (Not started / Viewed), including never-opened ones missing from the progress inline. Tests 41/41.

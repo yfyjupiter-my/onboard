@@ -381,6 +381,8 @@ class JoinerAdminTests(TestCase):
         joiner = User.objects.get(username="aaa")
         resp = self.client.get(reverse("admin:core_joiner_change", args=[joiner.pk]))
         self.assertContains(resp, "Doc")
+        self.assertContains(resp, "<li>Doc 2 (Not started)</li>", html=True)  # never opened, no progress row
+        self.assertNotContains(resp, "<li>Doc (Completed)</li>", html=True)
 
     def test_export_button_exports_all(self):
         resp = self.client.get(reverse("admin:core_joiner_export"))

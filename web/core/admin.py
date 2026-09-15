@@ -12,6 +12,7 @@ from django.forms.models import BaseInlineFormSet
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import path
+from django.utils.html import format_html, format_html_join
 
 logger = logging.getLogger(__name__)
 
@@ -168,7 +169,7 @@ class JoinerAdmin(admin.ModelAdmin):
     list_display = ("name", "email", "completed", "last_activity", "is_active")
     list_filter = ("is_active",)
     search_fields = ("username", "first_name", "last_name", "email")
-    readonly_fields = ("username", "first_name", "last_name", "email", "is_active", "date_joined")
+    readonly_fields = ("username", "first_name", "last_name", "email", "is_active", "date_joined", "incomplete_materials")
     inlines = [ProgressInline]
     actions = ["export_as_csv"]
 
@@ -193,6 +194,20 @@ class JoinerAdmin(admin.ModelAdmin):
     @admin.display(description="joiner", ordering="username")
     def name(self, obj):
         return obj.get_full_name() or obj.get_username()
+
+    # The progress inline only has rows for opened materials; this also lists never-opened ones.
+    @admin.display(description="incomplete materials")
+    def incomplete_materials(self, obj):
+        status = dict(obj.progress.values_list("material_id", "status"))
+        pending = [m for m in Material.objects.filter(is_active=True).order_by("chapter", "created_at")
+                   if status.get(m.id) != JoinerProgress.COMPLETED]
+        if not pending:
+            return "None, all active materials completed."
+        labels = dict(JoinerProgress.STATUS_CHOICES)
+        return format_html("<ul style=\"margin:0;padding-left:1.2em\">{}</ul>", format_html_join(
+            "", "<li>{} ({})</li>",
+            ((m.title, labels[status.get(m.id, JoinerProgress.NOT_STARTED)]) for m in pending),
+        ))
 
     @admin.display(description="completed", ordering="completed_count")
     def completed(self, obj):
