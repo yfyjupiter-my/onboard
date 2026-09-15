@@ -66,8 +66,6 @@
   </div>
 
   {% if topbar.total and topbar.done == topbar.total %}
-  {# T6.8: shown once per browser; total in the key so newly added materials earn a fresh one.
-     v2 (T6.9 fix): browsers that saw the pre-ribbon popup get popup + ribbons once more. #}
   <dialog id="congrats" class="card" aria-labelledby="congrats-title" aria-describedby="congrats-desc"
           data-key="onboard-congrats-v2-{{ request.user.id }}-{{ topbar.total }}">
     <div style="font-size:48px;line-height:1" aria-hidden="true">🎉</div>
