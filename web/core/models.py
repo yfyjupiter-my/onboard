@@ -1,3 +1,4 @@
+import os
 from urllib.parse import parse_qs, urlparse
 
 from django.conf import settings
@@ -26,7 +27,14 @@ class Material(models.Model):
     PDF = "pdf"
     VIDEO = "video"
     LINK = "link"
-    TYPE_CHOICES = [(PDF, "PDF"), (VIDEO, "Video"), (LINK, "Link")]
+    IMAGE = "image"
+    TYPE_CHOICES = [(PDF, "PDF"), (VIDEO, "Video"), (LINK, "Link"), (IMAGE, "Image")]
+    # T6.11: extension -> (magic bytes, served Content-Type). The header check stops a renamed HTML/SVG upload.
+    IMAGE_FORMATS = {
+        ".jpg": (b"\xff\xd8\xff", "image/jpeg"),
+        ".jpeg": (b"\xff\xd8\xff", "image/jpeg"),
+        ".png": (b"\x89PNG\r\n\x1a\n", "image/png"),
+    }
     # ponytail: fixed list; promote to a Chapter model if HR needs to add/rename chapters themselves.
     CHAPTER_CHOICES = [(1, "Internal information"), (2, "Security awareness")]
 
@@ -46,7 +54,17 @@ class Material(models.Model):
         if self.type == self.LINK and not self.url:
             raise ValidationError({"url": "Link materials need a URL."})
         if self.type != self.LINK and not self.file:
-            raise ValidationError({"file": "PDF and video materials need a file."})
+            raise ValidationError({"file": "PDF, video and image materials need a file."})
+        if self.type == self.IMAGE and self.file:
+            fmt = self.IMAGE_FORMATS.get(os.path.splitext(self.file.name)[1].lower())
+            if not fmt:
+                raise ValidationError({"file": "Image materials must be a .jpg, .jpeg or .png file."})
+            if not self.file._committed:  # new upload only; don't re-download stored files on every save
+                self.file.seek(0)
+                head = self.file.read(len(fmt[0]))
+                self.file.seek(0)
+                if head != fmt[0]:
+                    raise ValidationError({"file": "This file isn't a real JPEG/PNG image."})
 
     @property
     def source_url(self):
@@ -54,8 +72,13 @@ class Material(models.Model):
             return embeddable(self.url)
         # SEC-020: never let an upload render as a same-origin page, whatever its stored type.
         # PDF.js and <video> ignore these overrides; a direct top-level visit gets a PDF / a download.
-        params = ({"ResponseContentType": "application/pdf"} if self.type == self.PDF
-                  else {"ResponseContentDisposition": "attachment"})
+        if self.type == self.PDF:
+            params = {"ResponseContentType": "application/pdf"}
+        elif self.type == self.IMAGE:
+            fmt = self.IMAGE_FORMATS.get(os.path.splitext(self.file.name)[1].lower())
+            params = ({"ResponseContentType": fmt[1]} if fmt else {"ResponseContentDisposition": "attachment"})
+        else:
+            params = {"ResponseContentDisposition": "attachment"}
         return self.file.storage.url(self.file.name, parameters=params)
 
     def is_locked_for(self, user):

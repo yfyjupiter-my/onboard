@@ -95,6 +95,21 @@ class ModelValidationTests(TestCase):
         link.full_clean()
         self.assertEqual(link.source_url, "https://example.com/handbook")
 
+    def test_image_upload_checks_extension_and_header(self):
+        # T6.11: only real JPEG/PNG bytes behind a matching extension; served with a forced image type.
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        def clean(name, data):
+            Material(title="I", type=Material.IMAGE, file=SimpleUploadedFile(name, data)).full_clean()
+
+        clean("a.jpg", b"\xff\xd8\xff\xe0rest")
+        clean("a.PNG", b"\x89PNG\r\n\x1a\nrest")
+        for name, data in (("a.html", b"\xff\xd8\xff"), ("a.jpg", b"<html>"), ("a.png", b"\xff\xd8\xff")):
+            with self.assertRaises(ValidationError):
+                clean(name, data)
+        img = Material(title="I", type=Material.IMAGE, file="materials/a.png")
+        self.assertIn("response-content-type=image%2Fpng", img.source_url)
+
     def test_youtube_links_rewritten_to_embed(self):
         embed = "https://www.youtube.com/embed/tUd9Dg0R9CA"
         for url in ("https://www.youtube.com/watch?v=tUd9Dg0R9CA",

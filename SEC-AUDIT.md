@@ -290,3 +290,16 @@ Fix (2026-09-14), verified live:
 - Probe objects deleted (`qa-probe/` empty). Tests 37/37 (`test_file_urls_force_safe_response_type`).
 
 Gate: **PASS**, no vulnerabilities, nothing pending.
+
+---
+
+## T6.11 Image material type: security check (2026-09-15)
+
+SEC-021: Image uploads (JPEG/PNG)
+Verdict: ✅ Correct
+Action Needed: None.
+- Allowlist by extension plus magic-byte check on new uploads. `.svg` (can run scripts) and HTML disguised as `.jpg` are rejected (tested).
+- Presigned URL forces `image/jpeg` / `image/png`, so even a stored non-image can't render as a same-origin page (SEC-020 pattern). Bucket stays private; URLs are still 15-min presigned.
+- Template uses auto-escaped `title` for `alt`. No new view, URL, or permission path, and completion/lock rules are unchanged.
+
+Gate: **PASS**, nothing pending.
