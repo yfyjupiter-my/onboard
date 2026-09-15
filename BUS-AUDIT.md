@@ -296,3 +296,24 @@ BUS-027: inactive materials' progress hidden on the joiner page
 Verdict: ✅ Correct (accepted)
 Action Needed: None. For example, john.chen's `viewed` row for the inactive "Instruction" link is no longer listed (the old inline showed it). This matches the `X / total` count, which ignores inactive materials. The row is kept in the DB and is still in the CSV export.
 - Fixed: `JoinerAdmin._active_progress` works out the lock state once per chapter, using the same rule as `checklist()` (T6.5 + BUS-009). A material that is locked for this joiner right now gets " · locked" after its status ("Not started · locked", or "Viewed · locked" if it was opened before the chapter re-locked) in both the progress table and the incomplete list. No extra queries per row. `LockedMaterialTests` checks: no suffix while the chapter is open, suffix on both locked materials once it re-locks, never on unlocked ones. Tests 41/41.
+
+## BUS-026 lock marking + SEC-028 view-only joiner page: business logic check (2026-09-15)
+
+BUS-028: admin "· locked" agrees with the joiner's real lock state
+Verdict: ✅ Correct
+Action Needed: None. For every live joiner × active material (48 pairs), the admin label, `Material.is_locked_for()` and the `checklist()` lock flag all agree, with 0 mismatches. They also agree on synthetic edge cases (rolled back):
+- a material the joiner already completed that is then locked stays unlocked (BUS-009, steven.chen);
+- a chapter where every material is locked is open (no deadlock), so "Solo" shows plain "Not started";
+- an inactive locked material is neither listed nor blocking;
+- a locked material with incomplete unlocked siblings shows "Not started · locked" (lily.chen, john.chen).
+
+"· locked" never appears on a Completed row.
+
+BUS-029: lock rule written three times
+Verdict: ⚠️ Pending (low, maintenance)
+Action Needed: `Material.is_locked_for` (endpoint gate), `checklist()` and `JoinerAdmin._active_progress` each implement T6.5 + BUS-009. They agree today (BUS-028), and `LockedMaterialTests` checks the checklist and the admin page in one test. But a future rule change made in one place only would show HR a different lock state from what the joiner gets.
+- [ ] BUS-029a optional: move the per-chapter computation into one helper (e.g. `Material.locked_ids_for(user, materials, done)`) used by `checklist()` and the admin, and keep `is_locked_for` for single-material gates. Or accept as is.
+
+BUS-030: view-only joiner page removes no HR workflow
+Verdict: ✅ Correct
+Action Needed: None. The fields HR could see (name, email, active, date joined) were already read-only. The only things removed are editing the password, superuser/staff, groups and permissions, which belong in Users admin. Export CSV (toolbar, per-joiner, selected action) still works.

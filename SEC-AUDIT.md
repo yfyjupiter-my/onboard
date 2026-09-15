@@ -356,3 +356,21 @@ Action Needed: `JoinerAdmin` sets `readonly_fields` but not `fields`, so the joi
 - [x] SEC-028b `JoinerAdmin.has_change_permission` → `False`. The page becomes view-only with no Save; accounts are managed in the Users admin, as with add/delete.
 - [x] SEC-028c test: a `change_joiner` staff POST can't change `is_superuser`, and the page has no `name="password"`.
 - Verified: tests 42/42 (new `test_joiner_page_is_view_only`). On the live stack (rolled back), the `change_joiner` clerk's page has no password, superuser, staff, groups or permissions inputs, and the escalation POST is now **403** (lily.chen unchanged). The superuser still sees the progress table (17 rows = `9 / 17`). "Export selected as CSV" still returns `200 text/csv`. SEC-026 gating is unchanged.
+
+## BUS-026 lock marking + SEC-028 view-only joiner page: security check (2026-09-15)
+
+SEC-029: SEC-028 fix holds on every write path
+Verdict: ✅ Correct
+Action Needed: None. Verified on the live stack (rolled back) with a staff account holding view/change/add/delete joiner + view_joinerprogress:
+- change POST (is_superuser / is_staff / password / groups / permissions) → **403**, joiner unchanged;
+- delete GET/POST and add GET/POST → 403;
+- bulk `delete_selected` isn't offered (the only action is `export_as_csv`) and a forged POST is a no-op redirect, with the joiner still present;
+- no `list_editable` inputs.
+
+The superuser gets the same: POST 403, and the page has no password hash and no Save button. The history page is read-only (200). A staff pk still redirects out of the Joiner admin. `JoinerAdmin` is the only admin built on `auth.User` (Material/Quiz/Question are the others; `auth.User` keeps Django's own `UserAdmin`).
+
+SEC-030: carry-forward, `?password__startswith=` lookup on the Joiners list
+Verdict: ⚠️ Pending (accepted, unchanged, see SEC-014)
+Action Needed: Still 200 on `/admin/core/joiner/?password__startswith=pbkdf2`. This is stock Django `lookup_allowed` behaviour, and the same lookup already works on `/admin/auth/user/`, so there is no privilege gain for superuser-only HR. Close with a `lookup_allowed` allowlist if non-superuser staff get Joiner access.
+
+Gate: **PASS**, no vulnerabilities.
