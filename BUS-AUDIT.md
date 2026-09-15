@@ -288,10 +288,11 @@ Verdict: ✅ Correct
 Action Needed: None. Both use active materials and `COMPLETED`. Verified on lily.chen with an extra material added (rolled back): changelist `9 / 17`, table 17 rows, 9 Completed. Never-opened materials show "Not started" without creating a `JoinerProgress` row (the P3/P5 lazy-create rule is kept).
 
 BUS-026: locked materials look like plain "Not started"
-Verdict: ⚠️ Pending (minor)
+Verdict: ✅ Correct (fixed 2026-09-15, was ⚠️ Pending)
 Action Needed: A material the joiner can't open yet (T6.5 lock) shows as "Not started", the same as one they skipped. HR can't tell "blocked by chapter" from "hasn't bothered".
-- [ ] BUS-026a optional: append "· locked" to the status when `Material.is_locked_for(joiner)`. Compute it once per chapter as `checklist()` does, not per row. Or accept as is.
+- [x] BUS-026a optional: append "· locked" to the status when `Material.is_locked_for(joiner)`. Compute it once per chapter as `checklist()` does, not per row. Or accept as is.
 
 BUS-027: inactive materials' progress hidden on the joiner page
 Verdict: ✅ Correct (accepted)
 Action Needed: None. For example, john.chen's `viewed` row for the inactive "Instruction" link is no longer listed (the old inline showed it). This matches the `X / total` count, which ignores inactive materials. The row is kept in the DB and is still in the CSV export.
+- Fixed: `JoinerAdmin._active_progress` works out the lock state once per chapter, using the same rule as `checklist()` (T6.5 + BUS-009). A material that is locked for this joiner right now gets " · locked" after its status ("Not started · locked", or "Viewed · locked" if it was opened before the chapter re-locked) in both the progress table and the incomplete list. No extra queries per row. `LockedMaterialTests` checks: no suffix while the chapter is open, suffix on both locked materials once it re-locks, never on unlocked ones. Tests 41/41.

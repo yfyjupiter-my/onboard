@@ -190,19 +190,29 @@ class JoinerAdmin(admin.ModelAdmin):
         return obj.get_full_name() or obj.get_username()
 
     def _active_progress(self, obj):
-        # Every active material in checklist order, paired with this joiner's progress row (None = never opened).
+        # Every active material in checklist order as (material, progress row or None, status label).
         # Read-only: progress is written by the joiner flow, never hand-edited.
         rows = {p.material_id: p for p in obj.progress.all()}
-        return [(m, rows.get(m.id)) for m in Material.objects.filter(is_active=True).order_by("chapter", "created_at")]
+        materials = list(Material.objects.filter(is_active=True).order_by("chapter", "created_at"))
+        done = {mid for mid, p in rows.items() if p.status == JoinerProgress.COMPLETED}
+        # BUS-026: same lock rule as checklist() (T6.5/BUS-009), so HR can tell "blocked" from "skipped".
+        open_chapters = {m.chapter for m in materials} - {m.chapter for m in materials if not m.locked and m.id not in done}
+        result = []
+        for m in materials:
+            p = rows.get(m.id)
+            label = p.get_status_display() if p else "Not started"
+            if m.locked and m.id not in done and m.chapter not in open_chapters:
+                label += " · locked"
+            result.append((m, p, label))
+        return result
 
     @admin.display(description="incomplete materials")
     def incomplete_materials(self, obj):
-        pending = [(m, p) for m, p in self._active_progress(obj) if not p or p.status != JoinerProgress.COMPLETED]
+        pending = [(m, label) for m, p, label in self._active_progress(obj) if not p or p.status != JoinerProgress.COMPLETED]
         if not pending:
             return "None, all active materials completed."
         return format_html("<ul style=\"margin:0;padding-left:1.2em\">{}</ul>", format_html_join(
-            "", "<li>{} ({})</li>",
-            ((m.title, p.get_status_display() if p else "Not started") for m, p in pending),
+            "", "<li>{} ({})</li>", pending,
         ))
 
     # T6.16: replaces the progress inline, which only had rows for materials the joiner had opened.
@@ -212,12 +222,12 @@ class JoinerAdmin(admin.ModelAdmin):
             "Material", "Status", "Score", "Passed", "Submitted at", "Completed at")))
         body = format_html_join("", "<tr>{}</tr>", ((format_html_join("", "<td>{}</td>", ((v,) for v in (
             m.title,
-            p.get_status_display() if p else "Not started",
+            label,
             display_for_value(p and p.score, "-"),
             display_for_value(p and p.passed, "-", boolean=p is not None and p.passed is not None),
             display_for_value(p and p.submitted_at, "-"),
             display_for_value(p and p.completed_at, "-"),
-        ))),) for m, p in self._active_progress(obj)))
+        ))),) for m, p, label in self._active_progress(obj)))
         return format_html('<table aria-label="Progress"><thead><tr>{}</tr></thead><tbody>{}</tbody></table>', head, body)
 
     @admin.display(description="completed", ordering="completed_count")

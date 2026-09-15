@@ -346,3 +346,12 @@ Action Needed: None. Titles go through `format_html_join`, so a material titled 
 
 Gate: **⚠️ PASS with 1 pending (SEC-026)**. No exploitable vulnerability with current accounts; fix before any staff account gets `view_joiner` without `view_joinerprogress`.
 - Verified: tests 41/41. On the live stack (rolled back), a `view_joiner`-only clerk gets 200 on the joiner page with no progress table and no incomplete list. The superuser still sees both (17 rows, matching `9 / 17`).
+
+## Found while fixing BUS-026 (2026-09-15)
+
+SEC-028: joiner change page is an editable User form (privilege escalation)
+Verdict: 🚫 Blocking
+Action Needed: `JoinerAdmin` sets `readonly_fields` but not `fields`, so the joiner page (`/admin/core/joiner/<id>/change/`) also shows the rest of the `auth.User` form as **editable**: password (raw hash), superuser status, staff status, groups and user permissions, with a Save button. This has been there since T6.2 (`c2335de`). Verified (rolled-back transaction): a staff account with only `view_joiner` + `change_joiner` (no `auth.change_user`) POSTs `is_superuser=on` and lily.chen becomes **superuser + staff**. Anyone who can view the page also sees the password hash.
+- [ ] SEC-028a `JoinerAdmin.get_fields` → return only `get_readonly_fields(...)`, so there are no form fields, no hash and no permission widgets.
+- [ ] SEC-028b `JoinerAdmin.has_change_permission` → `False`. The page becomes view-only with no Save; accounts are managed in the Users admin, as with add/delete.
+- [ ] SEC-028c test: a `change_joiner` staff POST can't change `is_superuser`, and the page has no `name="password"`.

@@ -4,7 +4,7 @@ No fixtures/frameworks — Django TestCase + the joiner flow. `manage.py test co
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
-from django.test import TestCase, override_settings
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from .admin import _csv_safe
@@ -321,6 +321,17 @@ class LockedMaterialTests(TestCase):
         self.assertEqual([r[3] for r in rows], [False, False, False])
         self.assertFalse(final.is_locked_for(user))
         self.assertEqual(self.client.get(reverse("material", args=[final.pk])).status_code, 200)
+
+        # BUS-026: the admin joiner page marks a material as locked only while it is locked for that joiner.
+        hr = Client()  # separate client: _admin_login would drop the joiner's frontend session
+        _admin_login(hr, User.objects.create_superuser("hr_lock", password="pw-testing-123"))
+        page = hr.get(reverse("admin:core_joiner_change", args=[user.pk]))
+        self.assertNotContains(page, "· locked")  # chapter 1 is open now
+        JoinerProgress.objects.filter(user=user, material=intro).delete()
+        page = hr.get(reverse("admin:core_joiner_change", args=[user.pk]))
+        self.assertContains(page, "<td>Viewed · locked</td>")  # Final was opened while chapter 1 was open
+        self.assertContains(page, "<li>Also (Not started · locked)</li>", html=True)
+        self.assertNotContains(page, "Intro (Not started · locked)")  # unlocked materials never get the suffix
 
         # BUS-009: once completed, a newly added unlocked material doesn't re-lock it.
         JoinerProgress.objects.filter(user=user, material=final).update(status=JoinerProgress.COMPLETED)
