@@ -409,9 +409,21 @@ Verdict: ✅ Correct
 Action Needed: None. With `DEBUG=False`, `?password__startswith=<lily's real 15-char prefix>` and `?password__startswith=zzzz` return byte-identical 400 bodies on both the list and the export. The lookup is rejected before any query runs. (With `DEBUG=True` the bodies differ only in debug-page request details, not in anything that depends on the hash; see SEC-035.)
 
 SEC-035: live stack runs `DJANGO_DEBUG=True` (pre-existing operator config)
-Verdict: ⚠️ Pending (operator config, not code)
+Verdict: ✅ Correct (fixed 2026-09-15 via option b, was ⚠️ Pending)
 Action Needed: `.env` has `DJANGO_DEBUG=True`, and `DJANGO_CSRF_TRUSTED_ORIGINS` includes `https://onboard.mymaples.com`. Verified via nginx: **anonymous** `GET http://localhost:8080/nope-xyz/` returns Django's debug 404, which lists every URL pattern. Staff-reachable errors (e.g. the new 400) render the full traceback and settings page; Django masks names containing SECRET/PASSWORD/KEY/TOKEN, but paths, installed apps and request META are shown. It is also set because `SESSION_COOKIE_SECURE`/`CSRF_COOKIE_SECURE = not DEBUG` break login over plain-http LAN (see the LAN/CSRF note in STATUS).
-- [ ] SEC-035a when served over HTTPS (Cloudflare → `onboard.mymaples.com`): set `DJANGO_DEBUG=False` and `docker compose up -d`. HSTS, SSL redirect and Secure cookies then turn on (T5.1).
-- [ ] SEC-035b if plain-http LAN access must keep working: instead of `DEBUG=True`, add a separate env flag for Secure cookies and SSL redirect (e.g. `DJANGO_SECURE_COOKIES=False`) so DEBUG can stay off. This is a code change; confirm with the user first.
+- [ ] SEC-035a (still applies once TLS is in front: set `DJANGO_HTTPS=True`) when served over HTTPS (Cloudflare → `onboard.mymaples.com`): set `DJANGO_DEBUG=False` and `docker compose up -d`. HSTS, SSL redirect and Secure cookies then turn on (T5.1).
+- [x] SEC-035b if plain-http LAN access must keep working: instead of `DEBUG=True`, add a separate env flag for Secure cookies and SSL redirect (e.g. `DJANGO_SECURE_COOKIES=False`) so DEBUG can stay off. This is a code change; confirm with the user first.
 
 Gate: **PASS** for the SEC-030 fix, no vulnerabilities in the code. SEC-035 is a deployment setting to change before public exposure.
+
+## SEC-035 fix, option b (2026-09-15)
+
+- Code: `settings.py` has a new `DJANGO_HTTPS` switch that controls `SESSION_COOKIE_SECURE`, `CSRF_COOKIE_SECURE`, `SECURE_SSL_REDIRECT` and HSTS, which were previously tied to `not DEBUG`. It fails secure: unset or any value other than `false` means on (verified: `DJANGO_HTTPS=bogus` → Secure cookies + SSL redirect on). `.env.example` adds `DJANGO_HTTPS=True`. README config table, LAN example, production step 2 and troubleshooting now say to keep `DJANGO_DEBUG=False` and use `DJANGO_HTTPS=False` only for a plain-http pilot.
+- Live `.env` (operator file, gitignored; backup taken first): `DJANGO_DEBUG=False`, `DJANGO_HTTPS=False`. The web container was rebuilt and is healthy.
+- Verified via nginx `:8080`: anonymous 404 is the plain page (no URL patterns); `/login/` 200 with a non-Secure `csrftoken`; the login POST passes CSRF over http; hashed static CSS 200 (whitenoise manifest); `/admin/login/` 200; no HSTS or https redirect over http, as intended. With `DJANGO_HTTPS=True`: Secure cookies, SSL redirect and HSTS 31536000 are all on, and `check --deploy` shows only W009. Tests 43/43 with DEBUG off.
+- Remaining when TLS goes live on `onboard.mymaples.com`: set `DJANGO_HTTPS=True` (SEC-035a). While `False`, the https domain (if reachable) also gets non-Secure cookies and no HSTS.
+
+SEC-036: live `DJANGO_SECRET_KEY` is weak (W009)
+Verdict: ⚠️ Pending (operator config)
+Action Needed: `check --deploy` on the live `.env` flags W009. The key is 27 characters (Django wants ≥ 50 random), not the placeholder. It signs sessions, CSRF tokens and password-reset links; a short key is brute-forceable offline from any signed value.
+- [ ] SEC-036a generate one with `docker compose run --rm web python -c "from django.core.management.utils import get_random_secret_key as g; print(g())"`, put it in `.env`, then run `docker compose up -d`. Side effect: every joiner and admin is logged out once, and outstanding password-reset links stop working.
