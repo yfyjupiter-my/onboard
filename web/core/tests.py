@@ -434,6 +434,21 @@ class JoinerAdminTests(TestCase):
         self.assertNotContains(detail, "field-progress_table")
         self.assertNotContains(detail, "field-incomplete_materials")
 
+    def test_joiner_page_is_view_only(self):
+        # SEC-028: change_joiner must not become a back door to auth.User fields (is_superuser, password).
+        clerk = User.objects.create_user("clerk2", is_staff=True)
+        clerk.user_permissions.add(*Permission.objects.filter(codename__in=["view_joiner", "change_joiner"]))
+        _admin_login(self.client, clerk)
+        joiner = User.objects.get(username="aaa")
+        url = reverse("admin:core_joiner_change", args=[joiner.pk])
+        page = self.client.get(url)
+        self.assertEqual(page.status_code, 200)
+        for field in ("password", "is_superuser", "is_staff", "user_permissions", "groups", "_save"):
+            self.assertNotContains(page, f'name="{field}"')
+        self.client.post(url, {"is_superuser": "on", "is_staff": "on", "_save": "Save"})
+        joiner.refresh_from_db()
+        self.assertFalse(joiner.is_superuser or joiner.is_staff)
+
     def test_export_survives_a_bad_filter_value(self):
         # SEC-013: IncorrectLookupParameters used to escape as a 500.
         resp = self.client.get(reverse("admin:core_joiner_export") + "?is_active__exact=bogus")

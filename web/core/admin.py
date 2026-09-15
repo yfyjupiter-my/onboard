@@ -167,6 +167,13 @@ class JoinerAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def has_change_permission(self, request, obj=None):
+        return False  # SEC-028: view-only; editing a joiner account (password, staff, superuser) belongs to the Users admin
+
+    def get_fields(self, request, obj=None):
+        # SEC-028: without this the rest of the auth.User form (password hash, is_superuser, permissions) is rendered too.
+        return self.get_readonly_fields(request, obj)
+
     def get_readonly_fields(self, request, obj=None):
         # SEC-026: progress data needs view_joinerprogress, the same rule as the CSV export (SEC-012).
         if request.user.has_perm("core.view_joinerprogress"):

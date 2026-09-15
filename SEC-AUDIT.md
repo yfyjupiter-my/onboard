@@ -350,8 +350,9 @@ Gate: **⚠️ PASS with 1 pending (SEC-026)**. No exploitable vulnerability wit
 ## Found while fixing BUS-026 (2026-09-15)
 
 SEC-028: joiner change page is an editable User form (privilege escalation)
-Verdict: 🚫 Blocking
+Verdict: ✅ Correct (fixed 2026-09-15, was 🚫 Blocking)
 Action Needed: `JoinerAdmin` sets `readonly_fields` but not `fields`, so the joiner page (`/admin/core/joiner/<id>/change/`) also shows the rest of the `auth.User` form as **editable**: password (raw hash), superuser status, staff status, groups and user permissions, with a Save button. This has been there since T6.2 (`c2335de`). Verified (rolled-back transaction): a staff account with only `view_joiner` + `change_joiner` (no `auth.change_user`) POSTs `is_superuser=on` and lily.chen becomes **superuser + staff**. Anyone who can view the page also sees the password hash.
-- [ ] SEC-028a `JoinerAdmin.get_fields` → return only `get_readonly_fields(...)`, so there are no form fields, no hash and no permission widgets.
-- [ ] SEC-028b `JoinerAdmin.has_change_permission` → `False`. The page becomes view-only with no Save; accounts are managed in the Users admin, as with add/delete.
-- [ ] SEC-028c test: a `change_joiner` staff POST can't change `is_superuser`, and the page has no `name="password"`.
+- [x] SEC-028a `JoinerAdmin.get_fields` → return only `get_readonly_fields(...)`, so there are no form fields, no hash and no permission widgets.
+- [x] SEC-028b `JoinerAdmin.has_change_permission` → `False`. The page becomes view-only with no Save; accounts are managed in the Users admin, as with add/delete.
+- [x] SEC-028c test: a `change_joiner` staff POST can't change `is_superuser`, and the page has no `name="password"`.
+- Verified: tests 42/42 (new `test_joiner_page_is_view_only`). On the live stack (rolled back), the `change_joiner` clerk's page has no password, superuser, staff, groups or permissions inputs, and the escalation POST is now **403** (lily.chen unchanged). The superuser still sees the progress table (17 rows = `9 / 17`). "Export selected as CSV" still returns `200 text/csv`. SEC-026 gating is unchanged.
