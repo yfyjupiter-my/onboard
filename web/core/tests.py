@@ -202,6 +202,10 @@ class NoQuizViewTests(TestCase):
         # COM-022
         img = Material.objects.create(title="Org chart", type=Material.IMAGE, file="materials/o.png")
         self.assertContains(self.client.get(reverse("material", args=[img.pk])), 'alt="Org chart"')
+        # ROB-017: a failed image must hide the "Loading" dots (failed lives in the card scope the hint reads)
+        resp = self.client.get(reverse("material", args=[img.pk]))
+        self.assertContains(resp, 'x-data="{ reviewed: false, failed: false }"')
+        self.assertContains(resp, 'x-show="!reviewed && !failed"')
         img.description = "CEO at top, three teams below"
         img.save()
         self.assertContains(self.client.get(reverse("material", args=[img.pk])), 'alt="CEO at top, three teams below"')

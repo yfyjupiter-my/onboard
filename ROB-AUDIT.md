@@ -161,3 +161,16 @@ Action Needed: `.m4v` / `.mkv` / `.avi` are now rejected, with a clear message l
 ROB-016: error message read ".jpg, .jpeg, .png file"
 Verdict: ✅ Correct (fixed)
 Action Needed: now reads "Image materials must be a .jpg, .jpeg or .png file." (asserted by `test_file_extension_must_match_type`).
+
+## T6.13 QA check — image loading dots (2026-09-15)
+
+ROB-017: failed image keeps showing "Loading" dots
+Verdict: ✅ Correct (fixed)
+Action Needed: When the image fails (`@error`), `failed` is set in the inner `x-data` but `reviewed` stays false. So `#mc-hint` (`x-show="!reviewed"`) keeps bouncing next to "This image is unavailable. Please contact HR." Screen readers hear "Loading…" for a file that will never load. Before T6.13 the static sentence was stale too, but it didn't claim to be loading. The button stays locked (correct, ROB-011).
+- [x] ROB-017a **Recommended:** move `failed` into the card's `x-data` (`{ reviewed: false, failed: false }`), drop the inner `x-data`, and hide the hint with `x-show="!reviewed && !failed"`. Link materials never set `failed`, so they don't change. Add an assert to the image render test.
+- [ ] ROB-017b accept: the alert already explains the problem.
+- Verified: tests 41/41 (`test_image_alt_uses_description_else_title` asserts the shared scope). In Chromium, a missing image shows no dots, shows the alert and keeps the button disabled; a good image shows no dots and enables the button.
+
+ROB-018: image load before Alpine binds
+Verdict: ✅ Correct
+Action Needed: None. The ROB-009 `onload`/`onerror` flags plus `x-init` still set `reviewed`/`failed`, so a cached image hides the dots on first paint.

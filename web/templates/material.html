@@ -2,7 +2,7 @@
 {% block title %}{{ material.title }} — Onboard{% endblock %}
 {% block body %}
   {% include "_topbar.html" %}
-  <div class="card" x-data="{ reviewed: false }">
+  <div class="card" x-data="{ reviewed: false, failed: false }">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
       <a class="btn ghost sm" href="{% url 'home' %}">&larr; Back</a>
       <h1 class="title" style="flex:1;font-size:26px">{{ material.title }}</h1>
@@ -60,7 +60,7 @@
     {% elif material.type == 'image' %}
       {# T6.11 / ROB-011: like ROB-004, a failed image stays locked and says so (no false completion). #}
       {# ROB-009: static onload/onerror flags let x-init catch events that fire before Alpine binds. #}
-      <div x-data="{ failed: false }">
+      <div>
         <img src="{{ file_url }}" alt="{{ material.description|default:material.title }}" x-show="!failed"
              onload="this.dataset.loaded = '1'" onerror="this.dataset.failed = '1'"
              x-init="if ($el.dataset.failed) failed = true; else if ($el.dataset.loaded) reviewed = true"
@@ -91,7 +91,7 @@
           </span>
           {% else %}
           {# T6.10/T6.13: link + image materials show loading dots instead of a sentence; screen readers still hear the text #}
-          <span id="mc-hint" class="mc-dots" role="status" x-show="!reviewed">
+          <span id="mc-hint" class="mc-dots" role="status" x-show="!reviewed && !failed">
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>

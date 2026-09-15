@@ -291,3 +291,13 @@ Action Needed: None. The label and help text say "Image materials only"; for oth
 COM-007b (reverted 2026-09-15, on user request)
 Verdict: ⚠️ Pending (accepted gap)
 Action Needed: the "Open PDF in browser viewer — works with screen readers, search and zoom" link under the PDF.js viewer was removed. PDF pages are still canvas images with `role="img"` + "Page n of N" labels (COM-007a), but screen-reader users no longer have a route to the PDF's text (WCAG 1.1.1). If needed later, turn on PDF.js's text layer instead (COM-007b alternative).
+
+## T6.13 QA check — image loading dots (2026-09-15)
+
+COM-027: sighted joiners no longer read why Mark complete is disabled on image materials
+Verdict: ✅ Correct (accepted, same as COM-020)
+Action Needed: None. You asked for this change. The screen-reader text is "Loading, Mark complete enables once the image has loaded" (`aria-describedby="mc-hint"`, verified in the rendered page). The dots use `aria-hidden` SVGs and stay still under reduced motion (global rule). Colour isn't the only signal because the button's disabled state is shown too.
+
+COM-028: "Loading" status announced for a failed image
+Verdict: ✅ Correct (fixed via ROB-017a)
+Action Needed: see ROB-017a.

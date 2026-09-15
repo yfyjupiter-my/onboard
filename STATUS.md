@@ -186,3 +186,5 @@
 - **PDF "Open in browser viewer" link removed** (user request): gone from the joiner PDF material page (`material.html`); test renamed to `test_pdf_viewer_region_without_open_link`. COM-007b recorded as an accepted a11y gap (PDF text is no longer reachable by screen readers; the fix option is the PDF.js text layer). Tests 41/41.
 
 - **T6.13 image loading dots ✅ (user request)** — image materials now show the option C dots instead of "Enables once the image has loaded" (sr text kept). PDF/video hints unchanged.
+
+- **T6.13 QA check (COM/ROB)**: COM-027 accepted. **ROB-017 fixed (017a)**: `failed` now lives in the card scope, so a failed image hides the "Loading" dots. Tests 41/41; verified in Chromium (broken image: no dots, alert shown, button locked). Nothing pending.
