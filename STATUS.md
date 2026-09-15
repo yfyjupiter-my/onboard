@@ -184,3 +184,5 @@
 - **T6.12 QA check (ROB/SEC/COM/CODE) ✅ PASS**: no vulnerabilities (alt escaping and double-extension bypasses probed). Small fixes: error message "… .jpeg or .png", image description help text says ~150 characters (migration `0010`, help text only), ROB-012 test split out. Accepted: `.m4v/.mkv` rejected (ROB-015), description field visible for all types (COM-026). Tests 41/41. Nothing pending.
 
 - **PDF "Open in browser viewer" link removed** (user request): gone from the joiner PDF material page (`material.html`); test renamed to `test_pdf_viewer_region_without_open_link`. COM-007b recorded as an accepted a11y gap (PDF text is no longer reachable by screen readers; the fix option is the PDF.js text layer). Tests 41/41.
+
+- **T6.13 image loading dots ✅ (user request)** — image materials now show the option C dots instead of "Enables once the image has loaded" (sr text kept). PDF/video hints unchanged.

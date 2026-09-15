@@ -85,17 +85,17 @@
               style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
           {% csrf_token %}
           {# COM-008: say what unlocks the button (x-show hides it once reviewed) #}
-          {% if material.type == 'pdf' or material.type == 'video' or material.type == 'image' %}
+          {% if material.type == 'pdf' or material.type == 'video' %}
           <span id="mc-hint" x-show="!reviewed" style="color:var(--muted);font-size:14px">
-            {% if material.type == 'pdf' %}Scroll to the end of the document to enable{% elif material.type == 'image' %}Enables once the image has loaded{% else %}Watch the video to the end to enable{% endif %}
+            {% if material.type == 'pdf' %}Scroll to the end of the document to enable{% else %}Watch the video to the end to enable{% endif %}
           </span>
           {% else %}
-          {# T6.10: link materials show loading dots instead of a sentence; screen readers still hear the text #}
+          {# T6.10/T6.13: link + image materials show loading dots instead of a sentence; screen readers still hear the text #}
           <span id="mc-hint" class="mc-dots" role="status" x-show="!reviewed">
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
-            <span class="sr-only">Loading, Mark complete enables once the page has loaded</span>
+            <span class="sr-only">Loading, Mark complete enables once the {% if material.type == 'image' %}image{% else %}page{% endif %} has loaded</span>
           </span>
           {% endif %}
           <button type="submit" class="btn primary" :disabled="!reviewed" aria-describedby="mc-hint">Mark complete</button>

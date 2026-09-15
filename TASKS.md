@@ -126,3 +126,5 @@ Small changes requested after the 6 phases closed. Each is done + tested; no pha
   - Acceptance: `manage.py test core` 39/39 (`test_image_upload_checks_extension_and_header`); a live PNG upload is served `200 image/png` via nginx presign.
 - ✅ **T6.12** **Image QA follow-up (ROB-012, COM-022)**: `Material.clean()` checks the file extension against the type (PDF `.pdf`; video `.mp4/.webm/.mov`; image `.jpg/.jpeg/.png`), so switching type can't keep the wrong file. New optional `Material.description` ("image description", max 300) is used as `<img alt>`, falling back to the title. Migration `0009_material_description` (additive). COM-023 / BUS-020 accepted.
   - Acceptance: `manage.py test core` 40/40; all 17 live materials still pass `full_clean()`; migration 0009 applied on the live stack.
+- ✅ **T6.13** **Image-material loading dots (option C, user request)** — the "Enables once the image has loaded" hint is replaced by the T6.10 `mc-dots` (same markup/CSS); sr text "Loading, Mark complete enables once the image has loaded". PDF/video hints unchanged.
+  - Acceptance: `manage.py test core` green; rendered image page shows dots, no sentence.
