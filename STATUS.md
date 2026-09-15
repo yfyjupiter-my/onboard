@@ -180,3 +180,5 @@
 - **T6.11 QA check (ROB/COM/BUS/CODE)**: fixed **ROB-011** (broken image unlocked Mark complete → now shows "unavailable, contact HR" and stays locked; browser-verified) and **CODE-007** (one `image_format` property, stale comments). Pending your decision: ROB-012 (extension check for PDF/video), COM-022 (optional image description for alt), COM-023 ("Open image full size" link), BUS-020 (tall image scroll gate; recommend accept). No blockers.
 
 - **T6.12 ✅ (ROB-012, COM-022)**: file extension must match material type (PDF/video/image); optional "image description" field is used as alt text (migration `0009`). COM-023 and BUS-020 accepted. Tests 40/40; all live materials still valid. No open T6.11 audit items.
+
+- **T6.12 QA check (ROB/SEC/COM/CODE) ✅ PASS**: no vulnerabilities (alt escaping and double-extension bypasses probed). Small fixes: error message "… .jpeg or .png", image description help text says ~150 characters (migration `0010`, help text only), ROB-012 test split out. Accepted: `.m4v/.mkv` rejected (ROB-015), description field visible for all types (COM-026). Tests 41/41. Nothing pending.

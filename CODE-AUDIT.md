@@ -70,3 +70,15 @@ Action Needed: `clean()` and `source_url` each rebuilt the extension lookup. Mov
 CODE-008: migration and tests
 Verdict: ✅ Correct
 Action Needed: None. `0008_material_type_image` only changes choices (no SQL). `max_length=5` fits `"image"`. One test covers the extension/header allowlist and the forced content type.
+
+---
+
+## T6.12: code quality check (2026-09-15)
+
+CODE-009: one source of truth for extensions
+Verdict: ✅ Correct
+Action Needed: None. `FILE_EXTENSIONS[IMAGE] = tuple(IMAGE_FORMATS)`, so the image allowlist and served content types can't drift. `clean()` does one extension check for every file type, then the magic-byte check for new image uploads only. Migrations 0009 (AddField) and 0010 (help text) are additive.
+
+CODE-010: ROB-012 assertions were inside the image-upload test
+Verdict: ✅ Correct (fixed)
+Action Needed: moved to their own `test_file_extension_must_match_type`, so a failure names the rule that broke. Tests 41/41, `check` 0 issues.

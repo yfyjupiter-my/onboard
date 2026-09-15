@@ -275,3 +275,15 @@ Action Needed: the image is scaled to the card width. On a phone, small text in 
 COM-024: hint, icon, layout
 Verdict: ✅ Correct
 Action Needed: None. The button has `aria-describedby="mc-hint"` ("Enables once the image has loaded"); the failure message is `role="alert"`; the checklist icon is `aria-hidden` and the kicker text says "Image", so colour isn't the only signal; `width:100%;height:auto` doesn't overflow sideways at 400px.
+
+---
+
+## T6.12 image description: accessibility check (2026-09-15)
+
+COM-025: description reaches screen readers; length guidance
+Verdict: ✅ Correct (fixed)
+Action Needed: `alt` uses the description, or the title when it's blank (tested). A 300-character limit is fine for storage, but alt text is best kept short (around 150 characters), because screen readers read it in one go with no pausing. The help text now says "Image materials only: a short description of what the image shows (about 150 characters)…". Migration `0010` updates the help text only (no SQL).
+
+COM-026: "image description" field shows for PDF/video/link too
+Verdict: ✅ Correct (accepted)
+Action Needed: None. The label and help text say "Image materials only"; for other types it's stored but unused. Hiding it per type would need admin JS, which isn't worth it.

@@ -107,14 +107,17 @@ class ModelValidationTests(TestCase):
         for name, data in (("a.html", b"\xff\xd8\xff"), ("a.jpg", b"<html>"), ("a.png", b"\xff\xd8\xff")):
             with self.assertRaises(ValidationError):
                 clean(name, data)
-        # ROB-012: PDF/video need a matching extension too, so switching type can't keep the wrong file.
-        with self.assertRaises(ValidationError):
-            Material(title="P", type=Material.PDF, file="materials/a.png").full_clean()
-        with self.assertRaises(ValidationError):
-            Material(title="V", type=Material.VIDEO, file="materials/a.pdf").full_clean()
-        Material(title="V", type=Material.VIDEO, file="materials/a.MP4").full_clean()
         img = Material(title="I", type=Material.IMAGE, file="materials/a.png")
         self.assertIn("response-content-type=image%2Fpng", img.source_url)
+
+    def test_file_extension_must_match_type(self):
+        # ROB-012: switching type can't keep the wrong file.
+        for type_, name in ((Material.PDF, "a.png"), (Material.VIDEO, "a.pdf"), (Material.IMAGE, "a.pdf")):
+            with self.assertRaises(ValidationError):
+                Material(title="M", type=type_, file=f"materials/{name}").full_clean()
+        Material(title="V", type=Material.VIDEO, file="materials/a.MP4").full_clean()
+        with self.assertRaisesMessage(ValidationError, "Image materials must be a .jpg, .jpeg or .png file."):
+            Material(title="I", type=Material.IMAGE, file="materials/a.gif").full_clean()
 
     def test_youtube_links_rewritten_to_embed(self):
         embed = "https://www.youtube.com/embed/tUd9Dg0R9CA"

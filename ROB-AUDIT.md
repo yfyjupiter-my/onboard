@@ -145,3 +145,19 @@ Action Needed: switching a `.pdf` to Image, an empty upload, or a file with no e
 ROB-013: upload size, link expiry
 Verdict: ✅ Correct
 Action Needed: None. nginx `client_max_body_size 512m` covers images. The image loads once when the page opens (well within the 15-min presigned URL); a reload gets a fresh URL. The server never decodes the image, so a decompression bomb isn't a server risk.
+
+---
+
+## T6.12 extension check + image description: robustness check (2026-09-15)
+
+ROB-014: stricter extension check on every admin save
+Verdict: ✅ Correct
+Action Needed: None. All 17 live materials pass `full_clean()`, so no existing material is blocked from editing. A Link material with a leftover `.pdf` isn't checked (Link has no file rule; the remove-file button still works and saves with `update_fields`, skipping `clean()`). No bulk admin action changes the type.
+
+ROB-015: video formats outside the allowlist
+Verdict: ✅ Correct (accepted)
+Action Needed: `.m4v` / `.mkv` / `.avi` are now rejected, with a clear message listing the allowed formats. `.mp4/.webm` play in all browsers; `.mov` plays when it's H.264, and otherwise BUS-007 unlocks on error. No live video uses another extension. Add more extensions when HR asks.
+
+ROB-016: error message read ".jpg, .jpeg, .png file"
+Verdict: ✅ Correct (fixed)
+Action Needed: now reads "Image materials must be a .jpg, .jpeg or .png file." (asserted by `test_file_extension_must_match_type`).

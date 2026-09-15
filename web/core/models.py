@@ -45,7 +45,7 @@ class Material(models.Model):
     file = models.FileField(upload_to="materials/", blank=True)  # blank for LINK; PDF/video/image need one
     description = models.CharField(
         "image description", max_length=300, blank=True,
-        help_text="Image materials: describe what the image shows for screen-reader users. Leave blank to use the title.",
+        help_text="Image materials only: a short description of what the image shows (about 150 characters) for screen-reader users. Leave blank to use the title.",
     )  # COM-022: used as the <img> alt text
     url = models.URLField(blank=True)  # LINK only; embedded in an iframe
     is_active = models.BooleanField(default=True)
@@ -64,7 +64,8 @@ class Material(models.Model):
         # ponytail: extension only for PDF/video (PDF.js / <video> fail safely on junk); images also check bytes (T6.11).
         ext = os.path.splitext(self.file.name)[1].lower() if self.file else ""
         if self.type in self.FILE_EXTENSIONS and self.file and ext not in self.FILE_EXTENSIONS[self.type]:
-            allowed = ", ".join(self.FILE_EXTENSIONS[self.type])
+            *rest, last = self.FILE_EXTENSIONS[self.type]
+            allowed = f"{', '.join(rest)} or {last}" if rest else last  # ".jpg, .jpeg or .png"
             raise ValidationError({"file": f"{self.get_type_display()} materials must be a {allowed} file."})
         if self.type == self.IMAGE and self.file and not self.file._committed:  # new upload only; don't re-download stored files
             magic = self.image_format[0]

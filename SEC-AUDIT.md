@@ -303,3 +303,17 @@ Action Needed: None.
 - Template uses auto-escaped `title` for `alt`. No new view, URL, or permission path, and completion/lock rules are unchanged.
 
 Gate: **PASS**, nothing pending.
+
+---
+
+## T6.12 extension check + image description: security check (2026-09-15)
+
+SEC-022: image description (HR free text shown to joiners)
+Verdict: ✅ Correct
+Action Needed: None. Rendered only in `alt="{{ material.description|default:material.title }}"` with autoescape. Probe `" onerror="alert(1)" x="<script>{{7*7}}` → `&quot; onerror=&quot;…&lt;script&gt;{{7*7}}`, which can't break out of the attribute. It isn't evaluated by Django (single render) or Alpine (not in an `x-` / `:` attribute). Max 300 is enforced by the form and the DB (`varchar(300)`). Only staff with change permission can edit it.
+
+SEC-023: extension allowlist bypass attempts
+Verdict: ✅ Correct
+Action Needed: None. `a.png.html`, `a.pdf.html`, `a.png.` (trailing dot), `a.png ` (trailing space) and `a.svg` are rejected. `a.html.png` with real PNG bytes is accepted, but it is served `image/png` (SEC-021), so it can't render as a page. The extension is checked on the lower-cased `splitext`, the same value `source_url` uses for the forced content type.
+
+Gate: **PASS**, no vulnerabilities.
