@@ -86,7 +86,7 @@ Action Needed: moved to their own `test_file_extension_must_match_type`, so a fa
 ## T6.15 hide "Image description" in admin: code quality check (2026-09-15)
 
 CODE-011: `Material.description` has no way to be set
-Verdict: ⚠️ Pending (user decision)
+Verdict: ✅ Correct (user chose (a) keep the field, 2026-09-15)
 Action Needed: The column, its help text (mentions a field HR no longer sees), the template `default:` fallback and `test_image_alt_uses_description_else_title` remain. Nothing breaks. Options: (a) keep it, so the row can come back with a one-line change (recommended); (b) remove the field with migration `0012` and simplify alt to the title (no data lost today, 0 rows).
 
 CODE-012: exclude placement and page render
