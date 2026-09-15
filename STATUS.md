@@ -199,3 +199,4 @@
 - **T6.15 QA (SEC/BUS/COM/CODE)** PASS: SEC-025, BUS-024 (0 rows had a description), CODE-012 ✅. CODE-011 resolved: field kept (option a). COM-029 accepted: alt = title, so give image materials descriptive titles. Nothing pending.
 
 - **T6.16 incomplete materials on joiner page ✅** — Joiners → joiner detail now shows "Incomplete materials": active materials not completed, with status (Not started / Viewed), including never-opened ones missing from the progress inline. Tests 41/41.
+- **T6.16 follow-up ✅** — joiner page progress table now lists all active materials (never-opened = "Not started"), replacing the inline that only showed opened ones. Tests 41/41.

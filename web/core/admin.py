@@ -3,6 +3,7 @@ import logging
 
 from django.contrib import admin, messages
 from django.contrib.admin.options import IncorrectLookupParameters
+from django.contrib.admin.utils import display_for_value
 from django.contrib.admin.widgets import AdminFileWidget
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import models, transaction
@@ -151,26 +152,13 @@ def _get_app_list(request, app_label=None):
 admin.site.get_app_list = _get_app_list
 
 
-class ProgressInline(admin.TabularInline):
-    # Read-only: progress is written by the joiner flow, never hand-edited.
-    model = JoinerProgress
-    fields = ("material", "status", "score", "passed", "submitted_at", "completed_at")
-    readonly_fields = fields
-    extra = 0
-    can_delete = False
-
-    def has_add_permission(self, request, obj=None):
-        return False
-
-
 @admin.register(Joiner)
 class JoinerAdmin(admin.ModelAdmin):
     # One row per joiner; click through for their per-material progress. (P13 CSV export.)
     list_display = ("name", "email", "completed", "last_activity", "is_active")
     list_filter = ("is_active",)
     search_fields = ("username", "first_name", "last_name", "email")
-    readonly_fields = ("username", "first_name", "last_name", "email", "is_active", "date_joined", "incomplete_materials")
-    inlines = [ProgressInline]
+    readonly_fields = ("username", "first_name", "last_name", "email", "is_active", "date_joined", "incomplete_materials", "progress_table")
     actions = ["export_as_csv"]
 
     def has_add_permission(self, request):
@@ -195,19 +183,36 @@ class JoinerAdmin(admin.ModelAdmin):
     def name(self, obj):
         return obj.get_full_name() or obj.get_username()
 
-    # The progress inline only has rows for opened materials; this also lists never-opened ones.
+    def _active_progress(self, obj):
+        # Every active material in checklist order, paired with this joiner's progress row (None = never opened).
+        # Read-only: progress is written by the joiner flow, never hand-edited.
+        rows = {p.material_id: p for p in obj.progress.all()}
+        return [(m, rows.get(m.id)) for m in Material.objects.filter(is_active=True).order_by("chapter", "created_at")]
+
     @admin.display(description="incomplete materials")
     def incomplete_materials(self, obj):
-        status = dict(obj.progress.values_list("material_id", "status"))
-        pending = [m for m in Material.objects.filter(is_active=True).order_by("chapter", "created_at")
-                   if status.get(m.id) != JoinerProgress.COMPLETED]
+        pending = [(m, p) for m, p in self._active_progress(obj) if not p or p.status != JoinerProgress.COMPLETED]
         if not pending:
             return "None, all active materials completed."
-        labels = dict(JoinerProgress.STATUS_CHOICES)
         return format_html("<ul style=\"margin:0;padding-left:1.2em\">{}</ul>", format_html_join(
             "", "<li>{} ({})</li>",
-            ((m.title, labels[status.get(m.id, JoinerProgress.NOT_STARTED)]) for m in pending),
+            ((m.title, p.get_status_display() if p else "Not started") for m, p in pending),
         ))
+
+    # T6.16: replaces the progress inline, which only had rows for materials the joiner had opened.
+    @admin.display(description="progress")
+    def progress_table(self, obj):
+        head = format_html_join("", "<th>{}</th>", ((h,) for h in (
+            "Material", "Status", "Score", "Passed", "Submitted at", "Completed at")))
+        body = format_html_join("", "<tr>{}</tr>", ((format_html_join("", "<td>{}</td>", ((v,) for v in (
+            m.title,
+            p.get_status_display() if p else "Not started",
+            display_for_value(p and p.score, "-"),
+            display_for_value(p and p.passed, "-", boolean=p is not None and p.passed is not None),
+            display_for_value(p and p.submitted_at, "-"),
+            display_for_value(p and p.completed_at, "-"),
+        ))),) for m, p in self._active_progress(obj)))
+        return format_html("<table><thead><tr>{}</tr></thead><tbody>{}</tbody></table>", head, body)
 
     @admin.display(description="completed", ordering="completed_count")
     def completed(self, obj):
