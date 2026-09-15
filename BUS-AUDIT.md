@@ -274,3 +274,9 @@ Action Needed: `Material.clean()` drops *any* file when the material has a URL a
 BUS-023: file deletion can't hit another material
 Verdict: ✅ Correct
 Action Needed: None. Uploads use no-overwrite unique names, and `MaterialAdmin.save_as` is False, so no two rows share an object. Material 13's cleared PDF was checked (1 reference) before it was deleted.
+
+## T6.15 hide "Image description" in admin: business logic check (2026-09-15)
+
+BUS-024: hidden, uneditable alt text on existing materials
+Verdict: ✅ Correct
+Action Needed: None. 0 of 18 materials have a description stored, so no image has leftover alt text that HR can no longer see or change. New descriptions can't be entered, so every image uses its title.

@@ -323,3 +323,11 @@ Gate: **PASS**, no vulnerabilities.
 SEC-024: object deletion path
 Verdict: ✅ Correct
 Action Needed: None. Deletion is reachable only through the admin change form (staff, change permission, CSRF). The object key comes from the DB row, not the request, so there's no arbitrary or path-traversal delete. `URLField` still limits URLs to http(s)/ftp(s), so no `javascript:` in the iframe.
+
+## T6.15 hide "Image description" in admin: security check (2026-09-15)
+
+SEC-025: excluded field can't be set by a crafted POST
+Verdict: ✅ Correct
+Action Needed: None. With `exclude`, the ModelForm has no `description` field, so a posted `description=...` is dropped (verified: the form is valid and `description` isn't in `cleaned_data`). No new endpoint or permission change; alt output is still auto-escaped.
+
+Gate: **PASS**, no vulnerabilities.

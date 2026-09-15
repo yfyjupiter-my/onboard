@@ -301,3 +301,9 @@ Action Needed: None. You asked for this change. The screen-reader text is "Loadi
 COM-028: "Loading" status announced for a failed image
 Verdict: ✅ Correct (fixed via ROB-017a)
 Action Needed: see ROB-017a.
+
+## T6.15 hide "Image description" in admin: accessibility check (2026-09-15)
+
+COM-029: image alt text is now always the material title
+Verdict: ⚠️ Pending (accepted by user request)
+Action Needed: This reverses COM-022a. Screen-reader users hear only the title (for example "Org chart") instead of what the image shows. Mitigation: give image materials descriptive titles. No code change unless the user wants the row back for image materials only.

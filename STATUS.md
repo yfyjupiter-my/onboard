@@ -196,3 +196,4 @@
 - **QA (BUS/ROB/SEC) on T6.14 fix**: BUS-023, ROB-019/020, SEC-024 ✅. **BUS-022 fixed (022a, user choice)**: only stored files are dropped; a new wrong upload shows an error (Video: extension msg, Link: "Link materials don't use a file."). 41/41 tests.
 
 - **T6.15 ✅** "Image description" row removed from Material admin (all types) via `exclude`; field/data kept, alt falls back to title. Tests pass.
+- **T6.15 QA (SEC/BUS/COM/CODE)** PASS: SEC-025, BUS-024 (0 rows had a description), CODE-012 ✅. Pending: COM-029 (alt = title, accepted by request) and CODE-011 (keep the unused field (recommended) or drop it with migration 0012).

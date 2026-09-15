@@ -82,3 +82,13 @@ Action Needed: None. `FILE_EXTENSIONS[IMAGE] = tuple(IMAGE_FORMATS)`, so the ima
 CODE-010: ROB-012 assertions were inside the image-upload test
 Verdict: ✅ Correct (fixed)
 Action Needed: moved to their own `test_file_extension_must_match_type`, so a failure names the rule that broke. Tests 41/41, `check` 0 issues.
+
+## T6.15 hide "Image description" in admin: code quality check (2026-09-15)
+
+CODE-011: `Material.description` has no way to be set
+Verdict: ⚠️ Pending (user decision)
+Action Needed: The column, its help text (mentions a field HR no longer sees), the template `default:` fallback and `test_image_alt_uses_description_else_title` remain. Nothing breaks. Options: (a) keep it, so the row can come back with a one-line change (recommended); (b) remove the field with migration `0012` and simplify alt to the title (no data lost today, 0 rows).
+
+CODE-012: exclude placement and page render
+Verdict: ✅ Correct
+Action Needed: None. The add and change pages return 200 without the row, and the `url`/file widgets are unaffected. `check` passes; `core` tests OK.
