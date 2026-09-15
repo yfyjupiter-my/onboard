@@ -28,7 +28,7 @@ def _open_material(request, pk):
     # reached by typing its URL. BUS-010: returns None when locked; callers redirect home
     # (the checklist explains the lock) instead of a bare 403 page.
     material = get_object_or_404(Material, pk=pk, is_active=True)
-    if material.type != Material.LINK and not material.file:
+    if not (material.file or (material.embeds_url and material.url)):
         return None  # ROB-005: file-less PDF/video/image (admin blocks it; shell/imports don't) -> home, not 500
     return None if material.is_locked_for(request.user) else material
 

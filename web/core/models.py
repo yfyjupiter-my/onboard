@@ -42,12 +42,14 @@ class Material(models.Model):
     title = models.CharField(max_length=200)
     chapter = models.PositiveSmallIntegerField(choices=CHAPTER_CHOICES, default=1)
     type = models.CharField(max_length=5, choices=TYPE_CHOICES)
-    file = models.FileField(upload_to="materials/", blank=True)  # blank for LINK; PDF/video/image need one
+    file = models.FileField(upload_to="materials/", blank=True)  # blank for LINK (and URL videos); PDF/image need one
     description = models.CharField(
         "image description", max_length=300, blank=True,
         help_text="Image materials only: a short description of what the image shows (about 150 characters) for screen-reader users. Leave blank to use the title.",
     )  # COM-022: used as the <img> alt text
-    url = models.URLField(blank=True)  # LINK only; embedded in an iframe
+    url = models.URLField(
+        blank=True, help_text="Link materials, or a video without an uploaded file (e.g. YouTube). An uploaded video file takes priority.",
+    )  # embedded in an iframe
     is_active = models.BooleanField(default=True)
     locked = models.BooleanField(
         "locked until the rest of its chapter is completed", default=False,
@@ -58,8 +60,10 @@ class Material(models.Model):
     def clean(self):
         if self.type == self.LINK and not self.url:
             raise ValidationError({"url": "Link materials need a URL."})
-        if self.type != self.LINK and not self.file:
-            raise ValidationError({"file": "PDF, video and image materials need a file."})
+        if self.type == self.VIDEO and not (self.file or self.url):
+            raise ValidationError("Video materials need a file or a URL.")
+        if self.type in (self.PDF, self.IMAGE) and not self.file:
+            raise ValidationError({"file": "PDF and image materials need a file."})
         # ROB-012: the file must match the type, so switching type can't leave e.g. a .png behind a PDF.
         # ponytail: extension only for PDF/video (PDF.js / <video> fail safely on junk); images also check bytes (T6.11).
         ext = os.path.splitext(self.file.name)[1].lower() if self.file else ""
@@ -80,8 +84,13 @@ class Material(models.Model):
         return self.IMAGE_FORMATS.get(os.path.splitext(self.file.name)[1].lower())  # (magic, content type) or None
 
     @property
+    def embeds_url(self):
+        # T6.14: a video with no uploaded file plays its URL in an iframe, same as a Link.
+        return self.type == self.LINK or (self.type == self.VIDEO and not self.file)
+
+    @property
     def source_url(self):
-        if self.type == self.LINK:
+        if self.embeds_url:
             return embeddable(self.url)
         # SEC-020: never let an upload render as a same-origin page, whatever its stored type.
         # PDF.js and <video> ignore these overrides; a direct top-level visit gets a PDF / a download.

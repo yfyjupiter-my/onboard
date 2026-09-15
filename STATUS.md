@@ -188,3 +188,5 @@
 - **T6.13 image loading dots ✅ (user request)** — image materials now show the option C dots instead of "Enables once the image has loaded" (sr text kept). PDF/video hints unchanged.
 
 - **T6.13 QA check (COM/ROB)**: COM-027 accepted. **ROB-017 fixed (017a)**: `failed` now lives in the card scope, so a failed image hides the "Loading" dots. Tests 41/41; verified in Chromium (broken image: no dots, alert shown, button locked). Nothing pending.
+
+- **T6.14 ✅** — admin video materials accept a file **or** a URL (URL-only video plays in an iframe like Link; file wins if both). Migration 0011 (help text). 41/41 tests.

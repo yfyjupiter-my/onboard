@@ -107,14 +107,15 @@ class MaterialAdmin(admin.ModelAdmin):
                 messages.ERROR,
             )
         elif obj.file:
-            # File + URL conflict: drop the file and let the URL take over as a Link material.
+            # File + URL conflict: drop the file and let the URL take over (T6.14: a video stays a video).
             storage, name = obj.file.storage, obj.file.name
             with transaction.atomic():
                 obj.file = ""
-                obj.type = Material.LINK
+                if obj.type != Material.VIDEO:
+                    obj.type = Material.LINK
                 obj.save(update_fields=["file", "type"])
                 transaction.on_commit(lambda: storage.delete(name))
-            self.message_user(request, "File removed. This material now shows its URL (type: Link).", messages.SUCCESS)
+            self.message_user(request, f"File removed. This material now shows its URL (type: {obj.get_type_display()}).", messages.SUCCESS)
         return redirect("admin:core_material_change", pk)
 
 

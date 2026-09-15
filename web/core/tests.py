@@ -116,6 +116,14 @@ class ModelValidationTests(TestCase):
             with self.assertRaises(ValidationError):
                 Material(title="M", type=type_, file=f"materials/{name}").full_clean()
         Material(title="V", type=Material.VIDEO, file="materials/a.MP4").full_clean()
+        # T6.14: video accepts a URL instead of a file (embedded like a Link), but needs one of the two.
+        url_video = Material(title="V", type=Material.VIDEO, url="https://youtu.be/tUd9Dg0R9CA")
+        url_video.full_clean()
+        self.assertEqual(url_video.source_url, "https://www.youtube.com/embed/tUd9Dg0R9CA")
+        with self.assertRaisesMessage(ValidationError, "Video materials need a file or a URL."):
+            Material(title="V", type=Material.VIDEO).full_clean()
+        with self.assertRaises(ValidationError):
+            Material(title="P", type=Material.PDF, url="https://example.com/a.pdf").full_clean()
         with self.assertRaisesMessage(ValidationError, "Image materials must be a .jpg, .jpeg or .png file."):
             Material(title="I", type=Material.IMAGE, file="materials/a.gif").full_clean()
 

@@ -47,7 +47,7 @@
           container.setAttribute('role', 'alert');
         });
       </script>
-    {% elif material.type == 'link' %}
+    {% elif material.embeds_url %}{# link, or T6.14 URL-only video #}
       {# ponytail: an X-Frame-Options block can't be detected cross-origin (the frame still fires `load`), so a blocked site just renders blank — prefer embeddable URLs. #}
       {# Django's SECURE_REFERRER_POLICY default (same-origin) sends no Referer cross-origin, which YouTube rejects with error 153 — override it for this frame only. #}
       <iframe src="{{ file_url }}" title="{{ material.title }}" allowfullscreen
@@ -85,7 +85,7 @@
               style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end">
           {% csrf_token %}
           {# COM-008: say what unlocks the button (x-show hides it once reviewed) #}
-          {% if material.type == 'pdf' or material.type == 'video' %}
+          {% if material.type == 'pdf' or material.type == 'video' and not material.embeds_url %}
           <span id="mc-hint" x-show="!reviewed" style="color:var(--muted);font-size:14px">
             {% if material.type == 'pdf' %}Scroll to the end of the document to enable{% else %}Watch the video to the end to enable{% endif %}
           </span>
@@ -95,7 +95,7 @@
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
-            <span class="sr-only">Loading, Mark complete enables once the {% if material.type == 'image' %}image{% else %}page{% endif %} has loaded</span>
+            <span class="sr-only">Loading, Mark complete enables once the {% if material.type == 'image' %}image{% elif material.type == 'video' %}video{% else %}page{% endif %} has loaded</span>
           </span>
           {% endif %}
           <button type="submit" class="btn primary" :disabled="!reviewed" aria-describedby="mc-hint">Mark complete</button>
