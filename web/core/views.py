@@ -42,19 +42,15 @@ def checklist(request):
         Material.objects.filter(is_active=True, quiz__isnull=False).values_list("id", flat=True)
     )
     materials = list(Material.objects.filter(is_active=True).order_by("chapter", "created_at"))
-    # T6.5: same rule as Material.is_locked_for, computed once instead of per tile.
-    # BUS-009: a material the joiner already completed is never locked.
     completed = {mid for mid, p in progress.items() if p.status == JoinerProgress.COMPLETED}
+    locked = Material.locked_ids(materials, completed)  # T6.5, computed once instead of per tile
     # BUS-008: group by the chapters materials actually have, not CHAPTER_CHOICES, so an unlisted
     # chapter value can never hide an active material. Empty chapters simply don't appear.
     names = dict(Material.CHAPTER_CHOICES)
     chapters = []
     for number, group in groupby(materials, key=attrgetter("chapter")):
         group = list(group)
-        chapter_open = all(m.id in completed for m in group if not m.locked)  # T6.5: per chapter
-        rows = [(m, progress.get(m.id), m.id in quiz_material_ids,
-                 m.locked and m.id not in completed and not chapter_open)
-                for m in group]
+        rows = [(m, progress.get(m.id), m.id in quiz_material_ids, m.id in locked) for m in group]
         done = sum(1 for _, p, _, _ in rows if p and p.status == JoinerProgress.COMPLETED)
         chapters.append({"number": number, "name": names.get(number, f"Chapter {number}"),
                          "rows": rows, "done": done})

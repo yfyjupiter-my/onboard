@@ -310,10 +310,11 @@ Action Needed: None. For every live joiner × active material (48 pairs), the ad
 "· locked" never appears on a Completed row.
 
 BUS-029: lock rule written three times
-Verdict: ⚠️ Pending (low, maintenance)
+Verdict: ✅ Correct (fixed 2026-09-15, was ⚠️ Pending)
 Action Needed: `Material.is_locked_for` (endpoint gate), `checklist()` and `JoinerAdmin._active_progress` each implement T6.5 + BUS-009. They agree today (BUS-028), and `LockedMaterialTests` checks the checklist and the admin page in one test. But a future rule change made in one place only would show HR a different lock state from what the joiner gets.
-- [ ] BUS-029a optional: move the per-chapter computation into one helper (e.g. `Material.locked_ids_for(user, materials, done)`) used by `checklist()` and the admin, and keep `is_locked_for` for single-material gates. Or accept as is.
+- [x] BUS-029a optional: move the per-chapter computation into one helper (e.g. `Material.locked_ids_for(user, materials, done)`) used by `checklist()` and the admin, and keep `is_locked_for` for single-material gates. Or accept as is.
 
 BUS-030: view-only joiner page removes no HR workflow
 Verdict: ✅ Correct
 Action Needed: None. The fields HR could see (name, email, active, date joined) were already read-only. The only things removed are editing the password, superuser/staff, groups and permissions, which belong in Users admin. Export CSV (toolbar, per-joiner, selected action) still works.
+- Fixed: one rule, `Material.locked_ids(materials, done)`, in `web/core/models.py` (no queries, returns the ids locked for that joiner). `checklist()` and `JoinerAdmin._active_progress` call it on the materials they already loaded. `is_locked_for` (endpoint gate) calls it on the material's chapter; it still makes no queries for unlocked materials and 2 for locked ones, as before. Net −1 line. Tests 42/42 (`LockedMaterialTests` covers all three callers). Live re-check: 48 joiner × material pairs plus the synthetic edge cases, 0 mismatches.

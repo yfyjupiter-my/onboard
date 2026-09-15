@@ -110,16 +110,22 @@ class Material(models.Model):
             params = {"ResponseContentDisposition": "attachment"}
         return self.file.storage.url(self.file.name, parameters=params)
 
+    @staticmethod
+    def locked_ids(materials, done):
+        # BUS-029: the one lock rule (T6.5), shared by the endpoint gate, the checklist and the admin joiner page.
+        # materials: active materials; done: ids this joiner completed. A locked material waits on every
+        # *unlocked* material in its chapter (locked ones never block each other, so no deadlock), and one
+        # already completed stays open when new materials are added (BUS-009).
+        blocked_chapters = {m.chapter for m in materials if not m.locked and m.id not in done}
+        return {m.id for m in materials if m.locked and m.id not in done and m.chapter in blocked_chapters}
+
     def is_locked_for(self, user):
-        # T6.5: locked materials wait on every active, *unlocked* material in the same chapter
-        # (locked ones never block each other, so two locked materials can't deadlock).
         if not self.locked:
-            return False
-        done = JoinerProgress.objects.filter(user=user, status=JoinerProgress.COMPLETED)
-        if done.filter(material=self).exists():
-            return False  # BUS-009: already completed stays open when new materials are added
-        return (Material.objects.filter(is_active=True, locked=False, chapter=self.chapter)
-                .exclude(pk__in=done.values("material_id")).exists())
+            return False  # no queries for the common case
+        done = set(JoinerProgress.objects.filter(user=user, status=JoinerProgress.COMPLETED)
+                   .values_list("material_id", flat=True))
+        chapter = [*Material.objects.filter(is_active=True, chapter=self.chapter).exclude(pk=self.pk), self]
+        return self.id in Material.locked_ids(chapter, done)
 
     def __str__(self):
         return self.title

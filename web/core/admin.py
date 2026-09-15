@@ -202,13 +202,12 @@ class JoinerAdmin(admin.ModelAdmin):
         rows = {p.material_id: p for p in obj.progress.all()}
         materials = list(Material.objects.filter(is_active=True).order_by("chapter", "created_at"))
         done = {mid for mid, p in rows.items() if p.status == JoinerProgress.COMPLETED}
-        # BUS-026: same lock rule as checklist() (T6.5/BUS-009), so HR can tell "blocked" from "skipped".
-        open_chapters = {m.chapter for m in materials} - {m.chapter for m in materials if not m.locked and m.id not in done}
+        locked = Material.locked_ids(materials, done)  # BUS-026: HR can tell "blocked" from "skipped"
         result = []
         for m in materials:
             p = rows.get(m.id)
             label = p.get_status_display() if p else "Not started"
-            if m.locked and m.id not in done and m.chapter not in open_chapters:
+            if m.id in locked:
                 label += " · locked"
             result.append((m, p, label))
         return result
