@@ -374,3 +374,15 @@ Verdict: ⚠️ Pending (accepted, unchanged, see SEC-014)
 Action Needed: Still 200 on `/admin/core/joiner/?password__startswith=pbkdf2`. This is stock Django `lookup_allowed` behaviour, and the same lookup already works on `/admin/auth/user/`, so there is no privilege gain for superuser-only HR. Close with a `lookup_allowed` allowlist if non-superuser staff get Joiner access.
 
 Gate: **PASS**, no vulnerabilities.
+
+## BUS-029 refactor (`Material.locked_ids`): security check (2026-09-15)
+
+SEC-031: lock gate still blocks every endpoint
+Verdict: ✅ Correct
+Action Needed: None. In the same 60 randomized scenarios (rolled back), each of the 24 materials locked for the joiner was probed on all endpoints: `GET /material/<pk>/`, `POST /material/<pk>/complete/`, and `GET` and `POST /material/<pk>/quiz/`. All returned 302 home, and no `JoinerProgress` row was created or changed. Inactive materials returned 404.
+
+SEC-032: another joiner's progress can't unlock a material
+Verdict: ✅ Correct
+Action Needed: None. In every scenario a second joiner had **completed every material**. The test joiner's lock state still matched their own progress only: `done` comes from `JoinerProgress.objects.filter(user=user, ...)` in `is_locked_for`, from `request.user.progress` in `checklist()`, and from `obj.progress` in the admin. `locked_ids` takes no request input, so there's nothing to inject or tamper with.
+
+Gate: **PASS**, no vulnerabilities.

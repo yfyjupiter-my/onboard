@@ -318,3 +318,17 @@ BUS-030: view-only joiner page removes no HR workflow
 Verdict: ✅ Correct
 Action Needed: None. The fields HR could see (name, email, active, date joined) were already read-only. The only things removed are editing the password, superuser/staff, groups and permissions, which belong in Users admin. Export CSV (toolbar, per-joiner, selected action) still works.
 - Fixed: one rule, `Material.locked_ids(materials, done)`, in `web/core/models.py` (no queries, returns the ids locked for that joiner). `checklist()` and `JoinerAdmin._active_progress` call it on the materials they already loaded. `is_locked_for` (endpoint gate) calls it on the material's chapter; it still makes no queries for unlocked materials and 2 for locked ones, as before. Net −1 line. Tests 42/42 (`LockedMaterialTests` covers all three callers). Live re-check: 48 joiner × material pairs plus the synthetic edge cases, 0 mismatches.
+
+## BUS-029 refactor (`Material.locked_ids`): business logic check (2026-09-15)
+
+BUS-031: refactor behaves the same as the old lock code
+Verdict: ✅ Correct
+Action Needed: None. The old code from `a98da88^` (query-based `is_locked_for` and the `chapter_open` loop in `checklist()`) was run side by side with the new code over 60 seeded random scenarios on the live DB (rolled back). Each scenario had 0–8 materials in chapters 1, 2 and 7 (7 is outside `CHAPTER_CHOICES`, see BUS-008), about 45% locked, about 15% inactive, and a random mix of completed, viewed and never-opened progress. Results:
+- 235 per-material `is_locked_for` checks, including **inactive** materials: old == new;
+- per scenario, the old checklist set, `Material.locked_ids`, the rendered checklist lock flags and the admin "· locked" labels were all identical (24 locked materials in total).
+
+This covered empty scenarios (no materials), all-locked chapters (open), completed-then-locked (BUS-009, open) and mixed chapters (locks are per chapter). 0 mismatches.
+
+BUS-032: `locked_ids` contract relies on callers passing active materials
+Verdict: ✅ Correct
+Action Needed: None. The docstring states that `materials` must be active materials. All three callers do this: `checklist()` and the admin filter on `is_active=True`, and `is_locked_for` adds only `self` to the active chapter list. That is exactly the old behaviour, where the material itself was considered even if inactive, and the parity check above confirms it.
