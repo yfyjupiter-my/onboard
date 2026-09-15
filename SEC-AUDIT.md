@@ -370,7 +370,7 @@ Action Needed: None. Verified on the live stack (rolled back) with a staff accou
 The superuser gets the same: POST 403, and the page has no password hash and no Save button. The history page is read-only (200). A staff pk still redirects out of the Joiner admin. `JoinerAdmin` is the only admin built on `auth.User` (Material/Quiz/Question are the others; `auth.User` keeps Django's own `UserAdmin`).
 
 SEC-030: carry-forward, `?password__startswith=` lookup on the Joiners list
-Verdict: ⚠️ Pending (accepted, unchanged, see SEC-014)
+Verdict: ✅ Correct (fixed 2026-09-15, was ⚠️ Pending, accepted)
 Action Needed: Still 200 on `/admin/core/joiner/?password__startswith=pbkdf2`. This is stock Django `lookup_allowed` behaviour, and the same lookup already works on `/admin/auth/user/`, so there is no privilege gain for superuser-only HR. Close with a `lookup_allowed` allowlist if non-superuser staff get Joiner access.
 
 Gate: **PASS**, no vulnerabilities.
@@ -386,3 +386,10 @@ Verdict: ✅ Correct
 Action Needed: None. In every scenario a second joiner had **completed every material**. The test joiner's lock state still matched their own progress only: `done` comes from `JoinerProgress.objects.filter(user=user, ...)` in `is_locked_for`, from `request.user.progress` in `checklist()`, and from `obj.progress` in the admin. `locked_ids` takes no request input, so there's nothing to inject or tamper with.
 
 Gate: **PASS**, no vulnerabilities.
+
+## SEC-030 fix (2026-09-15)
+
+- Fixed: `JoinerAdmin.lookup_allowed` accepts only lookups on `is_active`, the sidebar filter. Any other URL filter (`password__startswith`, `is_superuser__exact`, `username__startswith`, `progress__score__gte`, …) raises `DisallowedModelAdminLookup` and returns **400** on both the Joiners list and the CSV export. The export is protected too, because it builds its queryset through the same changelist.
+- Verified live with the superuser: no params, search `?q=`, sort `?o=`, `?is_active__exact=1/0`, `?_facets=True` and pagination all return 200 on the list and the export; the probe lookups return 400. Tests 43/43 (new `test_only_sidebar_filter_lookups_allowed`).
+- Trade-off: hand-typed URL filters such as `?username__startswith=` no longer work on Joiners. Use the search box, which covers username, name and email.
+- Correction to SEC-014: `/admin/auth/user/?password__startswith=pbkdf2` already returns 400 on Django 5.2.4 (stock `UserAdmin` blocks it), so the earlier "same lookup works on Users admin" note is out of date. With this fix, no admin list accepts the hash probe.

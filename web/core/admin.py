@@ -174,6 +174,11 @@ class JoinerAdmin(admin.ModelAdmin):
         # SEC-028: without this the rest of the auth.User form (password hash, is_superuser, permissions) is rendered too.
         return self.get_readonly_fields(request, obj)
 
+    def lookup_allowed(self, lookup, value, request=None):
+        # SEC-030: URL filters only on the sidebar field. Stock admin allows any model field, so
+        # ?password__startswith=pbkdf2_sha256$... narrowed the list (and CSV export) one hash character at a time.
+        return lookup.split("__")[0] in ("is_active",) and super().lookup_allowed(lookup, value, request)
+
     def get_readonly_fields(self, request, obj=None):
         # SEC-026: progress data needs view_joinerprogress, the same rule as the CSV export (SEC-012).
         if request.user.has_perm("core.view_joinerprogress"):

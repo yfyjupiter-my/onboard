@@ -434,6 +434,13 @@ class JoinerAdminTests(TestCase):
         self.assertNotContains(detail, "field-progress_table")
         self.assertNotContains(detail, "field-incomplete_materials")
 
+    def test_only_sidebar_filter_lookups_allowed(self):
+        # SEC-030: no probing the password hash (or other User fields) through URL filters.
+        for url in (reverse("admin:core_joiner_changelist"), reverse("admin:core_joiner_export")):
+            self.assertEqual(self.client.get(url + "?password__startswith=pbkdf2").status_code, 400)
+            self.assertEqual(self.client.get(url + "?is_superuser__exact=1").status_code, 400)
+        self.assertContains(self.client.get(reverse("admin:core_joiner_changelist") + "?is_active__exact=1"), "2 joiners")
+
     def test_joiner_page_is_view_only(self):
         # SEC-028: change_joiner must not become a back door to auth.User fields (is_superuser, password).
         clerk = User.objects.create_user("clerk2", is_staff=True)
