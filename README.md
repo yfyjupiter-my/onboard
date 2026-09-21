@@ -60,8 +60,7 @@ Then edit `.env`. Compose **refuses to start** if the password vars are missing.
 | `MINIO_BUCKET` | no | default `onboard-media`; created automatically on first boot |
 | `MINIO_PUBLIC_ENDPOINT` | **yes** | the single browser-facing base URL — see the warning above |
 | `DJANGO_SECRET_KEY` | **yes** | the generated random string |
-| `DJANGO_DEBUG` | **yes** | always `False` outside local development (`True` shows URL patterns and tracebacks to visitors) |
-| `DJANGO_HTTPS` | no | default `True`: Secure cookies, SSL redirect, HSTS. `False` only for a plain-http LAN pilot (see below) |
+| `DJANGO_DEBUG` | **yes** | `False` in production (see the http/LAN caveat below) |
 | `DJANGO_ALLOWED_HOSTS` | **yes** | comma-separated hostnames/IPs you serve on, e.g. `localhost,127.0.0.1,192.168.100.210` |
 | `DJANGO_CSRF_TRUSTED_ORIGINS` | **yes** | comma-separated `scheme://host:port` origins, exactly as typed in the browser |
 
@@ -69,13 +68,12 @@ Example for a LAN pilot on `192.168.100.210`:
 
 ```dotenv
 MINIO_PUBLIC_ENDPOINT=http://192.168.100.210:8080
-DJANGO_DEBUG=False
-DJANGO_HTTPS=False
+DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=192.168.100.210,localhost,127.0.0.1
 DJANGO_CSRF_TRUSTED_ORIGINS=http://192.168.100.210:8080
 ```
 
-> **Why `DJANGO_HTTPS=False` for a plain-http LAN pilot:** with it on, Django marks the session and CSRF cookies `Secure` and redirects to https, so over `http://` the browser never sends the cookies and every login fails CSRF. Keep `DJANGO_DEBUG=False` regardless (SEC-035). Set `DJANGO_HTTPS=True` (or remove the line) as soon as real TLS is in front.
+> **Why `DEBUG=True` for a plain-http LAN pilot:** with `DEBUG=False` Django marks the session and CSRF cookies `Secure`, so the browser never sends them over `http://` and every login fails CSRF. Either keep `DEBUG=True` on the LAN, or put real TLS in front — do not run `DEBUG=True` on the internet.
 
 ## Step 3 — Start the stack
 
@@ -143,7 +141,7 @@ Each export writes a line to the container log (`docker compose logs web`) namin
 ## Production deployment
 
 1. **TLS in front.** Terminate https at a reverse proxy / Cloudflare and forward to host `:8080`. The proxy must send `X-Forwarded-Proto: https` (Cloudflare and most proxies do); nginx keeps it, otherwise Django's SSL redirect loops forever (SEC-017). If the proxy or tunnel runs on the same host, publish nginx on loopback only (`"127.0.0.1:8080:80"` in `docker-compose.yml`) so nobody can reach `:8080` around it.
-2. **`DJANGO_DEBUG=False` and `DJANGO_HTTPS=True`** (the default). `DJANGO_HTTPS` turns on SSL redirect, HSTS (1 year, subdomains, preload) and secure cookies. Verify:
+2. **`DJANGO_DEBUG=False`** — turns on SSL redirect, HSTS (1 year, subdomains, preload) and secure cookies. Verify:
    ```bash
    docker compose run --rm web python manage.py check --deploy
    ```
@@ -171,7 +169,7 @@ Each export writes a line to the container log (`docker compose logs web`) namin
 
 | Symptom | Cause / fix |
 |---|---|
-| "CSRF verification failed" on login | The origin you typed isn't in `DJANGO_CSRF_TRUSTED_ORIGINS` (needs exact scheme+host+port). Over plain http with `DJANGO_HTTPS=True`, secure cookies are never sent: set `DJANGO_HTTPS=False` for a LAN pilot (keep `DJANGO_DEBUG=False`) or use https. |
+| "CSRF verification failed" on login | The origin you typed isn't in `DJANGO_CSRF_TRUSTED_ORIGINS` (needs exact scheme+host+port). Over plain http with `DEBUG=False`, secure cookies are never sent — set `DEBUG=True` for a LAN pilot or use https. |
 | Checklist loads but video/PDF is blank, or "no supported format" | `MINIO_PUBLIC_ENDPOINT` doesn't match the host in the address bar. Set it to the exact URL every device uses, then `docker compose up -d`. |
 | `EndpointResolutionError` opening a material | `MINIO_PUBLIC_ENDPOINT` contains a comma-list. It is a single URL. |
 | Changed the host port from 8080 | Update `MINIO_PUBLIC_ENDPOINT` (and CSRF origins) to the new port — presigns include it. |
