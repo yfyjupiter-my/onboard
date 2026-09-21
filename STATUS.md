@@ -99,6 +99,8 @@
 - **Quiz template comment removed** (`55688a8`) — dropped the stale 2-line `{# #}` note in `quiz.html`; no behaviour change.
 
 ## Next
+- **T6.17 officekit tunnel split (operator, pending)** — Cloudflare is in this project only as onboard's ingress (Cloudflare Tunnel, zero inbound ports; `prd.md`). Officekit is unrelated — it merely had onboard's tunnel token copy-pasted (2026-09-17 incident below), and its `cloudflared` is stopped as the mitigation. Still to do: give officekit its own tunnel token/hostname in `officekit/.env` and start it there. See `TASKS.md` T6.17.
+
 - **Deploy prerequisites (operator, not code):** set real `.env` secrets (clears W009), scope MinIO service account (SEC-004), put Cloudflare Access on `/admin/` (SEC-006/P14). Repo already under git (`.gitignore` in place). App code is deploy-ready.
 
 - **Admin file replace (Material) fixed** — `ReplaceableFileInput` (subclasses `AdminFileWidget` to keep admin layout) lets a new upload win over the Clear tick; `MaterialAdmin.save_model` deletes the old MinIO object on replace/clear (on_commit). Added missing migration `0005_alter_joiner_options` (Meta only). Verified vs live MinIO: new object exists, old gone; `makemigrations --check` clean; core tests green.
