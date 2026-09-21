@@ -96,11 +96,14 @@ CSRF_TRUSTED_ORIGINS = [
     o.strip() for o in os.environ.get("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",") if o.strip()
 ]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+# SEC-035: https hardening has its own switch, so a plain-http LAN pilot can run with DEBUG off
+# (DEBUG=True leaked URL patterns and tracebacks). Anything but "false" keeps it on: fail secure.
+HTTPS = os.environ.get("DJANGO_HTTPS", "True").lower() != "false"
+SESSION_COOKIE_SECURE = HTTPS
+CSRF_COOKIE_SECURE = HTTPS
 
-# Prod-only (TLS terminates at nginx/Cloudflare, proxy header above lets Django see it). SEC-003.
-if not DEBUG:
+# TLS terminates at nginx/Cloudflare; the proxy header above lets Django see it. SEC-003.
+if HTTPS:
     SECURE_SSL_REDIRECT = True
     SECURE_HSTS_SECONDS = 31536000  # 1 year
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
