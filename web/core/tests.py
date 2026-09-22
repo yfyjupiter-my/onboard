@@ -1,6 +1,7 @@
 """One check per non-trivial path (T5.3): quiz scoring/state machine, presign URL shape, csv_safe.
 No fixtures/frameworks — Django TestCase + the joiner flow. `manage.py test core`.
 """
+from datetime import datetime, timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
@@ -400,6 +401,13 @@ class JoinerAdminTests(TestCase):
         resp = self.client.get(reverse("admin:core_joiner_export"))
         self.assertEqual(resp["Content-Type"], "text/csv")
         self.assertEqual(len(resp.content.decode().strip().splitlines()), 3)  # header + 2
+
+    def test_export_timestamps_are_local(self):
+        p = JoinerProgress.objects.first()
+        p.completed_at = datetime(2026, 9, 22, 0, 30, tzinfo=timezone.utc)
+        p.save(update_fields=["completed_at"])
+        body = self.client.get(reverse("admin:core_joiner_export")).content.decode()
+        self.assertIn("2026-09-22T08:30:00+08:00", body)  # KL, not the stored UTC 00:30
 
     def test_export_respects_changelist_filters(self):
         resp = self.client.get(reverse("admin:core_joiner_export") + "?q=aaa")

@@ -14,6 +14,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import path
 from django.utils.html import format_html, format_html_join
+from django.utils.timezone import localtime
 
 logger = logging.getLogger(__name__)
 
@@ -308,7 +309,7 @@ class JoinerAdmin(admin.ModelAdmin):
                 p.status,
                 "" if p.score is None else p.score,
                 "" if p.passed is None else p.passed,
-                p.completed_at.isoformat() if p.completed_at else "",
+                localtime(p.completed_at).isoformat() if p.completed_at else "",  # TIME_ZONE (KL), not UTC
             )])
         # COM-004: a whole-table PII export is one click and leaves no admin history.
         logger.info("joiner CSV export by %s: %d rows", request.user.get_username(), rows)
