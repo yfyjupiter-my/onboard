@@ -155,7 +155,7 @@ Each export writes a line to the container log (`docker compose logs web`) namin
    ```bash
    ssh -L 9001:127.0.0.1:9001 user@server   # then http://localhost:9001
    ```
-7. **Back up both volumes** — `pgdata` (all metadata/progress) and `minio-data` (the files). Database dump:
+7. **Back up both volumes** — `pgdata` (all metadata/progress) and `minio-data` (the files); see [Migrate / restore on another machine](#migrate--restore-on-another-machine) for the full procedure. Quick database dump:
    ```bash
    docker compose exec db pg_dump -U onboard onboard > backup-$(date +%F).sql
    ```
@@ -164,6 +164,91 @@ Each export writes a line to the container log (`docker compose logs web`) namin
    0 3 * * * cd /path/to/onboard && docker compose exec -T web python manage.py clearsessions
    ```
 9. **Vendored frontend libs** (no CDN, offline by design) under `web/static/vendor/`: htmx 1.9.x, Alpine 3.x, **pdf.js 4.6.82** (Apache-2.0; ≥ 4.2.67, past CVE-2024-4367). Fonts (Inter, Bricolage Grotesque — both OFL) are self-hosted under `web/static/fonts/`. Re-record versions here on upgrade.
+
+---
+
+## Migrate / restore on another machine
+
+Three things carry the deployment: the **repo + `.env`**, the **Postgres data** (users, materials, quizzes, progress) and the **MinIO objects** (the actual PDFs/videos). Docker images are not backed up — they rebuild from `web/Dockerfile` and public base images.
+
+### Back up (on the old host)
+
+Safe to run with the stack up — the DB dump is logical and consistent.
+
+```bash
+cd /path/to/onboard
+B=~/backups/onboard-$(date +%Y%m%d-%H%M%S); mkdir -p "$B"
+
+# 1. database
+docker compose exec -T db pg_dump -U onboard -d onboard --clean --if-exists > "$B/db.sql"
+
+# 2. MinIO objects (raw volume — keeps bucket layout and metadata)
+docker run --rm -v onboard_minio-data:/data:ro -v "$B":/out alpine \
+  tar czf /out/minio-data.tar.gz -C /data .
+
+# 3. repo, including .env and .git
+tar czf "$B/repo.tar.gz" -C "$(dirname "$PWD")" "$(basename "$PWD")"
+
+sha256sum "$B"/*.tar.gz "$B"/db.sql > "$B/SHA256SUMS"
+```
+
+Volume names are prefixed with the Compose project name (the directory name), so it is `onboard_minio-data` for a checkout in `onboard/`. Confirm with `docker volume ls`.
+
+Copy the directory to the new host: `scp -r "$B" user@newhost:~/`. **It contains `.env` with live secrets** — keep it off shared drives and delete it once the migration is verified.
+
+### Restore (on the new host)
+
+Prerequisites as in [Prerequisites](#prerequisites): Docker Engine + Compose v2, ports 8080 and 127.0.0.1:9001 free.
+
+```bash
+cd ~/onboard-<timestamp>          # the copied backup directory
+sha256sum -c SHA256SUMS
+
+# 1. code + .env
+tar xzf repo.tar.gz -C ~/Documents
+cd ~/Documents/onboard
+```
+
+**Do not regenerate `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD`** — the restored volume carries MinIO's own `.minio.sys` config and the app's presigned URLs are signed with these; changing them breaks every media file. Same for `DJANGO_SECRET_KEY` (changing it only logs everyone out, which is harmless).
+
+If the new host answers on a different address, update `MINIO_PUBLIC_ENDPOINT`, `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` now — see the warning at the top of this file.
+
+```bash
+# 2. bring up data services only, let Postgres initialise its empty volume
+docker compose up -d --build db minio
+docker compose exec -T db sh -c 'until pg_isready -U onboard; do sleep 1; done'
+
+# 3. restore the database (dump is --clean --if-exists, so re-running is safe)
+docker compose exec -T db psql -U onboard -d onboard < ~/onboard-<timestamp>/db.sql
+
+# 4. restore the objects into the fresh MinIO volume
+docker compose stop minio
+docker run --rm -v onboard_minio-data:/data -v ~/onboard-<timestamp>:/in alpine \
+  sh -c 'rm -rf /data/* /data/.minio.sys && tar xzf /in/minio-data.tar.gz -C /data'
+docker compose up -d minio
+
+# 5. full stack
+docker compose up -d --build
+docker compose ps                 # all four healthy
+```
+
+Restore the database **before** `web` first starts: its entrypoint runs `migrate`, which on an already-restored schema is a no-op, but on an empty DB would create a fresh schema that the dump then has to drop.
+
+### Verify
+
+```bash
+docker compose exec -T db psql -U onboard -d onboard -c \
+  'select (select count(*) from auth_user) users, (select count(*) from core_material) materials, (select count(*) from core_joinerprogress) progress;'
+docker compose run --rm web python manage.py check --deploy
+```
+
+Then in a browser, on the new host's chosen URL: log in at `/admin/`, open a joiner and confirm their progress rows, and open one PDF and one video material as a joiner — that is the only check that proves the MinIO restore *and* the presign address are both right. A blank/unplayable file means `MINIO_PUBLIC_ENDPOINT` doesn't match the address bar (see Troubleshooting).
+
+Sessions come across in the dump, so everyone stays logged in. To force fresh logins: `docker compose run --rm web python manage.py clearsessions` won't do it (it only drops expired rows) — truncate `django_session` or rotate `DJANGO_SECRET_KEY`.
+
+### Decommission the old host
+
+Only after the verification above passes: `docker compose down` (keeps volumes) or `docker compose down -v` (deletes database + uploaded files, irreversible). Keep one backup copy off both machines.
 
 ---
 
