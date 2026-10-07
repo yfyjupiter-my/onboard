@@ -26,6 +26,7 @@ Standing decisions made **after** P1–P15 below, during implementation. The aud
 | D14 | Video **captions are burned into the MP4** — no separate track/`<track>` file | one file to upload and presign; a sidecar caption file means a second object, a second presign and a sync problem | `COM-009`, README Step 5 |
 | D15 | `Material.description` is **hidden** in admin; image `alt` falls back to the title | the field had no way to be set and no one was setting it; field + data kept so it can come back | `CODE-011`, `COM-029` (accepted) |
 | D16 | `TIME_ZONE=Asia/Kuala_Lumpur` with `USE_TZ=True`; CSV timestamps localized on export | storage stays UTC (portable), humans read +08:00 in admin and in the export | `STATUS.md` T6.18 |
+| D17 | Opening a material via **GET** marks it Viewed (cross-site link can do it); not moved to POST | Viewed ≠ completed — completion still needs POST + CSRF token or a passed quiz; progress-on-first-view is P3/P5 | `SEC-043` (accepted) |
 
 Deferred by design, do not build without being asked: per-department material assignment (P3), timed/cooldown retakes (P4), an ADR/RFC process (one contributor — `prd.md` + this table + the audit files cover it).
 

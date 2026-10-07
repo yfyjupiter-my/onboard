@@ -50,7 +50,9 @@
     {% elif material.embeds_url %}{# link, or T6.14 URL-only video #}
       {# ponytail: an X-Frame-Options block can't be detected cross-origin (the frame still fires `load`), so a blocked site just renders blank — prefer embeddable URLs. #}
       {# Django's SECURE_REFERRER_POLICY default (same-origin) sends no Referer cross-origin, which YouTube rejects with error 153 — override it for this frame only. #}
+      {# SEC-042: sandboxed, no allow-top-navigation, so an embedded page can't redirect the joiner's tab. #}
       <iframe src="{{ file_url }}" title="{{ material.title }}" allowfullscreen
+              sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
               referrerpolicy="strict-origin-when-cross-origin"
               {# ROB-009: a fast-failing frame can fire load before Alpine binds @load; the static onload flag lets x-init catch it #}
               onload="this.dataset.loaded = '1'"

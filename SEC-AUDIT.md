@@ -427,3 +427,52 @@ SEC-036: live `DJANGO_SECRET_KEY` is weak (W009)
 Verdict: ⚠️ Pending (operator config)
 Action Needed: `check --deploy` on the live `.env` flags W009. The key is 27 characters (Django wants ≥ 50 random), not the placeholder. It signs sessions, CSRF tokens and password-reset links; a short key is brute-forceable offline from any signed value.
 - [ ] SEC-036a generate one with `docker compose run --rm web python -c "from django.core.management.utils import get_random_secret_key as g; print(g())"`, put it in `.env`, then run `docker compose up -d`. Side effect: every joiner and admin is logged out once, and outstanding password-reset links stop working.
+
+## QA check — XSS + CSRF (2026-10-07)
+
+Scope: all joiner templates, admin customisations (`format_html`, custom views, widget, change list/form overrides), `Material.url` → `iframe src`, uploaded-file serving via `/media/`, CSRF wiring incl. `SplitSessionMiddleware`. Verified on the live stack (`:8001`, `DJANGO_DEBUG=False`, `DJANGO_HTTPS=False`) with ad-hoc probes inside a rolled-back transaction (no test files added; 0 probe rows left behind).
+
+SEC-037: stored XSS via HR/admin-entered text (title, question, choice, user name)
+Verdict: ✅ Correct
+Action Needed: none. Payload `<script>…</script>"'><img onerror=…>{{7*7}}${7*7}` in material title, question, choice and joiner first name rendered escaped on checklist, material, quiz, admin joiner list/change, material list and quiz change (all 200). No `|safe`, `mark_safe` or `autoescape off` in the codebase. Admin HTML uses `format_html`/`format_html_join` only. No server data sits inside Alpine `x-*`/`@*` expressions (where HTML escaping would not protect). The only JS-context value (`file_url` in the PDF.js module) uses `escapejs`.
+
+SEC-038: `javascript:`/`data:` URL in Link/Video `url` → iframe XSS
+Verdict: ✅ Correct
+Action Needed: none. `URLField` rejects `javascript:`, `JaVaScRiPt:`, leading-space `javascript:`, `data:text/html` and `vbscript:`. `embeddable()` only rewrites to `https://www.youtube.com/embed/<id>`.
+
+SEC-039: XSS via uploaded files and `/media/` responses
+Verdict: ✅ Correct
+Action Needed: none. SEC-020 overrides still apply (PDF → `application/pdf`, image → magic-checked JPEG/PNG type, video/other → `attachment`). A MinIO error page with `<script>` in the key/query comes back as `application/xml` with the input XML-escaped, plus `nosniff`.
+
+SEC-040: CSRF coverage on every state-changing endpoint
+Verdict: ✅ Correct
+Action Needed: none. With no token or a wrong token, POST returns 403 on `mark_complete`, quiz submit, `/logout/`, `/login/`, `/admin/login/`, admin `remove-file`, admin change form and admin bulk action. Cross-origin POST through nginx with a valid token but `Origin: http://evil.example` → 403; same-origin → 200. `CSRF_TRUSTED_ORIGINS` is an explicit list (no wildcard). `sessionid` and `admin_sessionid` are both `HttpOnly; SameSite=Lax`, and admin is path-scoped to `/admin/`. Export CSV GETs are read-only. Logout is POST-only.
+
+SEC-041: no Content-Security-Policy header (defence in depth)
+Verdict: ⚠️ Pending (not exploitable today, no XSS found)
+Action Needed: nothing would limit the damage if an escaping bug were ever introduced. A strict CSP currently clashes with: inline `<script>` (checklist, login, material), inline `onload`/`onerror` attributes, inline `<style>`/`style=`, and the standard Alpine build (needs `'unsafe-eval'`). Needs user confirmation (new element):
+- [x] SEC-041a (low effort, no breakage) add a header in nginx `location /`: `frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'`. Leave `frame-src` open, because Link materials embed any HR URL.
+- [ ] SEC-041b (larger, optional) full `script-src 'self'`: move inline scripts to static files, replace `onload=`/`onerror=` flags, and switch to the `@alpinejs/csp` build.
+
+SEC-042: Link / URL-video `<iframe>` is not sandboxed
+Verdict: ⚠️ Pending (low; URL is staff-entered)
+Action Needed: a third-party page embedded as a Link runs unsandboxed, so it can open popups and, after a user click, navigate the joiner's top window (for example to a fake login page). Needs user confirmation:
+- [x] SEC-042a add `sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"` to the iframe in `material.html` (no `allow-top-navigation`). Then re-check that YouTube embeds and fullscreen still work.
+
+SEC-043: `GET /material/<id>/` changes state (creates progress, Not started → Viewed)
+Verdict: ✅ Accepted (user decision 2026-10-07, finalize.md D17)
+Action Needed: `SameSite=Lax` sends the session on a cross-site top-level GET, so a link can mark a material "Viewed" for a logged-in joiner. Impact is minimal: "Viewed" is not completion (completion needs POST + CSRF token or a passed quiz), and the joiner sees the material open. This is by design (P3/P5: progress is created on first view).
+- [x] SEC-043a accepted. Option kept for reference: accept and record it as a decision, or move the view-tracking into a POST fired by the page.
+
+Carry-forward (unchanged): SEC-035a, cookies are not `Secure` while `DJANGO_HTTPS=False` (http LAN); SEC-036a, rotate the weak `DJANGO_SECRET_KEY` (it signs session data).
+
+Gate: **PASS**. No exploitable XSS or CSRF. Three hardening items are pending user decision (SEC-041/042/043), none blocking.
+
+## SEC-041a / SEC-042a fixes + SEC-043 accepted (2026-10-07)
+
+- SEC-041a ✅ `nginx/default.conf.template` `location /` now sends `Content-Security-Policy: frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'` (`always`, so 4xx/5xx get it too). Verified via `:8001` on `/login/`, `/admin/login/`, `/`, and the 404 page; not added on `/media/`. Login POST still works under `form-action 'self'`. SEC-041 stays ⚠️ for the optional 041b (`script-src`).
+- SEC-042a ✅ Link/URL-video iframe in `material.html` now has `sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"`. Verified in Chromium: a YouTube Link material still plays (player present, no error) and Mark complete unlocks on load; a sandboxed frame calling `top.location=` → `SecurityError`, and the page stays put. Caveat: `allow-scripts` + `allow-same-origin` only protects cross-origin embeds. A Link that points at this app's own origin would not be confined, so Link URLs should be external (staff-entered).
+- SEC-043 ✅ accepted by the user (finalize.md D17).
+- Tests pass, `web` rebuilt, `nginx` recreated (`nginx -t` ok). The temporary browser-check joiner was deleted (0 rows left).
+
+Gate: **PASS**. Open: SEC-041b (optional), carry-forward SEC-035a / SEC-036a.
