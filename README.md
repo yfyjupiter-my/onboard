@@ -169,7 +169,7 @@ Each export writes a line to the container log (`docker compose logs web`) namin
 
 ## Migrate / restore on another machine
 
-Three things carry the deployment: the **repo + `.env`**, the **Postgres data** (users, materials, quizzes, progress) and the **MinIO objects** (the actual PDFs/videos). Docker images are not backed up — they rebuild from `web/Dockerfile` and public base images.
+Three things carry the deployment: the **repo + `.env`**, the **Postgres data** (users, materials, quizzes, progress) and the **MinIO objects** (the actual PDFs/videos — images and documents alike). A fourth is optional: the **Docker images**. `onboard-web` always rebuilds from `web/Dockerfile`, but `minio/minio:latest` and `nginx:alpine` are floating tags, so a fresh host pulls newer versions than the ones you tested — exporting them makes the migration byte-identical.
 
 ### Back up (on the old host)
 
@@ -188,6 +188,12 @@ docker run --rm -v onboard_minio-data:/data:ro -v "$B":/out alpine \
 
 # 3. repo, including .env and .git
 tar czf "$B/repo.tar.gz" -C "$(dirname "$PWD")" "$(basename "$PWD")"
+
+# 4. the exact images this stack ran (~260 MB, optional)
+docker images --digests --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Digest}}' \
+  | grep -E '^(minio/minio|nginx:alpine|postgres:16-alpine|onboard-web)' > "$B/IMAGES.txt"
+docker save minio/minio:latest nginx:alpine postgres:16-alpine onboard-web:latest \
+  | gzip > "$B/images.tar.gz"
 
 sha256sum "$B"/*.tar.gz "$B"/db.sql > "$B/SHA256SUMS"
 ```
@@ -214,20 +220,23 @@ cd ~/Documents/onboard
 If the new host answers on a different address, update `MINIO_PUBLIC_ENDPOINT`, `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` now — see the warning at the top of this file.
 
 ```bash
-# 2. bring up data services only, let Postgres initialise its empty volume
+# 2. load the saved images (skip if you'd rather pull current ones)
+docker load < ~/onboard-<timestamp>/images.tar.gz     # digests in IMAGES.txt
+
+# 3. bring up data services only, let Postgres initialise its empty volume
 docker compose up -d --build db minio
 docker compose exec -T db sh -c 'until pg_isready -U onboard; do sleep 1; done'
 
-# 3. restore the database (dump is --clean --if-exists, so re-running is safe)
+# 4. restore the database (dump is --clean --if-exists, so re-running is safe)
 docker compose exec -T db psql -U onboard -d onboard < ~/onboard-<timestamp>/db.sql
 
-# 4. restore the objects into the fresh MinIO volume
+# 5. restore the objects into the fresh MinIO volume
 docker compose stop minio
 docker run --rm -v onboard_minio-data:/data -v ~/onboard-<timestamp>:/in alpine \
   sh -c 'rm -rf /data/* /data/.minio.sys && tar xzf /in/minio-data.tar.gz -C /data'
 docker compose up -d minio
 
-# 5. full stack
+# 6. full stack
 docker compose up -d --build
 docker compose ps                 # all four healthy
 ```
