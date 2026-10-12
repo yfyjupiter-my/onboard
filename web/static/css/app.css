@@ -123,6 +123,7 @@ html{scroll-padding-top:80px} /* COM-013: focus/anchor scrolling stops below the
 .topbar .who{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .topbar .count{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .topbar .out{white-space:nowrap}
+.lang{white-space:nowrap;gap:6px}  /* T7.2 language toggle (_langswitch.html) */
 .topbar .out:hover{border-color:var(--text)}
 .topbar .out svg{transition:transform .18s}
 .topbar .out:hover svg,.topbar .out:focus-visible svg{transform:translateX(3px)}
@@ -143,6 +144,8 @@ html{scroll-padding-top:80px} /* COM-013: focus/anchor scrolling stops below the
 @keyframes tb-ping{0%{opacity:.6;transform:scale(.85)}100%{opacity:0;transform:scale(1.35)}}
 @keyframes tb-rise{from{opacity:0;transform:translateY(-6px)}}
 /* COM-014: visually hidden on phones, still read by screen readers */
+@media (max-width:560px){.topbar .lang-name{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+  .topbar .lang{padding:0 10px}}  /* T7.2: icon-only toggle on phones; name stays for screen readers */
 @media (max-width:560px){.topbar .count{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
 .brand{display:flex;align-items:center;gap:8px;font-weight:700}
 .brand .mark{width:28px;height:28px;border-radius:8px;background:var(--primary);
@@ -169,3 +172,8 @@ html{scroll-padding-top:80px} /* COM-013: focus/anchor scrolling stops below the
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* T7.2: Thai and Vietnamese stack marks above/below the line — the tight display setting
+   (line-height .95, -.04em tracking) clips them on wrapped titles. */
+:lang(th) :is(h1,h2,h3,.title,.tile.article .headline),
+:lang(vi) :is(h1,h2,h3,.title,.tile.article .headline){letter-spacing:normal;line-height:1.25}

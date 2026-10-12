@@ -1,0 +1,12 @@
+{% load i18n %}{% get_available_languages as langs %}{% get_current_language as cur %}
+{% if langs|length > 1 %}{# T7.1/T7.2: instance language ⇄ English; nothing on a single-language instance (Malaysia) #}
+<form method="post" action="{% url 'set_language' %}" style="margin:0">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.get_full_path }}">
+  {% for code, _name in langs %}{% if code != cur %}
+  <button class="btn ghost sm lang" type="submit" name="language" value="{{ code }}" lang="{{ code }}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg>{% get_language_info for code as li %}<span class="lang-name">{{ li.name_local }}</span>{# endonym: readable whatever is showing #}
+  </button>
+  {% endif %}{% endfor %}
+</form>
+{% endif %}

@@ -1,0 +1,187 @@
+# Onboard joiner UI — Thai.
+# DRAFT (T7.2): machine-drafted, must be reviewed by a native speaker before go-live.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-12 11:06+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Video"
+msgstr "วิดีโอ"
+
+msgid "Link"
+msgstr "ลิงก์"
+
+msgid "Image"
+msgstr "รูปภาพ"
+
+msgid "Internal information"
+msgstr "ข้อมูลภายในองค์กร"
+
+msgid "Security awareness"
+msgstr "การตระหนักรู้ด้านความปลอดภัย"
+
+msgid "Staff accounts sign in through the admin site."
+msgstr "บัญชีเจ้าหน้าที่ต้องเข้าสู่ระบบผ่านหน้าผู้ดูแลระบบ"
+
+#, python-format
+msgid "Chapter %(number)s"
+msgstr "บทที่ %(number)s"
+
+msgid "Welcome back"
+msgstr "ยินดีต้อนรับกลับ"
+
+#, python-format
+msgid "%(done)s of %(total)s complete"
+msgstr "เสร็จแล้ว %(done)s จาก %(total)s"
+
+msgid "Log out"
+msgstr "ออกจากระบบ"
+
+msgid "Your onboarding"
+msgstr "การปฐมนิเทศของคุณ"
+
+msgid "Your onboarding <em>checklist</em>"
+msgstr "<em>รายการ</em>ปฐมนิเทศของคุณ"
+
+msgid "Work through each item. Some end with a short quiz."
+msgstr "ทำทีละรายการให้ครบ บางรายการมีแบบทดสอบสั้น ๆ ตอนท้าย"
+
+#, python-format
+msgid "%(done)s / %(total)s done"
+msgstr "เสร็จ %(done)s / %(total)s"
+
+msgid "Quiz"
+msgstr "แบบทดสอบ"
+
+msgid "Locked · complete the rest of this chapter first"
+msgstr "ล็อกอยู่ · ทำรายการอื่นในบทนี้ให้เสร็จก่อน"
+
+msgid "Completed"
+msgstr "เสร็จสิ้น"
+
+msgid "In progress"
+msgstr "กำลังดำเนินการ"
+
+msgid "Not started"
+msgstr "ยังไม่เริ่ม"
+
+msgid "No materials assigned yet."
+msgstr "ยังไม่มีเนื้อหาที่ได้รับมอบหมาย"
+
+msgid "Congratulations!"
+msgstr "ขอแสดงความยินดี!"
+
+msgid "You've completed all your onboarding materials."
+msgstr "คุณได้ทำเนื้อหาปฐมนิเทศครบทั้งหมดแล้ว"
+
+msgid "Close"
+msgstr "ปิด"
+
+msgid "Back"
+msgstr "ย้อนกลับ"
+
+#, python-brace-format
+msgid "Page {n} of {total}"
+msgstr "หน้า {n} จาก {total}"
+
+msgid "This file is unavailable. Please contact HR."
+msgstr "ไม่สามารถใช้งานไฟล์นี้ได้ โปรดติดต่อฝ่ายบุคคล"
+
+msgid "This file can't be displayed. Please contact HR."
+msgstr "ไม่สามารถแสดงไฟล์นี้ได้ โปรดติดต่อฝ่ายบุคคล"
+
+msgid "This image is unavailable. Please contact HR."
+msgstr "ไม่สามารถใช้งานรูปภาพนี้ได้ โปรดติดต่อฝ่ายบุคคล"
+
+msgid "Retake quiz"
+msgstr "ทำแบบทดสอบอีกครั้ง"
+
+msgid "Take the quiz"
+msgstr "ทำแบบทดสอบ"
+
+msgid "Scroll to the end of the document to enable"
+msgstr "เลื่อนไปจนสุดเอกสารเพื่อเปิดใช้งาน"
+
+msgid "Watch the video to the end to enable"
+msgstr "ดูวิดีโอจนจบเพื่อเปิดใช้งาน"
+
+msgid "Loading, Mark complete enables once the image has loaded"
+msgstr "กำลังโหลด ปุ่มทำเครื่องหมายว่าเสร็จจะใช้งานได้เมื่อรูปภาพโหลดเสร็จ"
+
+msgid "Loading, Mark complete enables once the video has loaded"
+msgstr "กำลังโหลด ปุ่มทำเครื่องหมายว่าเสร็จจะใช้งานได้เมื่อวิดีโอโหลดเสร็จ"
+
+msgid "Loading, Mark complete enables once the page has loaded"
+msgstr "กำลังโหลด ปุ่มทำเครื่องหมายว่าเสร็จจะใช้งานได้เมื่อหน้าเว็บโหลดเสร็จ"
+
+msgid "Mark complete"
+msgstr "ทำเครื่องหมายว่าเสร็จ"
+
+msgid "Choose one answer per question."
+msgstr "เลือกหนึ่งคำตอบต่อหนึ่งคำถาม"
+
+msgid "Cancel"
+msgstr "ยกเลิก"
+
+msgid "Submit answers"
+msgstr "ส่งคำตอบ"
+
+msgid "Log in"
+msgstr "เข้าสู่ระบบ"
+
+msgid "Welcome"
+msgstr "ยินดีต้อนรับ"
+
+msgid "Log in to continue your onboarding."
+msgstr "เข้าสู่ระบบเพื่อปฐมนิเทศต่อ"
+
+msgid "Username"
+msgstr "ชื่อผู้ใช้"
+
+msgid "Password"
+msgstr "รหัสผ่าน"
+
+msgid "Signing you in…"
+msgstr "กำลังเข้าสู่ระบบ…"
+
+msgid "Result"
+msgstr "ผลลัพธ์"
+
+msgid "Passed"
+msgstr "ผ่าน"
+
+msgid "Nice work"
+msgstr "เยี่ยมมาก"
+
+#, python-format
+msgid "You needed %(pass_mark)s%% and passed. This item is complete."
+msgstr "คุณต้องได้ %(pass_mark)s%% และคุณผ่านแล้ว รายการนี้เสร็จสิ้น"
+
+msgid "Back to checklist"
+msgstr "กลับไปที่รายการ"
+
+msgid "Not passed"
+msgstr "ไม่ผ่าน"
+
+msgid "You scored"
+msgstr "คุณได้คะแนน"
+
+#, python-format
+msgid "You need %(pass_mark)s%% to complete this item. You can retake it now."
+msgstr "คุณต้องได้ %(pass_mark)s%% เพื่อให้รายการนี้เสร็จ คุณทำใหม่ได้ทันที"
+
+msgid "Review material"
+msgstr "ทบทวนเนื้อหา"

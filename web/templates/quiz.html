@@ -1,10 +1,10 @@
-{% extends "base.html" %}
-{% block title %}Quiz — {{ material.title }}{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Quiz" %} — {{ material.title }}{% endblock %}
 {% block body %}
   {% include "_topbar.html" %}
   <div class="card">
-    <h1 class="title" style="font-size:26px;margin-bottom:8px">Quiz — <em>{{ material.title }}</em></h1>
-    <p style="color:var(--muted);margin:0 0 18px">Choose one answer per question.</p>
+    <h1 class="title" style="font-size:26px;margin-bottom:8px">{% translate "Quiz" %} — <em>{{ material.title }}</em></h1>
+    <p style="color:var(--muted);margin:0 0 18px">{% translate "Choose one answer per question." %}</p>
 
     <form method="post">
       {% csrf_token %}
@@ -21,8 +21,8 @@
         </fieldset>
       {% endfor %}
       <div style="display:flex;justify-content:flex-end;gap:10px">
-        <a class="btn ghost" href="{% url 'material' material.id %}">Cancel</a>
-        <button class="btn primary" type="submit">Submit answers</button>
+        <a class="btn ghost" href="{% url 'material' material.id %}">{% translate "Cancel" %}</a>
+        <button class="btn primary" type="submit">{% translate "Submit answers" %}</button>
       </div>
     </form>
   </div>

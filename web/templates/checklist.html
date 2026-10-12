@@ -1,22 +1,22 @@
-{% extends "base.html" %}
-{% block title %}Your onboarding — Onboard{% endblock %}
+{% extends "base.html" %}{% load i18n %}
+{% block title %}{% translate "Your onboarding" %} — Onboard{% endblock %}
 {% block body %}
   <i class="bgshape s1"></i><i class="bgshape s2"></i><i class="bgshape s3"></i>
   <i class="bgshape s4"></i><i class="bgshape s5"></i>
   <i id="spot" aria-hidden="true"></i>
   {% include "_topbar.html" %}
   <div class="card">
-    <h1 class="title" style="margin-bottom:10px;font-size:34px">Your onboarding <em>checklist</em></h1>
-    <p style="color:var(--muted);margin:0 0 18px">Work through each item. Some end with a short quiz.</p>
+    <h1 class="title" style="margin-bottom:10px;font-size:34px">{% translate "Your onboarding <em>checklist</em>" %}</h1>
+    <p style="color:var(--muted);margin:0 0 18px">{% translate "Work through each item. Some end with a short quiz." %}</p>
 
     {% for chapter in chapters %}
     <section aria-labelledby="ch{{ chapter.number }}" style="margin-top:{% if forloop.first %}0{% else %}28px{% endif %}">
       <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 12px">
         <h2 id="ch{{ chapter.number }}" class="title" style="font-size:22px;margin:0">
-          <span style="display:block;font:700 11px/1.4 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px">Chapter {{ chapter.number }}</span>
+          <span style="display:block;font:700 11px/1.4 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:4px">{% blocktranslate with number=chapter.number %}Chapter {{ number }}{% endblocktranslate %}</span>
           {{ chapter.name }}
         </h2>
-        <span class="tag {% if chapter.done == chapter.rows|length %}done{% else %}neutral{% endif %}">{{ chapter.done }} / {{ chapter.rows|length }} done</span>
+        <span class="tag {% if chapter.done == chapter.rows|length %}done{% else %}neutral{% endif %}">{% blocktranslate with done=chapter.done total=chapter.rows|length %}{{ done }} / {{ total }} done{% endblocktranslate %}</span>
       </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
     {% for material, progress, has_quiz, locked in chapter.rows %}
@@ -26,9 +26,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
         </span>
         <span class="body">
-          <span class="kicker">{{ material.get_type_display }}{% if has_quiz %} · Quiz{% endif %}</span>
+          <span class="kicker">{{ material.get_type_display }}{% if has_quiz %} · {% translate "Quiz" %}{% endif %}</span>
           <span class="headline">{{ material.title }}</span>
-          <span class="foot"><span class="tag neutral">Locked · complete the rest of this chapter first</span></span>
+          <span class="foot"><span class="tag neutral">{% translate "Locked · complete the rest of this chapter first" %}</span></span>
         </span>
       </div>
       {% else %}
@@ -45,15 +45,15 @@
         {% endif %}
         </span>
         <span class="body">
-          <span class="kicker">{{ material.get_type_display }}{% if has_quiz %} · Quiz{% endif %}</span>
+          <span class="kicker">{{ material.get_type_display }}{% if has_quiz %} · {% translate "Quiz" %}{% endif %}</span>
           <span class="headline">{{ material.title }}</span>
           <span class="foot">
           {% if progress.status == 'completed' %}
-            <span class="tag done">Completed</span>
+            <span class="tag done">{% translate "Completed" %}</span>
           {% elif progress.status == 'viewed' %}
-            <span class="tag todo">In progress</span>
+            <span class="tag todo">{% translate "In progress" %}</span>
           {% else %}
-            <span class="tag neutral">Not started</span>
+            <span class="tag neutral">{% translate "Not started" %}</span>
           {% endif %}
           </span>
         </span>
@@ -63,7 +63,7 @@
     </div>
     </section>
     {% empty %}
-      <p style="color:var(--muted)">No materials assigned yet.</p>
+      <p style="color:var(--muted)">{% translate "No materials assigned yet." %}</p>
     {% endfor %}
   </div>
 
@@ -71,9 +71,9 @@
   <dialog id="congrats" class="card" aria-labelledby="congrats-title" aria-describedby="congrats-desc"
           data-key="onboard-congrats-v2-{{ request.user.id }}-{{ topbar.total }}">
     <div style="font-size:48px;line-height:1" aria-hidden="true">🎉</div>
-    <h2 id="congrats-title" class="title" style="font-size:28px;margin:12px 0 6px">Congratulations!</h2>
-    <p id="congrats-desc" style="color:var(--muted);margin:0">You've completed all your onboarding materials.</p>
-    <form method="dialog"><button class="btn primary" style="width:100%;margin-top:18px" autofocus>Close</button></form>
+    <h2 id="congrats-title" class="title" style="font-size:28px;margin:12px 0 6px">{% translate "Congratulations!" %}</h2>
+    <p id="congrats-desc" style="color:var(--muted);margin:0">{% translate "You've completed all your onboarding materials." %}</p>
+    <form method="dialog"><button class="btn primary" style="width:100%;margin-top:18px" autofocus>{% translate "Close" %}</button></form>
   </dialog>
   {% endif %}
 

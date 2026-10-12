@@ -1,0 +1,187 @@
+# Onboard joiner UI — Indonesian.
+# DRAFT (T7.2): machine-drafted, must be reviewed by a native speaker before go-live.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-12 11:06+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: id\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "Link"
+msgstr "Tautan"
+
+msgid "Image"
+msgstr "Gambar"
+
+msgid "Internal information"
+msgstr "Informasi internal"
+
+msgid "Security awareness"
+msgstr "Kesadaran keamanan"
+
+msgid "Staff accounts sign in through the admin site."
+msgstr "Akun staf masuk melalui situs admin."
+
+#, python-format
+msgid "Chapter %(number)s"
+msgstr "Bab %(number)s"
+
+msgid "Welcome back"
+msgstr "Selamat datang kembali"
+
+#, python-format
+msgid "%(done)s of %(total)s complete"
+msgstr "%(done)s dari %(total)s selesai"
+
+msgid "Log out"
+msgstr "Keluar"
+
+msgid "Your onboarding"
+msgstr "Orientasi Anda"
+
+msgid "Your onboarding <em>checklist</em>"
+msgstr "<em>Daftar periksa</em> orientasi Anda"
+
+msgid "Work through each item. Some end with a short quiz."
+msgstr "Selesaikan setiap item. Beberapa diakhiri dengan kuis singkat."
+
+#, python-format
+msgid "%(done)s / %(total)s done"
+msgstr "%(done)s / %(total)s selesai"
+
+msgid "Quiz"
+msgstr "Kuis"
+
+msgid "Locked · complete the rest of this chapter first"
+msgstr "Terkunci · selesaikan item lain di bab ini terlebih dahulu"
+
+msgid "Completed"
+msgstr "Selesai"
+
+msgid "In progress"
+msgstr "Sedang berlangsung"
+
+msgid "Not started"
+msgstr "Belum dimulai"
+
+msgid "No materials assigned yet."
+msgstr "Belum ada materi yang ditugaskan."
+
+msgid "Congratulations!"
+msgstr "Selamat!"
+
+msgid "You've completed all your onboarding materials."
+msgstr "Anda telah menyelesaikan semua materi orientasi."
+
+msgid "Close"
+msgstr "Tutup"
+
+msgid "Back"
+msgstr "Kembali"
+
+#, python-brace-format
+msgid "Page {n} of {total}"
+msgstr "Halaman {n} dari {total}"
+
+msgid "This file is unavailable. Please contact HR."
+msgstr "File ini tidak tersedia. Silakan hubungi HR."
+
+msgid "This file can't be displayed. Please contact HR."
+msgstr "File ini tidak dapat ditampilkan. Silakan hubungi HR."
+
+msgid "This image is unavailable. Please contact HR."
+msgstr "Gambar ini tidak tersedia. Silakan hubungi HR."
+
+msgid "Retake quiz"
+msgstr "Ulangi kuis"
+
+msgid "Take the quiz"
+msgstr "Kerjakan kuis"
+
+msgid "Scroll to the end of the document to enable"
+msgstr "Gulir ke akhir dokumen untuk mengaktifkan"
+
+msgid "Watch the video to the end to enable"
+msgstr "Tonton video sampai selesai untuk mengaktifkan"
+
+msgid "Loading, Mark complete enables once the image has loaded"
+msgstr "Memuat, Tandai selesai aktif setelah gambar dimuat"
+
+msgid "Loading, Mark complete enables once the video has loaded"
+msgstr "Memuat, Tandai selesai aktif setelah video dimuat"
+
+msgid "Loading, Mark complete enables once the page has loaded"
+msgstr "Memuat, Tandai selesai aktif setelah halaman dimuat"
+
+msgid "Mark complete"
+msgstr "Tandai selesai"
+
+msgid "Choose one answer per question."
+msgstr "Pilih satu jawaban untuk setiap pertanyaan."
+
+msgid "Cancel"
+msgstr "Batal"
+
+msgid "Submit answers"
+msgstr "Kirim jawaban"
+
+msgid "Log in"
+msgstr "Masuk"
+
+msgid "Welcome"
+msgstr "Selamat datang"
+
+msgid "Log in to continue your onboarding."
+msgstr "Masuk untuk melanjutkan orientasi Anda."
+
+msgid "Username"
+msgstr "Nama pengguna"
+
+msgid "Password"
+msgstr "Kata sandi"
+
+msgid "Signing you in…"
+msgstr "Sedang masuk…"
+
+msgid "Result"
+msgstr "Hasil"
+
+msgid "Passed"
+msgstr "Lulus"
+
+msgid "Nice work"
+msgstr "Kerja bagus"
+
+#, python-format
+msgid "You needed %(pass_mark)s%% and passed. This item is complete."
+msgstr "Anda memerlukan %(pass_mark)s%% dan lulus. Item ini selesai."
+
+msgid "Back to checklist"
+msgstr "Kembali ke daftar periksa"
+
+msgid "Not passed"
+msgstr "Belum lulus"
+
+msgid "You scored"
+msgstr "Skor Anda"
+
+#, python-format
+msgid "You need %(pass_mark)s%% to complete this item. You can retake it now."
+msgstr "Anda memerlukan %(pass_mark)s%% untuk menyelesaikan item ini. Anda dapat mengulanginya sekarang."
+
+msgid "Review material"
+msgstr "Tinjau materi"

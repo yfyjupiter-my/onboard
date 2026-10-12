@@ -1,16 +1,17 @@
-<header class="topbar">
+{% load i18n %}<header class="topbar">
   <a class="brand" href="{% url 'home' %}">
     <span class="mark">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
     </span>
-    <span class="greet"><small>Welcome back</small><span class="who">{{ request.user.get_username }}</span></span>
+    <span class="greet"><small>{% translate "Welcome back" %}</small><span class="who">{{ request.user.get_username }}</span></span>
   </a>
   <span class="spacer"></span>
-  {% if topbar %}<span class="count">{{ topbar.done }} of {{ topbar.total }} complete</span>{% endif %}
+  {% if topbar %}<span class="count">{% blocktranslate with done=topbar.done total=topbar.total %}{{ done }} of {{ total }} complete{% endblocktranslate %}</span>{% endif %}
+  {% include "_langswitch.html" %}
   <form method="post" action="{% url 'logout' %}" style="margin:0">
     {% csrf_token %}
     <button class="btn ghost sm out" type="submit">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>Log out
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>{% translate "Log out" %}
     </button>
   </form>
   {% if topbar %}<span class="rail" aria-hidden="true" style="--p:{{ topbar.ratio|stringformat:'.3f' }}"></span>{% endif %}

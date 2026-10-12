@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,6 +24,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "core.middleware.SplitSessionMiddleware",  # T6.6: admin/frontend sessions isolated
+    "core.middleware.InstanceLocaleMiddleware",  # T7.1: instance language unless the user toggled
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -64,8 +66,18 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
-TIME_ZONE = "Asia/Kuala_Lumpur"  # display tz for admin (Last Login / Completion); storage stays UTC via USE_TZ
+# T7.1: one instance per country (D18) — language and display tz come from that country's env file.
+# Defaults are Malaysia's, so an env without them renders exactly as before.
+LANGUAGE_CODE = os.environ.get("DJANGO_LANGUAGE_CODE", "en-us")
+TIME_ZONE = os.environ.get("DJANGO_TIME_ZONE", "Asia/Kuala_Lumpur")  # display only; storage stays UTC via USE_TZ
+# The instance's own language plus English (the toggle). The toggle shows each language's own name
+# (get_language_info name_local), so these labels are only Django's internal list.
+_SUPPORTED = {"en": "English", "vi": "Vietnamese", "th": "Thai", "id": "Indonesian"}
+_LANG = LANGUAGE_CODE.split("-")[0]
+if _LANG not in _SUPPORTED:  # fail at startup, not as a half-English site
+    raise ImproperlyConfigured(f"DJANGO_LANGUAGE_CODE={LANGUAGE_CODE!r}: supported are {sorted(_SUPPORTED)}")
+LANGUAGES = [(c, _SUPPORTED[c]) for c in dict.fromkeys([_LANG, "en"])]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 USE_I18N = True
 USE_TZ = True
 
@@ -101,6 +113,9 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 HTTPS = os.environ.get("DJANGO_HTTPS", "True").lower() != "false"
 SESSION_COOKIE_SECURE = HTTPS
 CSRF_COOKIE_SECURE = HTTPS
+LANGUAGE_COOKIE_SECURE = HTTPS
+LANGUAGE_COOKIE_HTTPONLY = True  # only the server reads it (set_language POST); no JS needs it
+LANGUAGE_COOKIE_SAMESITE = "Lax"
 
 # TLS terminates at nginx/Cloudflare; the proxy header above lets Django see it. SEC-003.
 if HTTPS:

@@ -4,6 +4,7 @@ from urllib.parse import parse_qs, urlparse
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator
 from django.db import models
 
@@ -28,7 +29,7 @@ class Material(models.Model):
     VIDEO = "video"
     LINK = "link"
     IMAGE = "image"
-    TYPE_CHOICES = [(PDF, "PDF"), (VIDEO, "Video"), (LINK, "Link"), (IMAGE, "Image")]
+    TYPE_CHOICES = [(PDF, "PDF"), (VIDEO, _("Video")), (LINK, _("Link")), (IMAGE, _("Image"))]  # T7.2: joiner tile kicker
     # T6.11: extension -> (magic bytes, served Content-Type). The header check stops a renamed HTML/SVG upload.
     IMAGE_FORMATS = {
         ".jpg": (b"\xff\xd8\xff", "image/jpeg"),
@@ -37,7 +38,7 @@ class Material(models.Model):
     }
     FILE_EXTENSIONS = {PDF: (".pdf",), VIDEO: (".mp4", ".webm", ".mov"), IMAGE: tuple(IMAGE_FORMATS)}
     # ponytail: fixed list; promote to a Chapter model if HR needs to add/rename chapters themselves.
-    CHAPTER_CHOICES = [(1, "Internal information"), (2, "Security awareness")]
+    CHAPTER_CHOICES = [(1, _("Internal information")), (2, _("Security awareness"))]
 
     title = models.CharField(max_length=200)
     chapter = models.PositiveSmallIntegerField(choices=CHAPTER_CHOICES, default=1)

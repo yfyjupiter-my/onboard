@@ -1,0 +1,187 @@
+# Onboard joiner UI — Vietnamese.
+# DRAFT (T7.2): machine-drafted, must be reviewed by a native speaker before go-live.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-12 11:06+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Video"
+msgstr "Video"
+
+msgid "Link"
+msgstr "Liên kết"
+
+msgid "Image"
+msgstr "Hình ảnh"
+
+msgid "Internal information"
+msgstr "Thông tin nội bộ"
+
+msgid "Security awareness"
+msgstr "Nhận thức về bảo mật"
+
+msgid "Staff accounts sign in through the admin site."
+msgstr "Tài khoản nhân viên quản trị đăng nhập qua trang quản trị."
+
+#, python-format
+msgid "Chapter %(number)s"
+msgstr "Chương %(number)s"
+
+msgid "Welcome back"
+msgstr "Chào mừng trở lại"
+
+#, python-format
+msgid "%(done)s of %(total)s complete"
+msgstr "Đã hoàn thành %(done)s/%(total)s"
+
+msgid "Log out"
+msgstr "Đăng xuất"
+
+msgid "Your onboarding"
+msgstr "Hội nhập của bạn"
+
+msgid "Your onboarding <em>checklist</em>"
+msgstr "<em>Danh sách</em> hội nhập của bạn"
+
+msgid "Work through each item. Some end with a short quiz."
+msgstr "Hoàn thành lần lượt từng mục. Một số mục có bài kiểm tra ngắn ở cuối."
+
+#, python-format
+msgid "%(done)s / %(total)s done"
+msgstr "Xong %(done)s / %(total)s"
+
+msgid "Quiz"
+msgstr "Bài kiểm tra"
+
+msgid "Locked · complete the rest of this chapter first"
+msgstr "Đã khóa · hãy hoàn thành các mục khác trong chương này trước"
+
+msgid "Completed"
+msgstr "Đã hoàn thành"
+
+msgid "In progress"
+msgstr "Đang thực hiện"
+
+msgid "Not started"
+msgstr "Chưa bắt đầu"
+
+msgid "No materials assigned yet."
+msgstr "Chưa có tài liệu nào được giao."
+
+msgid "Congratulations!"
+msgstr "Chúc mừng bạn!"
+
+msgid "You've completed all your onboarding materials."
+msgstr "Bạn đã hoàn thành tất cả tài liệu hội nhập."
+
+msgid "Close"
+msgstr "Đóng"
+
+msgid "Back"
+msgstr "Quay lại"
+
+#, python-brace-format
+msgid "Page {n} of {total}"
+msgstr "Trang {n}/{total}"
+
+msgid "This file is unavailable. Please contact HR."
+msgstr "Tệp này hiện không khả dụng. Vui lòng liên hệ phòng Nhân sự."
+
+msgid "This file can't be displayed. Please contact HR."
+msgstr "Không thể hiển thị tệp này. Vui lòng liên hệ phòng Nhân sự."
+
+msgid "This image is unavailable. Please contact HR."
+msgstr "Hình ảnh này hiện không khả dụng. Vui lòng liên hệ phòng Nhân sự."
+
+msgid "Retake quiz"
+msgstr "Làm lại bài kiểm tra"
+
+msgid "Take the quiz"
+msgstr "Làm bài kiểm tra"
+
+msgid "Scroll to the end of the document to enable"
+msgstr "Cuộn đến cuối tài liệu để kích hoạt"
+
+msgid "Watch the video to the end to enable"
+msgstr "Xem hết video để kích hoạt"
+
+msgid "Loading, Mark complete enables once the image has loaded"
+msgstr "Đang tải, nút Đánh dấu hoàn thành sẽ bật khi hình ảnh tải xong"
+
+msgid "Loading, Mark complete enables once the video has loaded"
+msgstr "Đang tải, nút Đánh dấu hoàn thành sẽ bật khi video tải xong"
+
+msgid "Loading, Mark complete enables once the page has loaded"
+msgstr "Đang tải, nút Đánh dấu hoàn thành sẽ bật khi trang tải xong"
+
+msgid "Mark complete"
+msgstr "Đánh dấu hoàn thành"
+
+msgid "Choose one answer per question."
+msgstr "Chọn một đáp án cho mỗi câu hỏi."
+
+msgid "Cancel"
+msgstr "Hủy"
+
+msgid "Submit answers"
+msgstr "Nộp bài"
+
+msgid "Log in"
+msgstr "Đăng nhập"
+
+msgid "Welcome"
+msgstr "Chào mừng"
+
+msgid "Log in to continue your onboarding."
+msgstr "Đăng nhập để tiếp tục quá trình hội nhập."
+
+msgid "Username"
+msgstr "Tên đăng nhập"
+
+msgid "Password"
+msgstr "Mật khẩu"
+
+msgid "Signing you in…"
+msgstr "Đang đăng nhập…"
+
+msgid "Result"
+msgstr "Kết quả"
+
+msgid "Passed"
+msgstr "Đạt"
+
+msgid "Nice work"
+msgstr "Làm tốt lắm"
+
+#, python-format
+msgid "You needed %(pass_mark)s%% and passed. This item is complete."
+msgstr "Bạn cần đạt %(pass_mark)s%% và đã đạt. Mục này đã hoàn thành."
+
+msgid "Back to checklist"
+msgstr "Về danh sách"
+
+msgid "Not passed"
+msgstr "Chưa đạt"
+
+msgid "You scored"
+msgstr "Điểm của bạn"
+
+#, python-format
+msgid "You need %(pass_mark)s%% to complete this item. You can retake it now."
+msgstr "Bạn cần đạt %(pass_mark)s%% để hoàn thành mục này. Bạn có thể làm lại ngay."
+
+msgid "Review material"
+msgstr "Xem lại tài liệu"

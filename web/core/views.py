@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from .models import JoinerProgress, Material
@@ -19,7 +20,7 @@ class JoinerLoginForm(AuthenticationForm):
         super().confirm_login_allowed(user)
         if user.is_staff:
             raise ValidationError(
-                "Staff accounts sign in through the admin site.", code="staff_forbidden"
+                _("Staff accounts sign in through the admin site."), code="staff_forbidden"
             )
 
 
@@ -52,7 +53,7 @@ def checklist(request):
         group = list(group)
         rows = [(m, progress.get(m.id), m.id in quiz_material_ids, m.id in locked) for m in group]
         done = sum(1 for _, p, _, _ in rows if p and p.status == JoinerProgress.COMPLETED)
-        chapters.append({"number": number, "name": names.get(number, f"Chapter {number}"),
+        chapters.append({"number": number, "name": names.get(number, _("Chapter %(number)s") % {"number": number}),
                          "rows": rows, "done": done})
     return render(request, "checklist.html", {"chapters": chapters})
 

@@ -1,16 +1,16 @@
-{% extends "base.html" %}
+{% extends "base.html" %}{% load i18n %}
 {% block title %}{{ material.title }} — Onboard{% endblock %}
 {% block body %}
   {% include "_topbar.html" %}
   <div class="card" x-data="{ reviewed: false, failed: false }">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-      <a class="btn ghost sm" href="{% url 'home' %}">&larr; Back</a>
+      <a class="btn ghost sm" href="{% url 'home' %}">&larr; {% translate "Back" %}</a>
       <h1 class="title" style="flex:1;font-size:26px">{{ material.title }}</h1>
-      {% if progress.status == 'completed' %}<span class="tag done">Completed</span>{% endif %}
+      {% if progress.status == 'completed' %}<span class="tag done">{% translate "Completed" %}</span>{% endif %}
     </div>
 
     {% if material.type == 'pdf' %}
-      {% load static %}
+      {% load static %}{% translate "Page {n} of {total}" as page_label %}
       <div id="pdfview" tabindex="0" role="region" aria-label="{{ material.title }} (PDF)"
            @scroll="if ($el.scrollTop + $el.clientHeight >= $el.scrollHeight - 8) reviewed = true"
            style="width:100%;height:70vh;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px"></div>
@@ -26,7 +26,7 @@
             const viewport = page.getViewport({ scale });
             const canvas = document.createElement('canvas');
             canvas.setAttribute('role', 'img');  // COM-007: pages are pixels; name them
-            canvas.setAttribute('aria-label', `Page ${n} of ${pdf.numPages}`);
+            canvas.setAttribute('aria-label', "{{ page_label|escapejs }}".replace('{n}', n).replace('{total}', pdf.numPages));
             canvas.width = viewport.width;
             canvas.height = viewport.height;
             canvas.style.cssText = 'display:block;margin:0 auto 12px;max-width:100%';
@@ -42,8 +42,8 @@
           console.error('PDF.js could not render this file:', err);
           const missing = err.name === 'MissingPDFException' || err.name === 'UnexpectedResponseException';
           container.textContent = missing
-            ? 'This file is unavailable. Please contact HR.'
-            : "This file can't be displayed. Please contact HR.";
+            ? "{{ _('This file is unavailable. Please contact HR.')|escapejs }}"
+            : "{{ _("This file can't be displayed. Please contact HR.")|escapejs }}";
           container.setAttribute('role', 'alert');
         });
       </script>
@@ -70,7 +70,7 @@
              style="display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)">
         <p role="alert" hidden :hidden="!failed"
            style="margin:0;padding:24px;border:1px solid var(--line);border-radius:12px;background:var(--surface)">
-          This image is unavailable. Please contact HR.</p>
+          {% translate "This image is unavailable. Please contact HR." %}</p>
       </div>
     {% else %}
       <video controls src="{{ file_url }}" @ended="reviewed = true" @error="reviewed = true"
@@ -80,7 +80,7 @@
     <div style="margin-top:18px;display:flex;justify-content:flex-end">
     {% if has_quiz %}
         <a class="btn primary" href="{% url 'quiz' material.id %}">
-          {% if progress.status == 'completed' %}Retake quiz{% else %}Take the quiz{% endif %}
+          {% if progress.status == 'completed' %}{% translate "Retake quiz" %}{% else %}{% translate "Take the quiz" %}{% endif %}
         </a>
     {% elif progress.status != 'completed' %}
         <form method="post" action="{% url 'mark_complete' material.id %}"
@@ -89,7 +89,7 @@
           {# COM-008: say what unlocks the button (x-show hides it once reviewed) #}
           {% if material.type == 'pdf' or material.type == 'video' and not material.embeds_url %}
           <span id="mc-hint" x-show="!reviewed" style="color:var(--muted);font-size:14px">
-            {% if material.type == 'pdf' %}Scroll to the end of the document to enable{% else %}Watch the video to the end to enable{% endif %}
+            {% if material.type == 'pdf' %}{% translate "Scroll to the end of the document to enable" %}{% else %}{% translate "Watch the video to the end to enable" %}{% endif %}
           </span>
           {% else %}
           {# T6.10/T6.13: link + image materials show loading dots instead of a sentence; screen readers still hear the text #}
@@ -97,10 +97,10 @@
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
             <svg viewBox="0 0 8 8" aria-hidden="true"><circle cx="4" cy="4" r="4"/></svg>
-            <span class="sr-only">Loading, Mark complete enables once the {% if material.type == 'image' %}image{% elif material.type == 'video' %}video{% else %}page{% endif %} has loaded</span>
+            <span class="sr-only">{% if material.type == 'image' %}{% translate "Loading, Mark complete enables once the image has loaded" %}{% elif material.type == 'video' %}{% translate "Loading, Mark complete enables once the video has loaded" %}{% else %}{% translate "Loading, Mark complete enables once the page has loaded" %}{% endif %}</span>
           </span>
           {% endif %}
-          <button type="submit" class="btn primary" :disabled="!reviewed" aria-describedby="mc-hint">Mark complete</button>
+          <button type="submit" class="btn primary" :disabled="!reviewed" aria-describedby="mc-hint">{% translate "Mark complete" %}</button>
         </form>
     {% endif %}
     </div>
