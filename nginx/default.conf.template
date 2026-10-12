@@ -12,7 +12,9 @@ upstream web {
 server {
     listen 80;
     server_name _;
-    server_tokens off;   # SEC-018: no nginx version in Server header / error pages
+    server_tokens off;
+    absolute_redirect off;   # T7.3: relative Location, so /vn -> /vn/ keeps the public host:port
+    resolver 127.0.0.11 valid=10s ipv6=off;   # Docker DNS, for the per-country $up_* upstreams (T7.3)   # SEC-018: no nginx version in Server header / error pages
     client_max_body_size 512m;   # allow PDF/MP4 admin uploads
 
     # P2/P8: /media/<key> is rewritten to /<bucket>/<key> and proxied to MinIO.
@@ -30,6 +32,72 @@ server {
         # SEC-010: media is served from the app's own origin — don't let the browser
         # sniff an upload into text/html and run it as us.
         add_header X-Content-Type-Options nosniff always;
+    }
+
+    # T7.3 (D18): /vn/ is the VN instance (web-vn, bucket onboard-vn). Same rules as
+    # Malaysia's /media/ and / below; only the prefix, upstream and bucket differ.
+    location = /vn { return 301 /vn/; }
+    location /vn/media/ {
+        rewrite ^/vn/media/(.*)$ /onboard-vn/$1 break;
+        proxy_pass http://minio:9000;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        add_header X-Content-Type-Options nosniff always;
+    }
+    location /vn/ {
+        set $up_vn web-vn:8000;          # variable + resolver: a country that isn't running is a 502, not an nginx that won't start
+        rewrite ^/vn/(.*)$ /$1 break;     # Django re-adds /vn from FORCE_SCRIPT_NAME
+        proxy_pass http://$up_vn;
+        proxy_read_timeout 120s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
+        add_header Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" always;
+    }
+
+    # T7.3 (D18): /th/ is the TH instance (web-th, bucket onboard-th). Same rules as
+    # Malaysia's /media/ and / below; only the prefix, upstream and bucket differ.
+    location = /th { return 301 /th/; }
+    location /th/media/ {
+        rewrite ^/th/media/(.*)$ /onboard-th/$1 break;
+        proxy_pass http://minio:9000;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        add_header X-Content-Type-Options nosniff always;
+    }
+    location /th/ {
+        set $up_th web-th:8000;          # variable + resolver: a country that isn't running is a 502, not an nginx that won't start
+        rewrite ^/th/(.*)$ /$1 break;     # Django re-adds /th from FORCE_SCRIPT_NAME
+        proxy_pass http://$up_th;
+        proxy_read_timeout 120s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
+        add_header Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" always;
+    }
+
+    # T7.3 (D18): /id/ is the ID instance (web-id, bucket onboard-id). Same rules as
+    # Malaysia's /media/ and / below; only the prefix, upstream and bucket differ.
+    location = /id { return 301 /id/; }
+    location /id/media/ {
+        rewrite ^/id/media/(.*)$ /onboard-id/$1 break;
+        proxy_pass http://minio:9000;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        add_header X-Content-Type-Options nosniff always;
+    }
+    location /id/ {
+        set $up_id web-id:8000;          # variable + resolver: a country that isn't running is a 502, not an nginx that won't start
+        rewrite ^/id/(.*)$ /$1 break;     # Django re-adds /id from FORCE_SCRIPT_NAME
+        proxy_pass http://$up_id;
+        proxy_read_timeout 120s;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
+        add_header Content-Security-Policy "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'" always;
     }
 
     # whitenoise serves /static/ from within gunicorn; just pass through.

@@ -2,7 +2,7 @@
 
 Employee onboarding: HR/IT publish materials (PDF/video) + optional quizzes in Django admin; joiners work through a checklist, review each material, and either click **Mark complete** or pass its quiz. Files live in MinIO and reach the browser only via short-lived (15-min) presigned URLs — never public, never streamed through Django.
 
-**Stack:** nginx (`:8080`) → Django 5.2 / gunicorn (`:8000`) → Postgres 16 + MinIO. Four Docker Compose services on one host.
+**Stack:** nginx (`:8080`) → Django 5.2 / gunicorn (`:8000`) → Postgres 16 + MinIO. Four Docker Compose services on one host, plus one `web-<cc>` container per extra country at `/<cc>/` (see [Countries](#countries-phase-7--vn--th--id)).
 
 ---
 
@@ -167,6 +167,50 @@ Each export writes a line to the container log (`docker compose logs web`) namin
 
 ---
 
+## Countries (Phase 7 — VN / TH / ID)
+
+One instance per country on the same host and **the same domain**, told apart by path. Each has its own Django container, database, MinIO bucket, admins, joiners and content; nothing is shared but the server. Isolation is enforced below the app: a country's database role can't connect to another's database, and its MinIO key can't read another's bucket.
+
+| Country | URL | Container | Database / bucket | Joiner UI |
+|---|---|---|---|---|
+| Malaysia | `/` | `web` | `onboard` / `onboard-media` | English |
+| Vietnam | `/vn/` | `web-vn` | `onboard_vn` / `onboard-vn` | Tiếng Việt + English toggle |
+| Thailand | `/th/` | `web-th` | `onboard_th` / `onboard-th` | ไทย + English toggle |
+| Indonesia | `/id/` | `web-id` | `onboard_id` / `onboard-id` | Bahasa Indonesia + English toggle |
+
+- Each country's settings live in **`env/<cc>.env`** (gitignored, mode 600; template `env/vn.env.example`). Those files hold that country's only credentials. The root Postgres/MinIO credentials in `.env` never reach `web-vn/-th/-id`.
+- The admin for a country is at `/<cc>/admin/` and is always English. Create the first one with `docker compose exec web-vn python manage.py createsuperuser`. Accounts are per country: a Malaysia admin can't sign in to `/vn/admin/`.
+- **The joiner-UI translations are drafts** (`web/locale/<lang>/LC_MESSAGES/django.po`). Have a native speaker in each country review them before go-live, then rebuild (`docker compose up -d --build`); `.mo` files are compiled during the image build.
+- An outer proxy (Caddy, Cloudflare Tunnel) only has to forward the domain to nginx and pass `Host` and `X-Forwarded-Proto`. nginx already does the per-country routing.
+- When you move from the LAN address to the real domain, update **every** env file (`.env` and `env/*.env`): `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `MINIO_PUBLIC_ENDPOINT`, `DJANGO_HTTPS=True`. Then put Cloudflare Access on `/admin/*` **and** `/vn/admin/*`, `/th/admin/*`, `/id/admin/*`.
+- After editing `nginx/default.conf.template`, run `docker compose restart nginx`: `up -d` doesn't notice changes to a bind-mounted template.
+- **Memory:** each country adds a ~100–130 MiB `web-<cc>` container (2 gunicorn workers). This host's swap is already full, so watch `free -m` and move onboard to its own VM if it starts thrashing. Nothing in the setup is tied to this host.
+
+### Add another country
+
+Replace `xx` with the 2-letter code, add its language to `_SUPPORTED` in `web/onboard/settings.py` with a `web/locale/<lang>` catalogue (`makemessages -l <lang>`), then:
+
+```bash
+cc=xx; pw=$(openssl rand -hex 24); s3=$(openssl rand -hex 24)
+# database + role that can connect only to its own database
+docker compose exec -T db psql -v ON_ERROR_STOP=1 -U onboard -d onboard -v role=onboard_$cc -v pw="$pw" <<'SQL'
+CREATE ROLE :"role" LOGIN PASSWORD :'pw' NOSUPERUSER NOCREATEDB NOCREATEROLE;
+CREATE DATABASE :"role" OWNER :"role";
+REVOKE CONNECT ON DATABASE :"role" FROM PUBLIC;
+SQL
+# bucket + user whose policy covers only that bucket
+docker compose exec -T -e CC=$cc -e S3=$s3 minio sh -s <<'SH'
+mc alias set local http://localhost:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
+mc mb --ignore-existing local/onboard-$CC
+printf '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetBucketLocation","s3:ListBucket"],"Resource":["arn:aws:s3:::onboard-%s"]},{"Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:DeleteObject"],"Resource":["arn:aws:s3:::onboard-%s/*"]}]}' $CC $CC > /tmp/p.json
+mc admin policy create local onboard-$CC /tmp/p.json && rm /tmp/p.json
+mc admin user add local onboard-$CC "$S3" && mc admin policy attach local onboard-$CC --user onboard-$CC
+SH
+echo "DB password: $pw   MinIO key: onboard-$cc / $s3"   # put these in env/$cc.env, then clear your scrollback
+```
+
+Copy `env/vn.env.example` to `env/$cc.env` and fill it in, with a new `DJANGO_SECRET_KEY` and `chmod 600`. Then add a `web-$cc` service (copy `web-vn` in `docker-compose.yml`) and a `/$cc/` + `/$cc/media/` block (copy the `vn` block in `nginx/default.conf.template`), run `docker compose up -d && docker compose restart nginx`, and add `$cc` to the backup loops below.
+
 ## Migrate / restore on another machine
 
 Three things carry the deployment: the **repo + `.env`**, the **Postgres data** (users, materials, quizzes, progress) and the **MinIO objects** (the actual PDFs/videos — images and documents alike). A fourth is optional: the **Docker images**. `onboard-web` always rebuilds from `web/Dockerfile`, but `minio/minio:latest` and `nginx:alpine` are floating tags, so a fresh host pulls newer versions than the ones you tested — exporting them makes the migration byte-identical.
@@ -179,8 +223,12 @@ Safe to run with the stack up — the DB dump is logical and consistent.
 cd /path/to/onboard
 B=~/backups/onboard-$(date +%Y%m%d-%H%M%S); mkdir -p "$B"
 
-# 1. database
+# 1. databases: Malaysia, then roles + the per-country DBs (Phase 7; --create keeps owner and CONNECT grants)
 docker compose exec -T db pg_dump -U onboard -d onboard --clean --if-exists > "$B/db.sql"
+docker compose exec -T db pg_dumpall -U onboard --roles-only > "$B/roles.sql"
+for cc in vn th id; do
+  docker compose exec -T db pg_dump -U onboard -d onboard_$cc --create --clean --if-exists > "$B/db_$cc.sql"
+done
 
 # 2. MinIO objects (raw volume — keeps bucket layout and metadata)
 docker run --rm -v onboard_minio-data:/data:ro -v "$B":/out alpine \
@@ -195,12 +243,14 @@ docker images --digests --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Digest}}' 
 docker save minio/minio:latest nginx:alpine postgres:16-alpine onboard-web:latest \
   | gzip > "$B/images.tar.gz"
 
-sha256sum "$B"/*.tar.gz "$B"/db.sql > "$B/SHA256SUMS"
+sha256sum "$B"/*.tar.gz "$B"/*.sql > "$B/SHA256SUMS"
 ```
 
 Volume names are prefixed with the Compose project name (the directory name), so it is `onboard_minio-data` for a checkout in `onboard/`. Confirm with `docker volume ls`.
 
 Copy the directory to the new host: `scp -r "$B" user@newhost:~/`. **It contains `.env` with live secrets** — keep it off shared drives and delete it once the migration is verified.
+
+The MinIO volume backup already holds every country's bucket and scoped user, and `repo.tar.gz` holds `env/<cc>.env` — both are needed for the per-country instances.
 
 ### Restore (on the new host)
 
@@ -227,8 +277,14 @@ docker load < ~/onboard-<timestamp>/images.tar.gz     # digests in IMAGES.txt
 docker compose up -d --build db minio
 docker compose exec -T db sh -c 'until pg_isready -U onboard; do sleep 1; done'
 
-# 4. restore the database (dump is --clean --if-exists, so re-running is safe)
+# 4. restore the databases (dumps are --clean --if-exists, so re-running is safe)
 docker compose exec -T db psql -U onboard -d onboard < ~/onboard-<timestamp>/db.sql
+docker compose exec -T db psql -U onboard -d postgres < ~/onboard-<timestamp>/roles.sql   # "role onboard already exists" is expected
+for cc in vn th id; do
+  docker compose exec -T db psql -U onboard -d postgres < ~/onboard-<timestamp>/db_$cc.sql
+done
+# Malaysia's DB isn't dumped with --create, so re-close it to the country roles (T7.3 isolation)
+docker compose exec -T db psql -U onboard -d onboard -c 'REVOKE CONNECT ON DATABASE onboard FROM PUBLIC; REVOKE CONNECT ON DATABASE postgres FROM PUBLIC;'
 
 # 5. restore the objects into the fresh MinIO volume
 docker compose stop minio

@@ -3,6 +3,7 @@ from functools import cached_property
 
 import boto3
 from botocore.client import Config
+from django.conf import settings
 from storages.backends.s3 import S3Storage, clean_name
 
 
@@ -20,8 +21,8 @@ class MinioMediaStorage(S3Storage):
         return boto3.client(
             "s3",
             endpoint_url=os.environ["MINIO_PUBLIC_ENDPOINT"],
-            aws_access_key_id=os.environ["MINIO_ROOT_USER"],
-            aws_secret_access_key=os.environ["MINIO_ROOT_PASSWORD"],
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,  # T7.3: scoped key per country, root for Malaysia
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
         )
 
@@ -35,5 +36,7 @@ class MinioMediaStorage(S3Storage):
         )
         # Signed path is /<bucket>/<key>; present it as /media/<key>. nginx rewrites
         # /media/ back to /<bucket>/ before MinIO, so the signature still matches.
-        # ponytail: str-replace the bucket segment; fixed single bucket, no templating.
-        return signed.replace(f"/{self.bucket_name}/", "/media/", 1)
+        # ponytail: str-replace the bucket segment; one bucket per instance, no templating.
+        # T7.3: under a path prefix it's /vn/media/<key>; nginx maps that to the VN bucket.
+        prefix = getattr(settings, "FORCE_SCRIPT_NAME", None) or ""
+        return signed.replace(f"/{self.bucket_name}/", f"{prefix}/media/", 1)

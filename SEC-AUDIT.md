@@ -476,3 +476,43 @@ Gate: **PASS**. No exploitable XSS or CSRF. Three hardening items are pending us
 - Tests pass, `web` rebuilt, `nginx` recreated (`nginx -t` ok). The temporary browser-check joiner was deleted (0 rows left).
 
 Gate: **PASS**. Open: SEC-041b (optional), carry-forward SEC-035a / SEC-036a.
+
+## Phase 7 gate — multi-country isolation (2026-10-12)
+
+Scope: T7.1–T7.5. Four instances on one host and **one origin** (`/`, `/vn/`, `/th/`, `/id/`), shared Postgres/MinIO/nginx. Probed live through nginx `:8001`; the probe rows were deleted afterwards.
+
+SEC-044: database isolation between countries
+Verdict: ✅ Correct
+Action Needed: None. Each country has its own role `onboard_<cc>` (NOSUPERUSER/NOCREATEDB/NOCREATEROLE) that owns only `onboard_<cc>`, and CONNECT is revoked from PUBLIC on every database. Verified: the web-vn role is refused on `onboard`, `onboard_th` and `postgres`. Database *names* are still visible in `pg_database`, which is accepted (no data).
+
+SEC-045: object-store isolation between countries
+Verdict: ✅ Correct
+Action Needed: None. Each `onboard-<cc>` MinIO user has a policy covering only its own bucket (Get/Put/Delete object, List/Location bucket). Verified: the VN key lists `onboard-vn`, and gets AccessDenied on `onboard-media` and `onboard-th` and on CreateBucket. A Malaysia presign replayed under `/vn/media/` → 403 (signature is bound to its bucket path). A VN presign under `/media/` or `/th/media/` → 403. Unsigned → 403. Traversal (`../`, `%2e%2e`, `..%2f`) → 404.
+
+SEC-046: session / CSRF cookie separation on a shared origin
+Verdict: ✅ Correct
+Action Needed: None. Each instance's cookies have its own names (`sessionid_vn`, `csrftoken_vn`, `django_language_vn`, `admin_sessionid_vn`) and are scoped to `Path=/vn/` (admin `/vn/admin/`). Malaysia keeps Django's defaults, so live sessions survived the deploy. Malaysia's `Path=/` cookies do reach `/vn/`, but the VN instance ignores them by name. Verified: a VN session → 200 on `/vn/`, and 302 to login on `/` and `/th/`.
+
+SEC-047: all countries share one browser origin
+Verdict: ⚠️ Pending (accepted for the temporary single-domain setup, user decision 2026-10-12)
+Action Needed: Cookie `Path` is not a security boundary between same-origin pages. Script running in one country's pages (an XSS) could `fetch()` another country's pages and admin with the victim's cookies, and `localStorage` is shared. That's why separate *names* (SEC-046) were needed and why the congrats popup key is per prefix. Mitigations in place: the XSS probes in this file pass, CSP is on every path, all cookies are HttpOnly, and one codebase serves every country. **SEC-047a** — when the temporary single-domain (Caddy) setup ends, move to one hostname per country (`onboard-vn.<domain>` etc.). That needs only env changes plus an nginx `server_name` per host; no code changes.
+
+SEC-048: Malaysia's instance still holds root credentials
+Verdict: ⚠️ Pending
+Action Needed: `web` (Malaysia) still uses the Postgres superuser and MinIO root keys (D2 / SEC-004), so a compromise of Malaysia reaches every country's data. Isolation only works in one direction. **SEC-048a** — give Malaysia a scoped DB role and a bucket-scoped MinIO user the same way as the other countries. This is now cheap: settings already read `MINIO_ACCESS_KEY`/`MINIO_SECRET_KEY`, and the runbook is in README "Add another country". Do it with `DATABASE_URL` pointing at a role that owns `onboard` (needs `ALTER DATABASE onboard OWNER TO onboard_my` + table ownership), in a maintenance window.
+
+SEC-049: language switch (`/<cc>/i18n/setlang/`) and language cookie
+Verdict: ✅ Correct
+Action Needed: None. The switch is POST-only with a CSRF token (403 without one), and an off-site `next` is replaced by the instance root. The cookie value is checked against `LANGUAGES`, and a forged value falls back to the instance language. The cookie is HttpOnly and Lax (Secure when `DJANGO_HTTPS`). An unsupported `DJANGO_LANGUAGE_CODE` or `DJANGO_URL_PREFIX` stops startup (`ImproperlyConfigured`).
+
+SEC-050: translated strings are emitted unescaped
+Verdict: ✅ Correct (documented)
+Action Needed: None in code. `{% translate "literal" %}` output is trusted, the same as the template it came from (that's how `<em>` survives in "Your onboarding <em>checklist</em>"). Variables inside `{% blocktranslate %}` are still escaped (verified: `<b>` → `&lt;b&gt;`). So `.po` files are code: native-speaker edits must come back through a commit and review, never be dropped into the image directly.
+
+SEC-051: per-country secret handling
+Verdict: ⚠️ Pending (minor)
+Action Needed: `env/<cc>.env` files are mode 600 and gitignored, and the per-country containers get no root credentials. **SEC-051a** — the README runbook `echo`es the new DB/MinIO secrets to the terminal and passes the MinIO secret as a `docker exec -e` value, which shows briefly in the host process list. Acceptable on a single-admin host; clear scrollback after use.
+
+Carry-forward: SEC-035a (all four instances run `DJANGO_HTTPS=False` on the LAN pilot; flip in **every** env file at go-live), SEC-036a, SEC-041b.
+
+Gate: **PASS**. Countries are isolated from each other at the database, object store and cookie level. Open, none blocking: SEC-047a (per-country hostnames when the temporary single-domain setup ends), SEC-048a (scope Malaysia's credentials), SEC-051a.

@@ -318,3 +318,31 @@ Action Needed: The table has a real `<thead>`/`<th>` and text values ("Not start
 COM-031: personal data shown
 Verdict: ✅ Correct
 Action Needed: None. The fields (status, score, passed, timestamps) are the same as the old inline, with no new PII columns; it just adds "Not started" rows. Who can see it is covered by SEC-026.
+
+## Phase 7 gate — multi-country i18n / a11y / data protection (2026-10-12)
+
+COM-032: page language declared correctly
+Verdict: ✅ Correct
+Action Needed: None. `<html lang>` follows the active language (`vi`/`th`/`id`/`en`), so screen readers pick the right voice. The toggle button carries `lang` for its own label, and the server sends `Content-Language`.
+
+COM-033: language toggle accessible
+Verdict: ✅ Correct
+Action Needed: None. It's a real `<button>` in a POST form, and its label is the language's own name ("English", "Tiếng Việt"), so it's readable whatever language is showing. Below 560px it shows only the globe icon, and the name stays as visually hidden text, so the accessible name is kept (globe `aria-hidden`). Malaysia has no toggle (single language).
+
+COM-034: Thai / Vietnamese rendering
+Verdict: ✅ Correct
+Action Needed: None. Thai glyphs come from the system font (Inter/Bricolage have none); no font file added. Titles under `:lang(th)`/`:lang(vi)` get line-height 1.25 and normal tracking, so stacked marks don't clip. Browser-checked vi at 390px: the username no longer truncates. A pre-existing 8px overflow with a desktop scrollbar (full-bleed top bar) is the same on Malaysia; phones are unaffected.
+
+COM-035: translation quality
+Verdict: 🚫 Blocking for go-live (not for code)
+Action Needed: **COM-035a** — the 54 joiner strings in `web/locale/{vi,th,id}/LC_MESSAGES/django.po` are machine-drafted. Each country's HR needs a native speaker to review them, commit the fixes (see SEC-050), then rebuild. Material titles and quiz text are content that each country's HR enters in its own language.
+
+COM-036: cross-border transfer of joiner personal data
+Verdict: ⚠️ Pending (legal, not code)
+Action Needed: VN/TH/ID joiner data (names, emails, scores, login times) is stored on the Malaysia host. The user confirmed central storage is approved (2026-10-12). **COM-036a** — ask HR/legal to confirm the per-country paperwork is on file before go-live. Vietnam (Decree 13/2023) expects a cross-border transfer impact assessment kept on file and filed with the authority. Thailand (PDPA s.28–29) and Indonesia (Law 27/2022, art. 56) require adequate protection or consent for transfer abroad. Each instance's CSV export and retention follow README Step 8 as for Malaysia.
+
+COM-037: admin language
+Verdict: ✅ Correct (by design)
+Action Needed: None. `/<cc>/admin/` is always English: its own labels, help text and validation messages are English, so a partly translated admin would be harder to use. Revisit if a country's HR can't work in English.
+
+Gate: **PASS for code**. Go-live blockers per country: COM-035a (native review) and COM-036a (transfer paperwork).

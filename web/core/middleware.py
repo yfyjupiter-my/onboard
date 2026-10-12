@@ -3,8 +3,11 @@ from django.contrib.sessions.middleware import SessionMiddleware
 from django.utils import translation
 from django.utils.cache import patch_vary_headers
 
-ADMIN_PREFIX = "/admin/"  # matches path("admin/", ...) in onboard/urls.py
-ADMIN_SESSION_COOKIE = "admin_sessionid"
+ADMIN_PREFIX = "/admin/"  # matches path("admin/", ...) in onboard/urls.py; compared with path_info (no /vn)
+# T7.3: derived from the instance's session cookie: "admin_sessionid" for Malaysia (unchanged),
+# "admin_sessionid_vn" for /vn/, so instances sharing the domain never read each other's admin session.
+ADMIN_SESSION_COOKIE = f"admin_{settings.SESSION_COOKIE_NAME}"
+ADMIN_COOKIE_PATH = (getattr(settings, "FORCE_SCRIPT_NAME", None) or "") + ADMIN_PREFIX
 
 
 class SplitSessionMiddleware(SessionMiddleware):
@@ -30,7 +33,7 @@ class SplitSessionMiddleware(SessionMiddleware):
         morsel = response.cookies.pop(settings.SESSION_COOKIE_NAME, None)
         if morsel is not None and request.path_info.startswith(ADMIN_PREFIX):
             morsel.set(ADMIN_SESSION_COOKIE, morsel.value, morsel.coded_value)
-            morsel["path"] = ADMIN_PREFIX
+            morsel["path"] = ADMIN_COOKIE_PATH
             response.cookies[ADMIN_SESSION_COOKIE] = morsel
         elif morsel is not None:
             response.cookies[settings.SESSION_COOKIE_NAME] = morsel

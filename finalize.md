@@ -27,6 +27,7 @@ Standing decisions made **after** P1–P15 below, during implementation. The aud
 | D15 | `Material.description` is **hidden** in admin; image `alt` falls back to the title | the field had no way to be set and no one was setting it; field + data kept so it can come back | `CODE-011`, `COM-029` (accepted) |
 | D16 | `TIME_ZONE=Asia/Kuala_Lumpur` with `USE_TZ=True`; CSV timestamps localized on export | storage stays UTC (portable), humans read +08:00 in admin and in the export | `STATUS.md` T6.18 |
 | D17 | Opening a material via **GET** marks it Viewed (cross-site link can do it); not moved to POST | Viewed ≠ completed — completion still needs POST + CSRF token or a passed quiz; progress-on-first-view is P3/P5 | `SEC-043` (accepted) |
+| D18 | **One instance per country** (VN/TH/ID) on the shared host: own container, DB + role, bucket + scoped key, env file; one domain, told apart by path (`/vn/`…, Malaysia `/`); admin English, joiner UI local + English | `prd.md` rules out multi-tenant, and a `country` column on every table means one missed filter leaks a country's data. Infra-level isolation needs no model change. Path prefix is the user's temporary single-domain choice; per-country hostnames later (SEC-047a) | `TASKS.md` Phase 7, `SEC-044`–`051`, `COM-032`–`037` |
 
 Deferred by design, do not build without being asked: per-department material assignment (P3), timed/cooldown retakes (P4), an ADR/RFC process (one contributor — `prd.md` + this table + the audit files cover it).
 

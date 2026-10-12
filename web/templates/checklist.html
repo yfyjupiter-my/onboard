@@ -69,7 +69,7 @@
 
   {% if topbar.total and topbar.done == topbar.total %}
   <dialog id="congrats" class="card" aria-labelledby="congrats-title" aria-describedby="congrats-desc"
-          data-key="onboard-congrats-v2-{{ request.user.id }}-{{ topbar.total }}">
+          {% url 'home' as home %}data-key="onboard-congrats-v2-{{ request.user.id }}-{{ topbar.total }}{% if home != '/' %}{{ home }}{% endif %}">{# T7.3: per-instance key; one origin, so user ids would collide #}
     <div style="font-size:48px;line-height:1" aria-hidden="true">🎉</div>
     <h2 id="congrats-title" class="title" style="font-size:28px;margin:12px 0 6px">{% translate "Congratulations!" %}</h2>
     <p id="congrats-desc" style="color:var(--muted);margin:0">{% translate "You've completed all your onboarding materials." %}</p>

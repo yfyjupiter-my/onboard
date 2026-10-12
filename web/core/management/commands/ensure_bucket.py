@@ -3,6 +3,7 @@ import os
 import boto3
 from botocore.client import Config
 from botocore.exceptions import ClientError
+from django.conf import settings
 from django.core.management.base import BaseCommand
 
 
@@ -14,8 +15,8 @@ class Command(BaseCommand):
         client = boto3.client(
             "s3",
             endpoint_url=os.environ["MINIO_ENDPOINT"],
-            aws_access_key_id=os.environ["MINIO_ROOT_USER"],
-            aws_secret_access_key=os.environ["MINIO_ROOT_PASSWORD"],
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,  # T7.3: same (scoped) key the app uses
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             config=Config(signature_version="s3v4"),
         )
         try:

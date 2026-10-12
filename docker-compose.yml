@@ -5,6 +5,31 @@ x-logging: &logging
     max-size: "10m"
     max-file: "5"
 
+x-country: &country
+  image: onboard-web:latest
+  pull_policy: never   # built by `web`; never fetched from a registry
+  restart: unless-stopped
+  logging: *logging
+  environment:
+    MINIO_ENDPOINT: http://minio:9000
+    GUNICORN_WORKERS: "2"   # host RAM is tight; 2 workers is ample for one country's joiners
+  depends_on:
+    db:
+      condition: service_healthy
+    minio:
+      condition: service_healthy
+  command: >
+    sh -c "python manage.py migrate --noinput &&
+           python manage.py clearsessions &&
+           python manage.py collectstatic --noinput &&
+           exec gunicorn onboard.wsgi:application --bind 0.0.0.0:8000 --workers $${GUNICORN_WORKERS:-3} --timeout 120"
+  healthcheck:
+    test: ["CMD", "curl", "-fsS", "http://localhost:8000/admin/login/"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+    start_period: 30s
+
 services:
   db:
     image: postgres:16-alpine
@@ -42,8 +67,9 @@ services:
       timeout: 5s
       retries: 10
 
-  web:
+  web:   # Malaysia (/). T7.3: also builds the image the per-country web-* services run
     build: ./web
+    image: onboard-web:latest
     restart: unless-stopped
     logging: *logging
     env_file: .env
@@ -68,6 +94,19 @@ services:
       start_period: 30s
     volumes:
       - static:/app/staticfiles
+
+  # T7.3 (D18): one instance per country on the shared db/minio/nginx. Each reads ONLY its own
+  # env/<cc>.env (own SECRET_KEY, database role, bucket-scoped MinIO key, language, tz, URL prefix):
+  # no root Postgres or MinIO credentials reach these containers.
+  web-vn:   # Vietnam (/vn/) — T7.3 (D18)
+    <<: *country
+    env_file: env/vn.env
+  web-th:   # Thailand (/th/) — T7.3 (D18)
+    <<: *country
+    env_file: env/th.env
+  web-id:   # Indonesia (/id/) — T7.3 (D18)
+    <<: *country
+    env_file: env/id.env
 
   nginx:
     image: nginx:alpine
