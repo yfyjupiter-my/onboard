@@ -1,11 +1,13 @@
+from .middleware import ADMIN_PREFIX
 from .models import JoinerProgress, Material
 
 
 def topbar_progress(request):
     """T6.7: "3 of 5 complete" + rail fill on every joiner page's top bar.
-    Staff/anonymous (admin, login) skip the queries entirely."""
+    Anonymous users and /admin/ pages skip the queries entirely; staff on the
+    frontend get their own progress like any joiner."""
     user = getattr(request, "user", None)
-    if not user or not user.is_authenticated or user.is_staff:
+    if not user or not user.is_authenticated or request.path_info.startswith(ADMIN_PREFIX):
         return {}
     total = Material.objects.filter(is_active=True).count()
     done = JoinerProgress.objects.filter(

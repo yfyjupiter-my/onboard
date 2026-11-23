@@ -2,8 +2,6 @@ from itertools import groupby
 from operator import attrgetter
 
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm
-from django.core.exceptions import ValidationError
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -11,17 +9,6 @@ from django.utils.translation import gettext as _
 from django.views.decorators.http import require_POST
 
 from .models import JoinerProgress, Material
-
-
-class JoinerLoginForm(AuthenticationForm):
-    """Frontend login is joiners-only; staff (HR/IT) use /admin/login/."""
-
-    def confirm_login_allowed(self, user):
-        super().confirm_login_allowed(user)
-        if user.is_staff:
-            raise ValidationError(
-                _("Staff accounts sign in through the admin site."), code="staff_forbidden"
-            )
 
 
 def _open_material(request, pk):

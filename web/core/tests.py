@@ -353,11 +353,11 @@ class PresignTests(TestCase):
 
 @override_settings(SECURE_SSL_REDIRECT=False)
 class JoinerLoginFormTests(TestCase):
-    def test_staff_rejected_at_frontend_login(self):
+    def test_staff_allowed_at_frontend_login(self):
         User.objects.create_user("hr", password="pw-testing-123", is_staff=True)
         resp = self.client.post(reverse("login"), {"username": "hr", "password": "pw-testing-123"})
-        self.assertEqual(resp.status_code, 200)  # re-rendered, not logged in
-        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("_auth_user_id", self.client.session)
 
     def test_login_error_is_announced(self):
         # COM-011
