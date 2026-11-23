@@ -2,7 +2,7 @@
 
 Employee onboarding: HR/IT publish materials (PDF/video) + optional quizzes in Django admin; joiners work through a checklist, review each material, and either click **Mark complete** or pass its quiz. Files live in MinIO and reach the browser only via short-lived (15-min) presigned URLs — never public, never streamed through Django.
 
-**Stack:** nginx (`:8080`) → Django 5.2 / gunicorn (`:8000`) → Postgres 16 + MinIO. Four Docker Compose services on one host, plus one `web-<cc>` container per extra country at `/<cc>/` (see [Countries](#countries-phase-7--vn--th--id)).
+**Stack:** nginx (`:8001`) → Django 5.2 / gunicorn (`:8000`) → Postgres 16 + MinIO. Four Docker Compose services on one host.
 
 ---
 
@@ -10,8 +10,8 @@ Employee onboarding: HR/IT publish materials (PDF/video) + optional quizzes in D
 
 1. **Pick ONE address for the whole deployment and use it everywhere.**
    Media URLs are cryptographically signed for exactly one host, so `MINIO_PUBLIC_ENDPOINT`, `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS` and the URL you type in the browser must all agree — **including the port**.
-   - Single machine only → `http://localhost:8080`
-   - Other devices on the LAN → `http://<server-LAN-IP>:8080` (then even the server itself must browse that IP, *not* `localhost`)
+   - Single machine only → `http://localhost:8001`
+   - Other devices on the LAN → `http://<server-LAN-IP>:8001` (then even the server itself must browse that IP, *not* `localhost`)
    - Real deployment → `https://onboard.example.com`
 
    `MINIO_PUBLIC_ENDPOINT` is a **single URL**, never a comma-list. Only `DJANGO_ALLOWED_HOSTS` and `DJANGO_CSRF_TRUSTED_ORIGINS` take commas.
@@ -23,7 +23,7 @@ Employee onboarding: HR/IT publish materials (PDF/video) + optional quizzes in D
 ## Prerequisites
 
 - Linux host (tested on Ubuntu 24.04) with **Docker Engine + the Compose v2 plugin** (`docker compose version` must work).
-- Free host ports: **8080** (the app) and **127.0.0.1:9001** (MinIO console, loopback only).
+- Free host ports: **8001** (the app) and **127.0.0.1:9001** (MinIO console, loopback only).
 - ~2 GB RAM, plus disk for uploaded PDFs/videos.
 - No Python/Node needed on the host — everything runs in containers.
 
@@ -68,11 +68,11 @@ Then edit `.env`. Compose **refuses to start** if the password vars are missing.
 Example for a LAN pilot on `192.168.100.210`:
 
 ```dotenv
-MINIO_PUBLIC_ENDPOINT=http://192.168.100.210:8080
+MINIO_PUBLIC_ENDPOINT=http://192.168.100.210:8001
 DJANGO_DEBUG=False
 DJANGO_HTTPS=False
 DJANGO_ALLOWED_HOSTS=192.168.100.210,localhost,127.0.0.1
-DJANGO_CSRF_TRUSTED_ORIGINS=http://192.168.100.210:8080
+DJANGO_CSRF_TRUSTED_ORIGINS=http://192.168.100.210:8001
 ```
 
 > **Why `DJANGO_HTTPS=False` for a plain-http LAN pilot:** with it on, Django marks the session and CSRF cookies `Secure` and redirects to https, so over `http://` the browser never sends the cookies and every login fails CSRF. Keep `DJANGO_DEBUG=False` regardless (SEC-035). Set `DJANGO_HTTPS=True` (or remove the line) as soon as real TLS is in front.
@@ -86,7 +86,7 @@ docker compose ps          # all four services should be healthy
 
 On startup the `web` container runs `ensure_bucket` (creates the private MinIO bucket, idempotent) → `migrate` → `clearsessions` → `collectstatic` → gunicorn on `:8000` (3 workers, 120s timeout). `db` and `minio` are health-gated, so `web` waits for them.
 
-Open your chosen URL, e.g. `http://localhost:8080/` — it redirects to the login page.
+Open your chosen URL, e.g. `http://localhost:8001/` — it redirects to the login page.
 
 Watch logs if anything looks wrong:
 
@@ -142,7 +142,7 @@ Each export writes a line to the container log (`docker compose logs web`) namin
 
 ## Production deployment
 
-1. **TLS in front.** Terminate https at a reverse proxy / Cloudflare and forward to host `:8080`. The proxy must send `X-Forwarded-Proto: https` (Cloudflare and most proxies do); nginx keeps it, otherwise Django's SSL redirect loops forever (SEC-017). If the proxy or tunnel runs on the same host, publish nginx on loopback only (`"127.0.0.1:8080:80"` in `docker-compose.yml`) so nobody can reach `:8080` around it.
+1. **TLS in front.** Terminate https at a reverse proxy / Cloudflare and forward to host `:8001`. The proxy must send `X-Forwarded-Proto: https` (Cloudflare and most proxies do); nginx keeps it, otherwise Django's SSL redirect loops forever (SEC-017). If the proxy or tunnel runs on the same host, publish nginx on loopback only (`"127.0.0.1:8001:80"` in `docker-compose.yml`) so nobody can reach `:8001` around it.
 2. **`DJANGO_DEBUG=False` and `DJANGO_HTTPS=True`** (the default). `DJANGO_HTTPS` turns on SSL redirect, HSTS (1 year, subdomains, preload) and secure cookies. Verify:
    ```bash
    docker compose run --rm web python manage.py check --deploy
@@ -167,50 +167,6 @@ Each export writes a line to the container log (`docker compose logs web`) namin
 
 ---
 
-## Countries (Phase 7 — VN / TH / ID)
-
-One instance per country on the same host and **the same domain**, told apart by path. Each has its own Django container, database, MinIO bucket, admins, joiners and content; nothing is shared but the server. Isolation is enforced below the app: a country's database role can't connect to another's database, and its MinIO key can't read another's bucket.
-
-| Country | URL | Container | Database / bucket | Joiner UI |
-|---|---|---|---|---|
-| Malaysia | `/` | `web` | `onboard` / `onboard-media` | English |
-| Vietnam | `/vn/` | `web-vn` | `onboard_vn` / `onboard-vn` | Tiếng Việt + English toggle |
-| Thailand | `/th/` | `web-th` | `onboard_th` / `onboard-th` | ไทย + English toggle |
-| Indonesia | `/id/` | `web-id` | `onboard_id` / `onboard-id` | Bahasa Indonesia + English toggle |
-
-- Each country's settings live in **`env/<cc>.env`** (gitignored, mode 600; template `env/vn.env.example`). Those files hold that country's only credentials. The root Postgres/MinIO credentials in `.env` never reach `web-vn/-th/-id`.
-- The admin for a country is at `/<cc>/admin/` and is always English. Create the first one with `docker compose exec web-vn python manage.py createsuperuser`. Accounts are per country: a Malaysia admin can't sign in to `/vn/admin/`.
-- **The joiner-UI translations are drafts** (`web/locale/<lang>/LC_MESSAGES/django.po`). Have a native speaker in each country review them before go-live, then rebuild (`docker compose up -d --build`); `.mo` files are compiled during the image build.
-- An outer proxy (Caddy, Cloudflare Tunnel) only has to forward the domain to nginx and pass `Host` and `X-Forwarded-Proto`. nginx already does the per-country routing.
-- When you move from the LAN address to the real domain, update **every** env file (`.env` and `env/*.env`): `DJANGO_ALLOWED_HOSTS`, `DJANGO_CSRF_TRUSTED_ORIGINS`, `MINIO_PUBLIC_ENDPOINT`, `DJANGO_HTTPS=True`. Then put Cloudflare Access on `/admin/*` **and** `/vn/admin/*`, `/th/admin/*`, `/id/admin/*`.
-- After editing `nginx/default.conf.template`, run `docker compose restart nginx`: `up -d` doesn't notice changes to a bind-mounted template.
-- **Memory:** each country adds a ~100–130 MiB `web-<cc>` container (2 gunicorn workers). This host's swap is already full, so watch `free -m` and move onboard to its own VM if it starts thrashing. Nothing in the setup is tied to this host.
-
-### Add another country
-
-Replace `xx` with the 2-letter code, add its language to `_SUPPORTED` in `web/onboard/settings.py` with a `web/locale/<lang>` catalogue (`makemessages -l <lang>`), then:
-
-```bash
-cc=xx; pw=$(openssl rand -hex 24); s3=$(openssl rand -hex 24)
-# database + role that can connect only to its own database
-docker compose exec -T db psql -v ON_ERROR_STOP=1 -U onboard -d onboard -v role=onboard_$cc -v pw="$pw" <<'SQL'
-CREATE ROLE :"role" LOGIN PASSWORD :'pw' NOSUPERUSER NOCREATEDB NOCREATEROLE;
-CREATE DATABASE :"role" OWNER :"role";
-REVOKE CONNECT ON DATABASE :"role" FROM PUBLIC;
-SQL
-# bucket + user whose policy covers only that bucket
-docker compose exec -T -e CC=$cc -e S3=$s3 minio sh -s <<'SH'
-mc alias set local http://localhost:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD"
-mc mb --ignore-existing local/onboard-$CC
-printf '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":["s3:GetBucketLocation","s3:ListBucket"],"Resource":["arn:aws:s3:::onboard-%s"]},{"Effect":"Allow","Action":["s3:GetObject","s3:PutObject","s3:DeleteObject"],"Resource":["arn:aws:s3:::onboard-%s/*"]}]}' $CC $CC > /tmp/p.json
-mc admin policy create local onboard-$CC /tmp/p.json && rm /tmp/p.json
-mc admin user add local onboard-$CC "$S3" && mc admin policy attach local onboard-$CC --user onboard-$CC
-SH
-echo "DB password: $pw   MinIO key: onboard-$cc / $s3"   # put these in env/$cc.env, then clear your scrollback
-```
-
-Copy `env/vn.env.example` to `env/$cc.env` and fill it in, with a new `DJANGO_SECRET_KEY` and `chmod 600`. Then add a `web-$cc` service (copy `web-vn` in `docker-compose.yml`) and a `/$cc/` + `/$cc/media/` block (copy the `vn` block in `nginx/default.conf.template`), run `docker compose up -d && docker compose restart nginx`, and add `$cc` to the backup loops below.
-
 ## Migrate / restore on another machine
 
 Three things carry the deployment: the **repo + `.env`**, the **Postgres data** (users, materials, quizzes, progress) and the **MinIO objects** (the actual PDFs/videos — images and documents alike). A fourth is optional: the **Docker images**. `onboard-web` always rebuilds from `web/Dockerfile`, but `minio/minio:latest` and `nginx:alpine` are floating tags, so a fresh host pulls newer versions than the ones you tested — exporting them makes the migration byte-identical.
@@ -223,12 +179,8 @@ Safe to run with the stack up — the DB dump is logical and consistent.
 cd /path/to/onboard
 B=~/backups/onboard-$(date +%Y%m%d-%H%M%S); mkdir -p "$B"
 
-# 1. databases: Malaysia, then roles + the per-country DBs (Phase 7; --create keeps owner and CONNECT grants)
+# 1. database
 docker compose exec -T db pg_dump -U onboard -d onboard --clean --if-exists > "$B/db.sql"
-docker compose exec -T db pg_dumpall -U onboard --roles-only > "$B/roles.sql"
-for cc in vn th id; do
-  docker compose exec -T db pg_dump -U onboard -d onboard_$cc --create --clean --if-exists > "$B/db_$cc.sql"
-done
 
 # 2. MinIO objects (raw volume — keeps bucket layout and metadata)
 docker run --rm -v onboard_minio-data:/data:ro -v "$B":/out alpine \
@@ -243,18 +195,16 @@ docker images --digests --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Digest}}' 
 docker save minio/minio:latest nginx:alpine postgres:16-alpine onboard-web:latest \
   | gzip > "$B/images.tar.gz"
 
-sha256sum "$B"/*.tar.gz "$B"/*.sql > "$B/SHA256SUMS"
+sha256sum "$B"/*.tar.gz "$B"/db.sql > "$B/SHA256SUMS"
 ```
 
 Volume names are prefixed with the Compose project name (the directory name), so it is `onboard_minio-data` for a checkout in `onboard/`. Confirm with `docker volume ls`.
 
 Copy the directory to the new host: `scp -r "$B" user@newhost:~/`. **It contains `.env` with live secrets** — keep it off shared drives and delete it once the migration is verified.
 
-The MinIO volume backup already holds every country's bucket and scoped user, and `repo.tar.gz` holds `env/<cc>.env` — both are needed for the per-country instances.
-
 ### Restore (on the new host)
 
-Prerequisites as in [Prerequisites](#prerequisites): Docker Engine + Compose v2, ports 8080 and 127.0.0.1:9001 free.
+Prerequisites as in [Prerequisites](#prerequisites): Docker Engine + Compose v2, ports 8001 and 127.0.0.1:9001 free.
 
 ```bash
 cd ~/onboard-<timestamp>          # the copied backup directory
@@ -277,14 +227,8 @@ docker load < ~/onboard-<timestamp>/images.tar.gz     # digests in IMAGES.txt
 docker compose up -d --build db minio
 docker compose exec -T db sh -c 'until pg_isready -U onboard; do sleep 1; done'
 
-# 4. restore the databases (dumps are --clean --if-exists, so re-running is safe)
+# 4. restore the database (dump is --clean --if-exists, so re-running is safe)
 docker compose exec -T db psql -U onboard -d onboard < ~/onboard-<timestamp>/db.sql
-docker compose exec -T db psql -U onboard -d postgres < ~/onboard-<timestamp>/roles.sql   # "role onboard already exists" is expected
-for cc in vn th id; do
-  docker compose exec -T db psql -U onboard -d postgres < ~/onboard-<timestamp>/db_$cc.sql
-done
-# Malaysia's DB isn't dumped with --create, so re-close it to the country roles (T7.3 isolation)
-docker compose exec -T db psql -U onboard -d onboard -c 'REVOKE CONNECT ON DATABASE onboard FROM PUBLIC; REVOKE CONNECT ON DATABASE postgres FROM PUBLIC;'
 
 # 5. restore the objects into the fresh MinIO volume
 docker compose stop minio
@@ -324,7 +268,7 @@ Only after the verification above passes: `docker compose down` (keeps volumes) 
 | "CSRF verification failed" on login | The origin you typed isn't in `DJANGO_CSRF_TRUSTED_ORIGINS` (needs exact scheme+host+port). Over plain http with `DJANGO_HTTPS=True`, secure cookies are never sent: set `DJANGO_HTTPS=False` for a LAN pilot (keep `DJANGO_DEBUG=False`) or use https. |
 | Checklist loads but video/PDF is blank, or "no supported format" | `MINIO_PUBLIC_ENDPOINT` doesn't match the host in the address bar. Set it to the exact URL every device uses, then `docker compose up -d`. |
 | `EndpointResolutionError` opening a material | `MINIO_PUBLIC_ENDPOINT` contains a comma-list. It is a single URL. |
-| Changed the host port from 8080 | Update `MINIO_PUBLIC_ENDPOINT` (and CSRF origins) to the new port — presigns include it. |
+| Changed the host port from 8001 | Update `MINIO_PUBLIC_ENDPOINT` (and CSRF origins) to the new port — presigns include it. |
 | `DisallowedHost` | Add the hostname/IP to `DJANGO_ALLOWED_HOSTS`. |
 | Admin login rejects a joiner account | `/admin/` is staff-only; the joiner site is non-staff-only. Use the right account. |
 | `docker compose up` exits with "set POSTGRES_PASSWORD in .env" | `.env` missing or the required vars still blank. |

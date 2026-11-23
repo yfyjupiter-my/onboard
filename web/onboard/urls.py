@@ -9,7 +9,6 @@ urlpatterns = [
         r"^admin/core/joinerprogress/",
         RedirectView.as_view(pattern_name="admin:core_joiner_changelist", permanent=True),
     ),
-    path("i18n/", include("django.conf.urls.i18n")),  # T7.1: set_language (POST + CSRF) for the toggle
     path("admin/", admin.site.urls),
     path("", include("core.urls")),
 ]

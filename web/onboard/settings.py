@@ -1,9 +1,7 @@
 import os
-import re
 from pathlib import Path
 
 import dj_database_url
-from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,7 +23,6 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "core.middleware.SplitSessionMiddleware",  # T6.6: admin/frontend sessions isolated
-    "core.middleware.InstanceLocaleMiddleware",  # T7.1: instance language unless the user toggled
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -67,22 +64,12 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# T7.1: one instance per country (D18) — language and display tz come from that country's env file.
-# Defaults are Malaysia's, so an env without them renders exactly as before.
-LANGUAGE_CODE = os.environ.get("DJANGO_LANGUAGE_CODE", "en-us")
-TIME_ZONE = os.environ.get("DJANGO_TIME_ZONE", "Asia/Kuala_Lumpur")  # display only; storage stays UTC via USE_TZ
-# The instance's own language plus English (the toggle). The toggle shows each language's own name
-# (get_language_info name_local), so these labels are only Django's internal list.
-_SUPPORTED = {"en": "English", "vi": "Vietnamese", "th": "Thai", "id": "Indonesian"}
-_LANG = LANGUAGE_CODE.split("-")[0]
-if _LANG not in _SUPPORTED:  # fail at startup, not as a half-English site
-    raise ImproperlyConfigured(f"DJANGO_LANGUAGE_CODE={LANGUAGE_CODE!r}: supported are {sorted(_SUPPORTED)}")
-LANGUAGES = [(c, _SUPPORTED[c]) for c in dict.fromkeys([_LANG, "en"])]
-LOCALE_PATHS = [BASE_DIR / "locale"]
+LANGUAGE_CODE = "en-us"
+TIME_ZONE = "Asia/Kuala_Lumpur"  # display tz for admin (Last Login / Completion); storage stays UTC via USE_TZ
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"  # relative: Django puts FORCE_SCRIPT_NAME (/vn) in front (T7.3)
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
@@ -94,10 +81,8 @@ STORAGES = {
 # --- MinIO / S3 media storage. P1/P2. ---
 AWS_STORAGE_BUCKET_NAME = os.environ.get("MINIO_BUCKET", "onboard-media")
 AWS_S3_ENDPOINT_URL = os.environ["MINIO_ENDPOINT"]  # http://minio:9000 — uploads (container-to-container)
-# T7.3: per-country instances get a service account scoped to their own bucket (MINIO_ACCESS_KEY/
-# MINIO_SECRET_KEY); Malaysia falls back to the root pair it has always used (SEC-004/D2).
-AWS_ACCESS_KEY_ID = os.environ.get("MINIO_ACCESS_KEY") or os.environ["MINIO_ROOT_USER"]
-AWS_SECRET_ACCESS_KEY = os.environ.get("MINIO_SECRET_KEY") or os.environ["MINIO_ROOT_PASSWORD"]
+AWS_ACCESS_KEY_ID = os.environ["MINIO_ROOT_USER"]
+AWS_SECRET_ACCESS_KEY = os.environ["MINIO_ROOT_PASSWORD"]
 AWS_S3_ADDRESSING_STYLE = "path"  # MinIO is path-style
 AWS_S3_SIGNATURE_VERSION = "s3v4"
 AWS_DEFAULT_ACL = None  # objects stay private; served only via presigned URLs
@@ -116,24 +101,6 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 HTTPS = os.environ.get("DJANGO_HTTPS", "True").lower() != "false"
 SESSION_COOKIE_SECURE = HTTPS
 CSRF_COOKIE_SECURE = HTTPS
-LANGUAGE_COOKIE_SECURE = HTTPS
-
-# T7.3 (D18): every country shares one domain and is told apart by path — Malaysia at /, the
-# others at /vn/, /th/, /id/ (nginx strips the prefix). Malaysia's cookies are Path=/ and so also
-# reach /vn/; per-instance names keep each instance reading only its own session, CSRF and
-# language cookies, and per-instance paths keep its cookies away from Malaysia. Unset = Malaysia,
-# whose names and paths stay Django's defaults (existing sessions survive the upgrade).
-URL_PREFIX = os.environ.get("DJANGO_URL_PREFIX", "").strip("/")
-if URL_PREFIX:
-    if not re.fullmatch(r"[a-z]{2}", URL_PREFIX):
-        raise ImproperlyConfigured(f"DJANGO_URL_PREFIX={URL_PREFIX!r}: expected a 2-letter country code")
-    FORCE_SCRIPT_NAME = f"/{URL_PREFIX}"
-    SESSION_COOKIE_NAME = f"sessionid_{URL_PREFIX}"
-    CSRF_COOKIE_NAME = f"csrftoken_{URL_PREFIX}"
-    LANGUAGE_COOKIE_NAME = f"django_language_{URL_PREFIX}"
-    SESSION_COOKIE_PATH = CSRF_COOKIE_PATH = LANGUAGE_COOKIE_PATH = f"/{URL_PREFIX}/"
-LANGUAGE_COOKIE_HTTPONLY = True  # only the server reads it (set_language POST); no JS needs it
-LANGUAGE_COOKIE_SAMESITE = "Lax"
 
 # TLS terminates at nginx/Cloudflare; the proxy header above lets Django see it. SEC-003.
 if HTTPS:
@@ -152,5 +119,5 @@ LOGGING = {
 }
 
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "home"  # T7.3: a URL name, so /vn/ lands on /vn/, not on Malaysia's /
+LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "login"

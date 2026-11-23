@@ -2,4 +2,3 @@
 __pycache__/
 *.pyc
 web/staticfiles/
-env/*.env

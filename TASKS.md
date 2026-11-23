@@ -142,7 +142,9 @@ Small changes requested after the 6 phases closed. Each is done + tested; no pha
 - ✅ **T6.18** **Kuala Lumpur timezone (user request)** — `TIME_ZONE = "Asia/Kuala_Lumpur"` in `web/onboard/settings.py` (`USE_TZ=True` unchanged, so Postgres keeps UTC and only rendering shifts): admin Joiners **Last Login / Completion** and the joiner detail timestamps show +08:00. Joiner CSV export writes `localtime(p.completed_at).isoformat()` (`web/core/admin.py`) instead of the stored UTC value. No migration; image rebuild required (code is baked in, restart alone keeps the old settings).
   - Acceptance: `manage.py test core` 44/44 (new `test_export_timestamps_are_local`: stored 00:30Z → `2026-09-22T08:30:00+08:00`); live DB check — `chris.goh` last login `2026-09-22 01:28Z` renders `Sept. 22, 2026, 9:28 a.m.`, export row shows `2026-09-14T15:49:45+08:00`.
 
-## Phase 7 — Multi-country rollout (VN / TH / ID) — ✅ DONE (go-live blockers: COM-035a native review, COM-036a transfer paperwork)
+## Phase 7 — Multi-country rollout (VN / TH / ID) — 🗑️ REMOVED 2026-11-23 (user request)
+> Removed in full: `web-vn/-th/-id`, nginx `/<cc>/` routes, `env/`, URL prefix/cookies, i18n (locale files, toggle, `InstanceLocaleMiddleware`, `{% translate %}`). Country DBs/roles/buckets/users dropped (were empty). Malaysia-only again. Items below kept as history; COM-035a/036a, SEC-047a/048a no longer apply.
+
 One instance per country on shared infra (plan approved 2026-10-12): one image, `web-<cc>` container + own Postgres DB/role + own MinIO bucket/service account + own **path prefix** on the one shared domain (`/vn/`, `/th/`, `/id/`; Malaysia stays at `/`; user decision 2026-10-12, replaces per-country subdomains); nginx routes by path. No model changes (`prd.md` "no multi-tenant" holds). Malaysia data stays in `onboard` DB / `onboard-media` bucket, untouched. Local-language UI (vi/th/id) + English toggle.
 
 - ✅ **T7.1** **Per-instance settings** — `TIME_ZONE`, `LANGUAGE_CODE` from env (defaults = today's KL / en-us, so Malaysia is unchanged); `LANGUAGES` = instance language + English; `LocaleMiddleware` + `set_language` (POST, CSRF); `GUNICORN_WORKERS` env (default 3).
