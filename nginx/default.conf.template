@@ -1,18 +1,20 @@
 # SEC-017: keep https from a TLS proxy/tunnel in front (else Django's SSL redirect loops);
-# otherwise use our own scheme. A direct :8080 client can only claim https for itself.
+# otherwise use our own scheme. A direct :8001 client can only claim https for itself.
 map $http_x_forwarded_proto $fwd_proto {
     default $scheme;
     https   https;
-}
-
-upstream web {
-    server web:8000;
 }
 
 server {
     listen 80;
     server_name _;
     server_tokens off;   # SEC-018: no nginx version in Server header / error pages
+    absolute_redirect off;   # ROB-023a: relative Location, so nginx's own redirects keep the public host:port
+    # ROB-024a: Docker DNS, re-resolved every 10 s via the variable upstreams below, so a recreated
+    # web/minio (new IP) is picked up without an nginx restart, and a missing one is a 502, not a dead nginx.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $up_web web:8000;
+    set $up_minio minio:9000;
     client_max_body_size 512m;   # allow PDF/MP4 admin uploads
 
     # P2/P8: /media/<key> is rewritten to /<bucket>/<key> and proxied to MinIO.
@@ -24,7 +26,7 @@ server {
     # envsubst (/etc/nginx/templates/*.template) — no drift with the app.
     location /media/ {
         rewrite ^/media/(.*)$ /${MINIO_BUCKET}/$1 break;
-        proxy_pass http://minio:9000;
+        proxy_pass http://$up_minio;
         proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         # SEC-010: media is served from the app's own origin — don't let the browser
@@ -34,7 +36,7 @@ server {
 
     # whitenoise serves /static/ from within gunicorn; just pass through.
     location / {
-        proxy_pass http://web;
+        proxy_pass http://$up_web;
         proxy_read_timeout 120s;   # RUN-005: match gunicorn --timeout 120
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;

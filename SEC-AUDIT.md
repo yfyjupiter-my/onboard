@@ -538,3 +538,41 @@ Gate: **PASS**. No blocker. Open: SEC-054a (tied to SEC-041b), SEC-006 carry-for
 SEC-055: StaffFilter vs SEC-030 lookup allowlist
 Verdict: ✅ Correct
 Action Needed: None. `lookup_allowed` now permits `is_active` + `staff` only; `?password__startswith=` / `?is_superuser__exact=` still 400 (test green). Exporting staff rows (`?staff=include|only`) still requires `view_joinerprogress` (SEC-012); unknown `staff` values fall back to joiners-only. Joiner page for a staff user stays view-only with restricted fields (SEC-028).
+
+## QA check — Security after Phase 7 removal (`1e8dd4f`, 2026-11-23)
+
+Scope: revert of 0f531e6 + 5640690 (country instances + i18n) and the live teardown. Verified live through nginx `:8001` and on `web` with the Django test client in a rolled-back transaction; one throwaway MinIO object written and deleted. No test files added.
+
+SEC-056: country routes and i18n endpoint are gone
+Verdict: ✅ Correct
+Action Needed: None. `/vn/ /th/ /id/`, `/vn`, `/vn/media/x`, `/vn/admin/`, `/onboard-vn/`, `/i18n/setlang/` (GET + POST) → 404. No `LocaleMiddleware`, no `FORCE_SCRIPT_NAME`, no `locale/` dir in the image; `Accept-Language: vi` still renders `lang="en"`.
+
+SEC-057: session / CSRF / admin cookie split after cookie names went back to defaults
+Verdict: ✅ Correct
+Action Needed: None. `sessionid` Path=/ HttpOnly Lax; `admin_sessionid` Path=/admin/ HttpOnly; frontend session on `/admin/` → 302 admin login; admin session on `/` → 302 login (T6.6/SEC-052 hold). `?next=https://evil.test/` → `/`. Login and joiner POST without token → 403. `LOGIN_REDIRECT_URL="/"`, `DEBUG=False`.
+
+SEC-058: presign + `/media/` proxy on the single bucket
+Verdict: ✅ Correct
+Action Needed: None. Presign is `/media/<key>` (no bucket in path, 900 s). End-to-end via nginx: signed 200 + `nosniff`; tampered signature, unsigned, and same signature on another key → 403. `/media/` listing 403; `..`/`%2e%2e` traversal 404. Bucket `onboard-media` anonymous access `private`.
+
+SEC-059: country credentials fully removed
+Verdict: ✅ Correct
+Action Needed: None. Postgres: only role `onboard`, no objects owned by any `onboard_<cc>` role. MinIO: no users, no service accounts, country policies removed. `env/` deleted; `env/*.env` never committed (git history clean); no copies under `~`. `.env` stays mode 600.
+
+SEC-060: Postgres `CONNECT` back to PUBLIC default on this host
+Verdict: ✅ Correct (SEC-060a done 2026-11-23: revoked live, `datacl` PUBLIC = TEMP only; README restore step 4 re-applies it)
+Action Needed: `datacl` of `onboard` / `postgres` is default (PUBLIC may CONNECT). Harmless now: `onboard` is the only role. The Phase 7 revoke existed for cross-country isolation. **SEC-060a** (optional, needs user OK): `REVOKE CONNECT ON DATABASE onboard, postgres FROM PUBLIC` as defence in depth, plus a README backup/restore line.
+
+SEC-061: `web` back on root Postgres + MinIO credentials
+Verdict: ⚠️ Pending (accepted design, SEC-004/D2)
+Action Needed: None now. `web` env holds `POSTGRES_PASSWORD`, `MINIO_ROOT_USER/PASSWORD` as before Phase 7. Scoped keys were only wired for countries; **SEC-048a** (scope Malaysia's creds) stays open as a hardening option. SEC-047a, SEC-051a, COM-035a/036a no longer apply.
+
+SEC-062: stale `:8080` in nginx comment
+Verdict: ✅ Correct (SEC-062a done 2026-11-23: comment now `:8001`)
+Action Needed: **SEC-062a** — `nginx/default.conf.template` SEC-017 comment says "direct :8080 client"; host port is `8001`. Comment-only.
+
+Out of scope, noted: host `0.0.0.0:8000` is another Compose project (`dimension_check`), host `127.0.0.1:5432` is a host Postgres — neither belongs to onboard.
+
+Carry-forward: SEC-006 (login throttle / Cloudflare Access at go-live), SEC-035a (`DJANGO_HTTPS=False` — now only `.env`), SEC-036a, SEC-041b / SEC-054a (strict `script-src`), SEC-048a.
+
+Gate: **PASS**. No blocker. SEC-060a + SEC-062a fixed; open: carry-forwards above.

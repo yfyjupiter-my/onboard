@@ -229,6 +229,8 @@ docker compose exec -T db sh -c 'until pg_isready -U onboard; do sleep 1; done'
 
 # 4. restore the database (dump is --clean --if-exists, so re-running is safe)
 docker compose exec -T db psql -U onboard -d onboard < ~/onboard-<timestamp>/db.sql
+# SEC-060a: only listed roles may connect (a fresh Postgres volume grants CONNECT to PUBLIC)
+docker compose exec -T db psql -U onboard -d postgres -c 'REVOKE CONNECT ON DATABASE onboard, postgres FROM PUBLIC'
 
 # 5. restore the objects into the fresh MinIO volume
 docker compose stop minio

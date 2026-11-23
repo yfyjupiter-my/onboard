@@ -194,3 +194,25 @@ Action Needed: None. Every query link Django generates on the Joiners list (`?_f
 ROB-022: blocked lookup is a bare 400 page
 Verdict: ⚠️ Pending (accepted, minor)
 Action Needed: A stale hand-typed bookmark such as `?username__startswith=l` gets Django's plain "Bad Request (400)" (with DEBUG off) and no link back, and a change page opened with a bad `_changelist_filters` renders but its "back to list" lands on that 400. Only staff typing URLs by hand can hit this. Each hit logs one `django.security.DisallowedModelAdminLookup` ERROR line ("Filtering by … not allowed"), which is only reachable after admin login, so no anonymous log flooding and a useful audit trail for probes. No code change unless HR reports stale links; the option is to catch `DisallowedModelAdminLookup` in `changelist_view` and redirect to the plain list with a message.
+
+## QA check — Robustness after Phase 7 removal (`1e8dd4f`, 2026-11-23)
+
+Scope: revert of 0f531e6 + 5640690 and the live teardown. Probed live through nginx `:8001` and with the Django test client in a rolled-back transaction. No test files added.
+
+ROB-023: nginx-built redirects drop the public port
+Verdict: ✅ Correct (ROB-023a done 2026-11-23: `absolute_redirect off`; `/media` → `Location: /media/`)
+Action Needed: `curl -I :8001/media` → `301 Location: http://localhost/media/` (port 8001 lost → dead link). Django redirects are relative and unaffected (`/admin` → `/admin/` OK). The revert removed Phase 7's `absolute_redirect off`. **ROB-023a** (needs user OK): re-add `absolute_redirect off;` to the `server` block in `nginx/default.conf.template`.
+
+ROB-024: nginx keeps a stale `web` IP after web is recreated
+Verdict: ✅ Correct (ROB-024a done 2026-11-23: Docker `resolver` + `$up_web`/`$up_minio`. Re-tested: web .6 → .5 served 200 within 10 s, no nginx restart; nginx starts with web down (502); presign via nginx 200)
+Action Needed: Reproduced: web came back on `172.19.0.6`, nginx still proxied to `172.19.0.4` → **502** until `docker compose restart nginx`. Static `upstream web { server web:8000; }` resolves once at nginx start, and if `web` doesn't exist at that moment nginx refuses to start. Same for `proxy_pass http://minio:9000`. Phase 7's resolver only covered the country routes. **ROB-024a** (needs user OK): `resolver 127.0.0.11 valid=10s ipv6=off;` + variable upstreams (`set $web web:8000; proxy_pass http://$web;`, same for minio) so a recreated container is picked up within 10 s and a missing one is a 502, not a dead nginx. Until then: README rule — restart nginx after any `up --build web`.
+
+ROB-025: joiner pages and error paths after the template revert
+Verdict: ✅ Correct
+Action Needed: None. Checklist / material 200, `lang="en"`, no language switch markup. Missing / non-numeric material, missing quiz → 404; GET on `complete/` → 405; anonymous `/` → 302 `/login/?next=/`. nginx 404 page is plain. No errors / tracebacks / `NoReverseMatch` in web logs. Test suite 45/45.
+
+ROB-026: stale Phase 7 client and config state
+Verdict: ✅ Correct
+Action Needed: None. Leftover browser cookies (`django_language=vi`, `sessionid_vn`, `csrftoken_vn`) are ignored: page still English, session intact. `.env` holds no Phase 7 keys (`DJANGO_LANGUAGE_CODE`, `DJANGO_URL_PREFIX`, `MINIO_ACCESS_KEY`, `GUNICORN_WORKERS` absent), so the removed startup validators leave no silently-ignored settings.
+
+Gate: **PASS**. No blocker. ROB-023a + ROB-024a fixed.
