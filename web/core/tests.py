@@ -464,6 +464,20 @@ class JoinerAdminTests(TestCase):
         joiner.refresh_from_db()
         self.assertFalse(joiner.is_superuser or joiner.is_staff)
 
+    def test_staff_filter(self):
+        # BUS-035a: staff hidden by default (reports/CSV unchanged), shown on request.
+        User.objects.create_user("newhr", password="pw-testing-123", is_staff=True)
+        cl = reverse("admin:core_joiner_changelist")
+        ex = reverse("admin:core_joiner_export")
+        self.assertNotContains(self.client.get(cl), "newhr")
+        self.assertContains(self.client.get(cl + "?staff=include"), "newhr")
+        only = self.client.get(cl + "?staff=only")
+        self.assertContains(only, "newhr")
+        self.assertNotContains(only, ">aaa<")
+        self.assertEqual(self.client.get(cl + "?staff=bogus").status_code, 200)  # unknown value -> default
+        JoinerProgress.objects.create(user=User.objects.get(username="newhr"), material=Material.objects.first())
+        self.assertNotIn("newhr", self.client.get(ex).content.decode())
+
     def test_export_survives_a_bad_filter_value(self):
         # SEC-013: IncorrectLookupParameters used to escape as a 500.
         resp = self.client.get(reverse("admin:core_joiner_export") + "?is_active__exact=bogus")

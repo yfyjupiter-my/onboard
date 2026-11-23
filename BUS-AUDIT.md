@@ -332,3 +332,21 @@ This covered empty scenarios (no materials), all-locked chapters (open), complet
 BUS-032: `locked_ids` contract relies on callers passing active materials
 Verdict: ✅ Correct
 Action Needed: None. The docstring states that `materials` must be active materials. All three callers do this: `checklist()` and the admin filter on `is_active=True`, and `is_locked_for` adds only `self` to the active chapter list. That is exactly the old behaviour, where the material itself was considered even if inactive, and the parity check above confirms it.
+
+## Staff accounts on the frontend: business logic check (`d2a224d`, 2026-11-23)
+
+BUS-033: staff progress stays out of HR reports and CSV
+Verdict: ✅ Correct
+Action Needed: None. Staff opening a material creates a normal `JoinerProgress` row (verified: 1 row), but `JoinerAdmin.get_queryset` filters `is_staff=False`, and all three CSV paths go through `_csv(joiners)` → `JoinerProgress.filter(user__in=joiners)`. Verified: superuser absent from the joiner list/CSV source. No other code aggregates progress across users.
+
+BUS-034: staff progress drives their own locks and topbar only
+Verdict: ✅ Correct
+Action Needed: None. `is_locked_for` / `locked_ids` and `topbar_progress` are per-user, so a staff preview unlocks nothing for joiners. Topbar shows for staff on the frontend (verified) and is skipped on `/admin/` (`path_info`, prefix-safe under `FORCE_SCRIPT_NAME`).
+
+BUS-035: a staff member who is also a new hire is invisible in reports
+Verdict: ✅ Resolved (option b, 2026-11-23)
+Action Needed: Now that staff can complete onboarding, a new HR/IT hire's real progress is hidden by the `is_staff=False` filter, and promoting a joiner to staff hides their history too. **BUS-035a** — decide: (a) accept, staff use the frontend only to preview (document in README); or (b) show staff in the joiner list behind a "Staff" filter (excluded by default). No change made without confirmation.
+
+Gate: **PASS**. No blocker. Open: BUS-035a (product decision).
+
+BUS-035a resolution: `StaffFilter` on the joiner admin sidebar — **Joiners only** (default, no param; reports/CSV unchanged), **Joiners + staff** (`?staff=include`), **Staff only** (`?staff=only`). `get_queryset` no longer hard-filters `is_staff`; the filter does. CSV "Export" follows the active filter. Test `test_staff_filter` (default hides staff in list + CSV, include/only show them, bogus value → default); 45/45.

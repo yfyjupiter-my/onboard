@@ -516,3 +516,25 @@ Action Needed: `env/<cc>.env` files are mode 600 and gitignored, and the per-cou
 Carry-forward: SEC-035a (all four instances run `DJANGO_HTTPS=False` on the LAN pilot; flip in **every** env file at go-live), SEC-036a, SEC-041b.
 
 Gate: **PASS**. Countries are isolated from each other at the database, object store and cookie level. Open, none blocking: SEC-047a (per-country hostnames when the temporary single-domain setup ends), SEC-048a (scope Malaysia's credentials), SEC-051a.
+
+## QA check — staff accounts on the frontend login (`d2a224d`, 2026-11-23)
+
+Scope: `JoinerLoginForm` staff block removed; `/login/` is Django's default `LoginView`. Verified live on `web` in a rolled-back transaction (superuser + inactive staff fixtures).
+
+SEC-052: frontend session never grants admin access
+Verdict: ✅ Correct
+Action Needed: None. Superuser signed in at `/login/` gets only `sessionid` (path `/`); `GET /admin/` → 302 `/admin/login/`. `SplitSessionMiddleware` strips the frontend cookie on `/admin/` paths; admin login sets `admin_sessionid` scoped to `/admin/`. T6.6 isolation holds for staff.
+
+SEC-053: default `LoginView` keeps the account checks
+Verdict: ✅ Correct
+Action Needed: None. Inactive staff (`is_active=False`) rejected (re-rendered, no session). Off-site `?next=https://evil.test/` → `/` (`url_has_allowed_host_and_scheme`). Session key rotated on login (Django default). CSRF on the form unchanged.
+
+SEC-054: staff passwords now also accepted at `/login/`
+Verdict: ⚠️ Pending (accepted, no new exposure)
+Action Needed: None in code. Superuser credentials could already be guessed at `/admin/login/` with the same (absent) throttle, so attack surface is unchanged — still covered by **SEC-006** (Cloudflare Access / login throttle at go-live). **SEC-054a** — superuser passwords are now typed into a frontend page, whose CSP has no `script-src` yet (SEC-041b: inline + Alpine eval); the login page renders no HR/joiner content, so skimming risk is low. Revisit together with SEC-041b.
+
+Gate: **PASS**. No blocker. Open: SEC-054a (tied to SEC-041b), SEC-006 carry-forward.
+
+SEC-055: StaffFilter vs SEC-030 lookup allowlist
+Verdict: ✅ Correct
+Action Needed: None. `lookup_allowed` now permits `is_active` + `staff` only; `?password__startswith=` / `?is_superuser__exact=` still 400 (test green). Exporting staff rows (`?staff=include|only`) still requires `view_joinerprogress` (SEC-012); unknown `staff` values fall back to joiners-only. Joiner page for a staff user stays view-only with restricted fields (SEC-028).

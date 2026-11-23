@@ -153,11 +153,34 @@ def _get_app_list(request, app_label=None):
 admin.site.get_app_list = _get_app_list
 
 
+class StaffFilter(admin.SimpleListFilter):
+    # BUS-035a: staff can onboard on the frontend too (d2a224d), so their progress is
+    # reachable here. Default stays joiners-only, so HR reports and CSV are unchanged.
+    title = "staff"
+    parameter_name = "staff"
+
+    def lookups(self, request, model_admin):
+        return (("include", "Joiners + staff"), ("only", "Staff only"))
+
+    def choices(self, changelist):
+        for choice in super().choices(changelist):
+            if choice["display"] == "All":
+                choice["display"] = "Joiners only"  # no param = default view
+            yield choice
+
+    def queryset(self, request, queryset):
+        if self.value() == "include":
+            return queryset
+        if self.value() == "only":
+            return queryset.filter(is_staff=True)
+        return queryset.filter(is_staff=False)
+
+
 @admin.register(Joiner)
 class JoinerAdmin(admin.ModelAdmin):
     # One row per joiner; click through for their per-material progress. (P13 CSV export.)
     list_display = ("name", "email", "completed", "last_activity", "is_active")
-    list_filter = ("is_active",)
+    list_filter = ("is_active", StaffFilter)
     search_fields = ("username", "first_name", "last_name", "email")
     readonly_fields = ("username", "first_name", "last_name", "email", "is_active", "date_joined", "incomplete_materials", "progress_table")
     actions = ["export_as_csv"]
@@ -178,7 +201,7 @@ class JoinerAdmin(admin.ModelAdmin):
     def lookup_allowed(self, lookup, value, request=None):
         # SEC-030: URL filters only on the sidebar field. Stock admin allows any model field, so
         # ?password__startswith=pbkdf2_sha256$... narrowed the list (and CSV export) one hash character at a time.
-        return lookup.split("__")[0] in ("is_active",) and super().lookup_allowed(lookup, value, request)
+        return lookup.split("__")[0] in ("is_active", StaffFilter.parameter_name) and super().lookup_allowed(lookup, value, request)
 
     def get_readonly_fields(self, request, obj=None):
         # SEC-026: progress data needs view_joinerprogress, the same rule as the CSV export (SEC-012).
@@ -189,7 +212,8 @@ class JoinerAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         total = Material.objects.filter(is_active=True).count()
         return (
-            super().get_queryset(request).filter(is_staff=False).annotate(
+            # BUS-035a: staff/joiner split is StaffFilter's job (default joiners-only).
+            super().get_queryset(request).annotate(
                 completed_count=Count("progress", filter=Q(progress__status=JoinerProgress.COMPLETED,
                                                             progress__material__is_active=True)),
                 total_count=Value(total),
